@@ -112,7 +112,7 @@ try {
 $recentFlashes = [];
 try {
     $sql = "
-        SELECT DISTINCT
+        SELECT
             f.id,
             f.type,
             COALESCE(NULLIF(f.title_short, ''), f.title) AS title,
@@ -120,14 +120,27 @@ try {
             f.updated_at
         FROM sf_flashes f
         INNER JOIN incident_body_part ibp ON ibp.incident_id = f.id
+        INNER JOIN (
+            SELECT
+                COALESCE(translation_group_id, id) AS group_id,
+                MIN(CASE WHEN lang = :ui_lang THEN id END) AS ui_lang_id,
+                -- Parent = original flash (no group or is root of its group)
+                MIN(CASE WHEN translation_group_id IS NULL OR translation_group_id = id THEN id END) AS parent_id,
+                MIN(id) AS any_id
+            FROM sf_flashes
+            WHERE state = 'published'
+            GROUP BY COALESCE(translation_group_id, id)
+        ) grp ON f.id = COALESCE(grp.ui_lang_id, grp.parent_id, grp.any_id)
         WHERE f.state = 'published'
           $dateFilter
           $siteFilter
         ORDER BY f.updated_at DESC
         LIMIT 200
     ";
+    $recentParams = $params;
+    $recentParams[':ui_lang'] = $uiLang;
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->execute($recentParams);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($rows)) {
