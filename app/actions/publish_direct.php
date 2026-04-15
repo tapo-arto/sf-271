@@ -227,7 +227,7 @@ try {
         ':flash_id' => $logFlashId,
         ':user_id' => $userId,
         ':event_type' => 'published_direct',
-        ':description' => 'log_published_direct',
+        ':description' => sf_term('log_published_direct', $currentUiLang),
     ]);
 
     if ($oldState !== 'published') {

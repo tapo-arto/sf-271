@@ -19,6 +19,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../services/ApprovalRouting.php';
 require_once __DIR__ . '/../includes/log_app.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $flashId = isset($_POST['flash_id']) ? (int)$_POST['flash_id'] : 0;
 $approverIds = isset($_POST['approver_ids']) ? json_decode($_POST['approver_ids'], true) : [];
@@ -160,7 +161,7 @@ if ($submissionComment !== '') {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => "log_comment_label: LÄHETETTY TURVATIIMILLE: " . $submissionComment,
+        ':description' => "log_comment_label: " . mb_strtoupper(sf_term('log_sent_to_safety_team', $currentUiLang ?? ($_SESSION['ui_lang'] ?? 'fi'))) . ": " . $submissionComment,
     ]);
 }
 
