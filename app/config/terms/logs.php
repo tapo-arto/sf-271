@@ -766,4 +766,32 @@ return [
     'it' => 'Pubblicato direttamente',
     'el' => 'Δημοσιεύτηκε απευθείας',
 ],
+'log_comment_label' => [
+    'fi' => 'Kommentti',
+    'sv' => 'Kommentar',
+    'en' => 'Comment',
+    'it' => 'Commento',
+    'el' => 'Σχόλιο',
+],
+'log_return_reason_label' => [
+    'fi' => 'Palautuksen syy',
+    'sv' => 'Orsak till retur',
+    'en' => 'Return reason',
+    'it' => 'Motivo del reso',
+    'el' => 'Λόγος επιστροφής',
+],
+'log_message_to_comms_label' => [
+    'fi' => 'Viesti viestinnälle',
+    'sv' => 'Meddelande till kommunikation',
+    'en' => 'Message to communications',
+    'it' => 'Messaggio alle comunicazioni',
+    'el' => 'Μήνυμα στις επικοινωνίες',
+],
+'log_supervisor_message_label' => [
+    'fi' => 'Työmaavastaavan viesti',
+    'sv' => 'Platschefens meddelande',
+    'en' => 'Supervisor message',
+    'it' => 'Messaggio del supervisore',
+    'el' => 'Μήνυμα επόπτη',
+],
 ];

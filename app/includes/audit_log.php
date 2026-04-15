@@ -548,6 +548,94 @@ function sf_audit_action_label(string $action, string $lang = 'fi'): string
             'it' => 'Pubblicato direttamente',
             'el' => 'Δημοσιεύτηκε απευθείας',
         ],
+
+        // Additional flash actions
+        'flash_supervisor_approved' => [
+            'fi' => 'Työmaavastaava hyväksyi',
+            'sv' => 'Platschefen godkände',
+            'en' => 'Supervisor approved',
+            'it' => 'Supervisore approvato',
+            'el' => 'Ο επόπτης ενέκρινε',
+        ],
+        'flash_sent_to_supervisor' => [
+            'fi' => 'Lähetetty työmaavastaavalle',
+            'sv' => 'Skickad till platschef',
+            'en' => 'Sent to supervisor',
+            'it' => 'Inviato al supervisore',
+            'el' => 'Στάλθηκε στον επόπτη',
+        ],
+        'flash_language_version_created' => [
+            'fi' => 'Kieliversio luotu',
+            'sv' => 'Språkversion skapad',
+            'en' => 'Language version created',
+            'it' => 'Versione linguistica creata',
+            'el' => 'Δημιουργήθηκε γλωσσική έκδοση',
+        ],
+        'flash_created' => [
+            'fi' => 'Safetyflash luotu',
+            'sv' => 'Safetyflash skapad',
+            'en' => 'Safetyflash created',
+            'it' => 'Safetyflash creato',
+            'el' => 'Δημιουργήθηκε Safetyflash',
+        ],
+        'flash_updated' => [
+            'fi' => 'Safetyflash päivitetty',
+            'sv' => 'Safetyflash uppdaterad',
+            'en' => 'Safetyflash updated',
+            'it' => 'Safetyflash aggiornato',
+            'el' => 'Safetyflash ενημερώθηκε',
+        ],
+        'flash_status_changed' => [
+            'fi' => 'Tila muutettu',
+            'sv' => 'Status ändrad',
+            'en' => 'Status changed',
+            'it' => 'Stato modificato',
+            'el' => 'Η κατάσταση άλλαξε',
+        ],
+
+        // Additional user actions
+        'user_login' => [
+            'fi' => 'Kirjautuminen',
+            'sv' => 'Inloggning',
+            'en' => 'Login',
+            'it' => 'Accesso',
+            'el' => 'Σύνδεση',
+        ],
+        'user_logout' => [
+            'fi' => 'Uloskirjautuminen',
+            'sv' => 'Utloggning',
+            'en' => 'Logout',
+            'it' => 'Disconnessione',
+            'el' => 'Αποσύνδεση',
+        ],
+        'user_login_failed' => [
+            'fi' => 'Kirjautuminen epäonnistui',
+            'sv' => 'Inloggning misslyckades',
+            'en' => 'Login failed',
+            'it' => 'Accesso fallito',
+            'el' => 'Αποτυχία σύνδεσης',
+        ],
+        'user_created' => [
+            'fi' => 'Käyttäjä luotu',
+            'sv' => 'Användare skapad',
+            'en' => 'User created',
+            'it' => 'Utente creato',
+            'el' => 'Ο χρήστης δημιουργήθηκε',
+        ],
+        'user_updated' => [
+            'fi' => 'Käyttäjä päivitetty',
+            'sv' => 'Användare uppdaterad',
+            'en' => 'User updated',
+            'it' => 'Utente aggiornato',
+            'el' => 'Ο χρήστης ενημερώθηκε',
+        ],
+        'user_deleted' => [
+            'fi' => 'Käyttäjä poistettu',
+            'sv' => 'Användare borttagen',
+            'en' => 'User deleted',
+            'it' => 'Utente eliminato',
+            'el' => 'Ο χρήστης διαγράφηκε',
+        ],
     ];
 
     if (isset($labels[$action])) {

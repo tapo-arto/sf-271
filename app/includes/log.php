@@ -37,8 +37,18 @@ function sf_log_event(int $flashId, string $eventType, string $description = '')
 
     $stmt->close();
 }
+/**
+ * Log field-level changes as a single event.
+ *
+ * @deprecated Use direct INSERT into safetyflash_logs combined with sf_audit_log() instead.
+ *
+ * @param int   $flashId Flash ID
+ * @param array $old     Old field values
+ * @param array $new     New field values
+ */
 function sf_log_changes(int $flashId, array $old, array $new): void
 {
+    trigger_error('sf_log_changes() is deprecated, use direct INSERT into safetyflash_logs combined with sf_audit_log() instead', E_USER_DEPRECATED);
     if (!function_exists('sf_term')) {
         require_once __DIR__ . '/../../assets/lib/sf_terms.php';
     }

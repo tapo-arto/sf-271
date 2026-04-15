@@ -20,6 +20,7 @@ require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../services/ApprovalRouting.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+require_once __DIR__ . '/../includes/audit_log.php';
 
 $flashId = isset($_POST['flash_id']) ? (int)$_POST['flash_id'] : 0;
 $message = isset($_POST['message']) ? trim($_POST['message']) : '';
@@ -78,6 +79,7 @@ if (!empty($message)) {
 sf_log_event($flashId, 'supervisor_approved', $desc);
 
 // Save message as system comment so it appears in Comments tab
+$currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 if (!empty($message)) {
     $userId = $currentUser ? (int)$currentUser['id'] : null;
     $safeMessage = mb_substr($message, 0, 2000);
@@ -89,13 +91,15 @@ if (!empty($message)) {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => "log_comment_label: " . mb_strtoupper(sf_term('log_role_supervisor', $currentUiLang ?? ($_SESSION['ui_lang'] ?? 'fi'))) . ": " . $safeMessage,
+        ':description' => sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_supervisor_approved', $currentUiLang) . ": " . $safeMessage,
     ]);
 }
 
 // Send email notification to safety team
 require_once __DIR__ . '/../../assets/services/email_services.php';
 sf_mail_to_safety_team($pdo, $flashId, 'pending_supervisor');
+
+sf_audit_log('flash_supervisor_approved', 'flash', $flashId);
 
 echo json_encode([
     'ok' => true,
