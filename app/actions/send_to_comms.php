@@ -360,7 +360,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 
     // Save message as system comment so it appears in Comments tab
     if ($message !== '') {
-        $systemCommentDesc = "log_comment_label: " . mb_strtoupper(sf_term('log_sent_to_comms', $currentUiLang)) . ": " . $message;
+        $systemCommentDesc = sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_sent_to_comms', $currentUiLang) . ": " . $message;
         $stmtSysComment = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
             VALUES (:flash_id, :user_id, :event_type, :description, NOW())
