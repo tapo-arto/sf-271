@@ -1,0 +1,65 @@
+[2026-04-14 19:17:51] [ERROR] Worker FAILED for flash_id: 763. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(975): require('...')
+#2 {main}
+[2026-04-14 19:17:51] [ERROR] save_flash.php ERROR: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away | {"request_uri":"\/app\/api\/save_flash.php","trace":"#0 \/home\/deb4000107\/domains\/safetyflash.tapojarvi.online\/public_html\/app\/api\/process_flash_worker.php(603): PDO->prepare()\n#1 \/home\/deb4000107\/domains\/safetyflash.tapojarvi.online\/public_html\/app\/api\/save_flash.php(975): require('...')\n#2 {main}"}
+[2026-04-14 19:55:59] [ERROR] Worker FAILED for flash_id: 763. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-14 19:56:18] [ERROR] Worker FAILED for flash_id: 763. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:11:39] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:13:51] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:14:54] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:15:07] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:15:25] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:15:45] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:35:15] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
+[2026-04-15 07:38:29] [ERROR] Worker FAILED for flash_id: 764. Error: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away
+#0 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/process_flash_worker.php(304): PDO->prepare()
+#1 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(359): require('...')
+#2 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/services/FlashSaveService.php(100): FlashSaveService->triggerWorker()
+#3 /home/deb4000107/domains/safetyflash.tapojarvi.online/public_html/app/api/save_flash.php(302): FlashSaveService->save()
+#4 {main}
