@@ -1530,6 +1530,13 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
       $bundleMemberLabel = implode(', ', $bundleMemberLabelParts);
   }
   ?>
+  <?php
+  // Detect if the parent flash is already in an advanced state (to_comms or published).
+  // In that case, translation children do not need to go through the review flow again.
+  $parentIsAdvancedState = $isTranslationChild
+      && isset($sourceFlash['state'])
+      && in_array($sourceFlash['state'], ['to_comms', 'published'], true);
+  ?>
   <?php if ($isTranslationChild): ?>
     <!-- Translation child mode footer -->
     <div class="sf-step6-footer">
@@ -1543,7 +1550,7 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
           || $state_val === '';
       $actionUrl = $base . '/app/api/save_flash.php';
       ?>
-      <?php if (! ($editing && ! $showSendToReview) && $isInBundle): ?>
+      <?php if ($isInBundle && (!($editing && !$showSendToReview) || $parentIsAdvancedState)): ?>
         <!-- Bundle info bar above the button row -->
         <div class="sf-bundle-info-bar">
           <span class="sf-bundle-info-label">
@@ -1557,7 +1564,36 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
           <?= htmlspecialchars(sf_term('btn_prev', $uiLang), ENT_QUOTES, 'UTF-8'); ?>
         </button>
         <div class="sf-step6-footer-right">
-          <?php if ($editing && ! $showSendToReview): ?>
+          <?php if ($parentIsAdvancedState): ?>
+            <!-- Emoversio on viestinnällä/julkaistu – ei tarvita tarkistuskierrosta.
+                 Näytä: Tallenna luonnos + Lisää kieliversio + Tallenna (ei Lähetä tarkistettavaksi) -->
+            <button
+              type="submit"
+              name="submission_type"
+              value="draft"
+              id="sfSaveDraft"
+              class="sf-btn sf-btn-secondary"
+            >
+              <?= htmlspecialchars(sf_term('btn_save_draft', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button
+              type="button"
+              id="sfAddLanguageVersion"
+              class="sf-btn sf-btn-outline"
+              title="<?= htmlspecialchars(sf_term('btn_add_language_version_title', $uiLang) ?? 'Tallenna ensin luonnoksena, luo sitten uusi kieliversio', ENT_QUOTES, 'UTF-8') ?>"
+            >
+              ➕ <?= htmlspecialchars(sf_term('btn_add_language_version', $uiLang) ?? 'Lisää kieliversio', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button
+              type="button"
+              id="sfSaveInline"
+              class="sf-btn sf-btn-primary"
+              data-action-url="<?= htmlspecialchars($actionUrl, ENT_QUOTES, 'UTF-8') ?>"
+              data-flash-id="<?= (int)$editId ?>"
+            >
+              <?= htmlspecialchars(sf_term('btn_save', $uiLang) ?? 'Tallenna', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+          <?php elseif ($editing && ! $showSendToReview): ?>
             <!-- Muokkaus tilassa joka EI ole draft/request_info - vain tallenna -->
             <button
               type="button"
@@ -1968,7 +2004,7 @@ window.SF_LIBRARY_SELECTIONS = <?= json_encode($libraryImageIds, JSON_UNESCAPED_
 <script src="<?= sf_asset_url('assets/js/sf-image-edit-flow.js', $base) ?>"></script>
 <script src="<?= sf_asset_url('assets/js/sf-grid-step.js', $base) ?>"></script>
 
-<?php if ($editing && !$showSendToReview): ?>
+<?php if (($editing && !$showSendToReview) || $parentIsAdvancedState): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const saveBtn = document.getElementById('sfSaveInline');
