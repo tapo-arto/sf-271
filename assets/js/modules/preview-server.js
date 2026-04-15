@@ -199,7 +199,8 @@ export class ServerPreview {
             'sf-lang',
 
             // varmistus: jos joskus dispatchataan eventti hidden inputille
-            'sf-grid-bitmap'
+            'sf-grid-bitmap',
+            'sf-grid-layout'
         ];
 
         fields.forEach(id => {
@@ -224,7 +225,43 @@ export class ServerPreview {
         this._bindFontSizeSelector();
         this._bindLayoutModeSelector();
 
-        // Initial render
+        // Initial render — wait briefly for any pending grid bitmap upload from step 5
+        this._waitForGridBitmapAndUpdate();
+    }
+
+    /**
+     * Wait for the grid bitmap hidden input to stabilize (async uploads from grid step
+     * may still be in-flight when preview step initializes), then trigger update.
+     */
+    async _waitForGridBitmapAndUpdate() {
+        const gridInput = document.getElementById('sf-grid-bitmap');
+        if (!gridInput) {
+            this.update(1, { force: true });
+            return;
+        }
+
+        const initialValue = gridInput.value;
+        let attempts = 0;
+        const maxAttempts = 10; // Max 2 seconds wait (10 * 200ms)
+
+        // Poll until value stabilizes or max attempts reached
+        while (attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 200));
+            attempts++;
+
+            const currentValue = gridInput.value;
+            if (currentValue !== initialValue && currentValue !== '') {
+                // Value changed — wait one more tick for it to fully settle
+                await new Promise(r => setTimeout(r, 100));
+                break;
+            }
+
+            // If we have a non-empty value (temp file or base64), proceed
+            if (currentValue) {
+                break;
+            }
+        }
+
         this.update(1, { force: true });
     }
 
@@ -275,7 +312,7 @@ export class ServerPreview {
     }
 
     watchHiddenBitmapFields() {
-        const ids = ['sf-grid-bitmap'];
+        const ids = ['sf-grid-bitmap', 'sf-grid-layout'];
 
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -397,6 +434,12 @@ export class ServerPreview {
             data.set('root_causes', document.getElementById('sf-root-causes')?.value || '');
             data.set('actions', document.getElementById('sf-actions')?.value || '');
             data.set('layout_mode', layoutMode);
+
+            // Send grid layout so server knows which layout template to use
+            const gridLayoutInput = document.getElementById('sf-grid-layout');
+            if (gridLayoutInput && gridLayoutInput.value) {
+                data.set('grid_layout', gridLayoutInput.value);
+            }
 
             const isForceDouble = selectedType === 'green' && layoutMode === 'force_double';
             data.set('card_number', String(cardNumber));
