@@ -1599,7 +1599,24 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
               <?= htmlspecialchars(sf_term('btn_save', $uiLang) ?? 'Tallenna', ENT_QUOTES, 'UTF-8') ?>
             </button>
           <?php elseif ($editing && ! $showSendToReview): ?>
-            <!-- Muokkaus tilassa joka EI ole draft/request_info - vain tallenna -->
+            <!-- Muokkaus tilassa joka EI ole draft/request_info – näytä luonnos + kieliversio + tallenna (ei lähetä tarkistettavaksi) -->
+            <button
+              type="submit"
+              name="submission_type"
+              value="draft"
+              id="sfSaveDraft"
+              class="sf-btn sf-btn-secondary"
+            >
+              <?= htmlspecialchars(sf_term('btn_save_draft', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button
+              type="button"
+              id="sfAddLanguageVersion"
+              class="sf-btn sf-btn-outline"
+              title="<?= htmlspecialchars(sf_term('btn_add_language_version_title', $uiLang) ?? 'Tallenna ensin luonnoksena, luo sitten uusi kieliversio', ENT_QUOTES, 'UTF-8') ?>"
+            >
+              ➕ <?= htmlspecialchars(sf_term('btn_add_language_version', $uiLang) ?? 'Lisää kieliversio', ENT_QUOTES, 'UTF-8') ?>
+            </button>
             <button
               type="button"
               id="sfSaveInline"
@@ -1711,7 +1728,24 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
         </button>
         <div class="sf-step6-footer-right">
           <?php if ($editing && ! $showSendToReview): ?>
-            <!-- Muokkaus tilassa joka EI ole draft/request_info - vain tallenna -->
+            <!-- Muokkaus tilassa joka EI ole draft/request_info – näytä luonnos + kieliversio + tallenna (ei lähetä tarkistettavaksi) -->
+            <button
+              type="submit"
+              name="submission_type"
+              value="draft"
+              id="sfSaveDraft"
+              class="sf-btn sf-btn-secondary"
+            >
+              <?= htmlspecialchars(sf_term('btn_save_draft', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button
+              type="button"
+              id="sfAddLanguageVersion"
+              class="sf-btn sf-btn-outline"
+              title="<?= htmlspecialchars(sf_term('btn_add_language_version_title', $uiLang) ?? 'Tallenna ensin luonnoksena, luo sitten uusi kieliversio', ENT_QUOTES, 'UTF-8') ?>"
+            >
+              ➕ <?= htmlspecialchars(sf_term('btn_add_language_version', $uiLang) ?? 'Lisää kieliversio', ENT_QUOTES, 'UTF-8') ?>
+            </button>
             <button
               type="button"
               id="sfSaveInline"
