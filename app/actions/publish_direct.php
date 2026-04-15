@@ -1,0 +1,289 @@
+<?php
+declare(strict_types=1);
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+try {
+    require_once __DIR__ . '/../includes/protect.php';
+    require_once __DIR__ . '/../includes/log_app.php';
+    require_once __DIR__ . '/../includes/statuses.php';
+    require_once __DIR__ . '/../includes/audit_log.php';
+    require_once __DIR__ . '/helpers.php';
+    require_once __DIR__ . '/../includes/file_cleanup.php';
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+
+    $base = rtrim($config['base_url'] ?? '', '/');
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        header("Location: {$base}/index.php?page=list");
+        exit;
+    }
+
+    sf_csrf_check();
+
+    $id  = sf_validate_id();
+    $pdo = sf_get_pdo();
+
+    if ($id <= 0) {
+        sf_redirect($base . "/index.php?page=list&notice=error");
+    }
+
+    $currentUser = sf_current_user();
+    $userId = isset($currentUser['id']) ? (int)$currentUser['id'] : 0;
+    $roleId = isset($currentUser['role_id']) ? (int)$currentUser['role_id'] : 0;
+    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+
+    $isAdmin = ($roleId === 1);
+    $isSafety = ($roleId === 3);
+
+    if (!$isAdmin && !$isSafety) {
+        http_response_code(403);
+        echo 'Ei oikeuksia.';
+        exit;
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT id, translation_group_id, title, state, lang, type
+        FROM sf_flashes
+        WHERE id = :id
+        LIMIT 1
+    ");
+    $stmt->execute([':id' => $id]);
+    $flash = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$flash) {
+        sf_redirect($base . "/index.php?page=list&notice=error");
+    }
+
+    $oldState = (string)($flash['state'] ?? '');
+
+    if (!in_array($oldState, ['pending_supervisor', 'pending_review'], true)) {
+        sf_redirect($base . "/index.php?page=view&id={$id}&notice=error");
+    }
+
+    $message = trim((string)($_POST['message'] ?? ''));
+    if ($message === '') {
+        sf_redirect($base . "/index.php?page=view&id={$id}&notice=error");
+    }
+    $message = mb_substr($message, 0, 2000);
+
+    $groupId = !empty($flash['translation_group_id'])
+        ? (int)$flash['translation_group_id']
+        : (int)$flash['id'];
+
+    $logFlashId = $groupId;
+
+    $stmtVersions = $pdo->prepare("
+        SELECT id, lang
+        FROM sf_flashes
+        WHERE id = :gid OR translation_group_id = :gid2
+        ORDER BY FIELD(lang, 'fi', 'sv', 'en', 'it', 'el')
+    ");
+    $stmtVersions->execute([
+        ':gid' => $groupId,
+        ':gid2' => $groupId,
+    ]);
+    $versions = $stmtVersions->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$versions) {
+        sf_redirect($base . "/index.php?page=view&id={$id}&notice=error");
+    }
+
+    $versionIds = array_map(static function (array $row): int {
+        return (int)$row['id'];
+    }, $versions);
+
+    $placeholders = implode(',', array_fill(0, count($versionIds), '?'));
+
+    $updateSql = "
+        UPDATE sf_flashes
+        SET state = 'published',
+            status = 'JULKAISTU',
+            published_at = COALESCE(published_at, NOW()),
+            updated_at = NOW()
+        WHERE id IN ($placeholders)
+    ";
+    $stmtUpdate = $pdo->prepare($updateSql);
+    $stmtUpdate->execute($versionIds);
+
+    $clearSnapshotSql = "
+        UPDATE sf_flashes
+        SET display_snapshot_active = 0,
+            display_snapshot_preview = NULL
+        WHERE id IN ($placeholders)
+    ";
+    $stmtClearSnapshot = $pdo->prepare($clearSnapshotSql);
+    $stmtClearSnapshot->execute($versionIds);
+
+    $stmtType = $pdo->prepare("
+        SELECT type
+        FROM sf_flashes
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmtType->execute([$groupId]);
+    $flashType = $stmtType->fetchColumn();
+
+    $versionType = match ($flashType) {
+        'red' => 'ensitiedote',
+        'yellow' => 'vaaratilanne',
+        'green' => 'tutkintatiedote',
+        default => 'vaaratilanne',
+    };
+
+    $stmtPreview = $pdo->prepare("
+        SELECT preview_filename
+        FROM sf_flashes
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmtPreview->execute([$groupId]);
+    $previewFilename = $stmtPreview->fetchColumn();
+
+    if ($previewFilename) {
+        $previewFilename = basename((string)$previewFilename);
+    }
+
+    $baseDir = dirname(__DIR__, 2);
+    $previewPath = $previewFilename ? $baseDir . '/uploads/previews/' . $previewFilename : null;
+
+    if ($previewPath && file_exists($previewPath)) {
+        $stmtExisting = $pdo->prepare("
+            SELECT id, image_path
+            FROM sf_flash_snapshots
+            WHERE flash_id = ? AND version_type = ? AND lang = ?
+            LIMIT 1
+        ");
+        $stmtExisting->execute([$groupId, $versionType, $flash['lang'] ?? 'fi']);
+        $existing = $stmtExisting->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            $snapshotFullPath = $baseDir . $existing['image_path'];
+            if (copy($previewPath, $snapshotFullPath)) {
+                $stmtSnapshotUpdate = $pdo->prepare("
+                    UPDATE sf_flash_snapshots
+                    SET published_at = NOW(), published_by = ?
+                    WHERE id = ?
+                ");
+                $stmtSnapshotUpdate->execute([$userId, $existing['id']]);
+            }
+        } else {
+            $snapshotDir = $baseDir . '/storage/snapshots/' . $groupId;
+            if (!is_dir($snapshotDir)) {
+                mkdir($snapshotDir, 0755, true);
+            }
+
+            $timestamp = date('Y-m-d_His');
+            $snapshotFilename = $versionType . '_' . $timestamp . '.jpg';
+            $snapshotPath = $snapshotDir . '/' . $snapshotFilename;
+
+            if (copy($previewPath, $snapshotPath)) {
+                $relativeImagePath = '/storage/snapshots/' . $groupId . '/' . $snapshotFilename;
+
+                $stmtCount = $pdo->prepare("
+                    SELECT COUNT(*)
+                    FROM sf_flash_snapshots
+                    WHERE flash_id = ?
+                ");
+                $stmtCount->execute([$groupId]);
+                $versionNumber = (int)$stmtCount->fetchColumn() + 1;
+
+                $stmtSnapshotInsert = $pdo->prepare("
+                    INSERT INTO sf_flash_snapshots
+                    (flash_id, version_type, lang, version_number, image_path, published_at, published_by)
+                    VALUES (:flash_id, :version_type, :lang, :version_number, :image_path, NOW(), :published_by)
+                ");
+                $stmtSnapshotInsert->execute([
+                    ':flash_id' => $groupId,
+                    ':version_type' => $versionType,
+                    ':lang' => $flash['lang'] ?? 'fi',
+                    ':version_number' => $versionNumber,
+                    ':image_path' => $relativeImagePath,
+                    ':published_by' => $userId,
+                ]);
+            }
+        }
+    }
+
+    $commentDescription = "log_comment_label: " . $message;
+    $stmtComment = $pdo->prepare("
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+    ");
+    $stmtComment->execute([
+        ':flash_id' => $logFlashId,
+        ':user_id' => $userId,
+        ':event_type' => 'comment_added',
+        ':description' => $commentDescription,
+    ]);
+
+    $stmtDirectLog = $pdo->prepare("
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+    ");
+    $stmtDirectLog->execute([
+        ':flash_id' => $logFlashId,
+        ':user_id' => $userId,
+        ':event_type' => 'published_direct',
+        ':description' => 'log_published_direct',
+    ]);
+
+    if ($oldState !== 'published') {
+        $oldStateLabel = sf_status_label($oldState, $currentUiLang);
+        $newStateLabel = sf_status_label('published', $currentUiLang);
+        $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+
+        $stmtStateChange = $pdo->prepare("
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
+            VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+        ");
+        $stmtStateChange->execute([
+            ':flash_id' => $logFlashId,
+            ':user_id' => $userId,
+            ':event_type' => 'state_changed',
+            ':description' => $stateChangeDesc,
+        ]);
+    }
+
+    sf_audit_log(
+        'flash_publish_direct',
+        'flash',
+        (int)$id,
+        [
+            'title' => $flash['title'] ?? null,
+            'from_state' => $oldState,
+            'to_state' => 'published',
+            'translation_group_id' => $groupId,
+            'message' => mb_substr($message, 0, 200),
+        ],
+        $userId ?: null
+    );
+
+    sf_app_log("publish_direct.php: Flash {$id} published directly by user {$userId}. Group {$groupId}. Versions: " . implode(',', $versionIds));
+
+    sf_redirect($base . "/index.php?page=view&id={$id}&notice=published_direct");
+} catch (Throwable $e) {
+    if (function_exists('sf_app_log')) {
+        sf_app_log('publish_direct.php FATAL ERROR: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), LOG_LEVEL_ERROR);
+    } else {
+        error_log('publish_direct.php FATAL ERROR: ' . $e->getMessage());
+    }
+
+    $base = '';
+    if (isset($config['base_url'])) {
+        $base = rtrim($config['base_url'], '/');
+    }
+
+    $id = $_GET['id'] ?? 0;
+
+    if ($base !== '') {
+        header("Location: {$base}/index.php?page=view&id={$id}&notice=error");
+    } else {
+        header("Location: /index.php?page=view&id={$id}&notice=error");
+    }
+    exit;
+}
+
+restore_error_handler();
