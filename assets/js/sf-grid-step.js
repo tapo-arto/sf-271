@@ -557,6 +557,17 @@
             const out = el("sf-grid-bitmap");
             const existingBitmapValue = out ? (out.value || '').trim() : '';
 
+            // If the existing value is a valid persisted filename (not empty, not a base64
+            // data URL, and not a temporary upload), preserve it on initial page load.
+            // The bitmap will only be regenerated when the user explicitly clicks a layout card.
+            const isPersistedFilename = existingBitmapValue
+                && !existingBitmapValue.startsWith('data:image')
+                && !existingBitmapValue.startsWith('temp_grid_');
+            if (isPersistedFilename) {
+                console.log('[Grid] Preserving existing persisted grid bitmap filename:', existingBitmapValue);
+                return;
+            }
+
             if (!hasRealImages && existingBitmapValue) {
                 console.log('[Grid] Preserving existing grid bitmap – no real images available');
                 return;
