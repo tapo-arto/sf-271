@@ -1420,7 +1420,10 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
     // Capture the supervisor section for the preview controls right column.
     // Show for all flashes (including translation children) when in a submittable state.
     ob_start();
-    if (!$editing || $state_val === 'draft' || $state_val === 'request_info' || $state_val === ''):
+    if (
+        (!$editing || $state_val === 'draft' || $state_val === 'request_info' || $state_val === '') &&
+        !($isTranslationChild && isset($sourceFlash['state']) && in_array($sourceFlash['state'], ['to_comms', 'published'], true))
+    ):
   ?>
     <div class="sf-supervisor-section" id="sfSupervisorApprovalSection" style="display: none;">
       <h3 class="sf-supervisor-title"><?= htmlspecialchars(sf_term('select_inspector_title', $uiLang) ?: 'Valitse tarkistaja', ENT_QUOTES, 'UTF-8') ?></h3>
