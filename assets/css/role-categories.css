@@ -1,0 +1,475 @@
+/* Role Categories Admin Page Styles */
+
+.sf-role-categories-page {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.sf-role-categories-page h1 {
+    margin-bottom: 20px;
+    color: #1f2937;
+}
+
+.sf-info-box {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.sf-info-box p {
+    margin: 0 0 10px 0;
+}
+
+.sf-info-box ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+
+.sf-info-box li {
+    margin: 5px 0;
+}
+
+/* Filter Bar */
+.sf-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.sf-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: #334155;
+    margin: 0;
+}
+
+.sf-filter-label svg {
+    opacity: 0.6;
+}
+
+.sf-filter-select {
+    padding: 8px 32px 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.95rem;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 200px;
+}
+
+.sf-filter-select:hover {
+    border-color: #94a3b8;
+}
+
+.sf-filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sf-filter-count {
+    font-size: 0.9rem;
+    color: #64748b;
+    padding: 4px 12px;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.sf-categories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sf-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.sf-category-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.sf-category-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Filtered out cards */
+.sf-category-card.sf-filtered-out {
+    display: none;
+}
+
+.sf-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.sf-category-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+    flex: 1;
+}
+
+.sf-category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sf-category-badge-supervisor {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.sf-category-badge-approver {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sf-category-badge-reviewer {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sf-category-body {
+    margin-bottom: 15px;
+}
+
+.sf-category-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sf-category-info-row:last-child {
+    border-bottom: none;
+}
+
+.sf-category-label {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.sf-category-value {
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.sf-category-value em {
+    color: #9ca3af;
+}
+
+.sf-category-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sf-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Modal Styles */
+.sf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.sf-modal-content {
+    background: white;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.sf-modal-large {
+    max-width: 800px;
+}
+
+.sf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.sf-modal-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 20px;
+}
+
+.sf-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+}
+
+.sf-modal-close:hover {
+    color: #1f2937;
+}
+
+.sf-modal-body {
+    padding: 24px;
+}
+
+.sf-form-group {
+    margin-bottom: 20px;
+}
+
+.sf-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.sf-form-group input[type="text"],
+.sf-form-group select,
+.sf-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.sf-form-group input[type="text"]:focus,
+.sf-form-group select:focus,
+.sf-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sf-form-group small {
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.sf-form-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.sf-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Button Styles */
+.sf-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sf-btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.sf-btn-primary:hover {
+    background: #2563eb;
+}
+
+.sf-btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.sf-btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.sf-role-categories .sf-btn-small {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f3f4f6;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.sf-role-categories .sf-btn-small:hover {
+    background: #e5e7eb;
+}
+
+.sf-btn-danger {
+    background: #fee;
+    color: #dc2626;
+}
+
+.sf-btn-danger:hover {
+    background: #fecaca;
+}
+
+/* Manage Users Section */
+.sf-manage-users-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.sf-manage-users-section h3 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+.sf-users-list {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.sf-user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sf-user-item:last-child {
+    border-bottom: none;
+}
+
+.sf-user-info {
+    flex: 1;
+}
+
+.sf-user-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.sf-user-email {
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.sf-user-remove {
+    background: #fee;
+    color: #dc2626;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.sf-user-remove:hover {
+    background: #fecaca;
+}
+
+.sf-users-list-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .sf-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sf-filter-select {
+        width: 100%;
+    }
+
+    .sf-categories-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-manage-users-container {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .sf-category-actions {
+        flex-direction: column;
+    }
+
+    .sf-category-actions button {
+        width: 100%;
+    }
+}

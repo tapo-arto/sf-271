@@ -1,0 +1,1681 @@
+/* ============================================
+   DASHBOARD - CLEAN MODERN LAYOUT
+   ============================================ */
+
+.sf-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    overflow-x: hidden;
+}
+
+/* ============================================
+   PUBLISHED SECTION
+   ============================================ */
+
+.sf-published-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   DASHBOARD STATS SECTION - TWO COLUMN GRID
+   ============================================ */
+
+.sf-dashboard-stats-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.sf-section-header--main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.sf-section-title--main {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sf-subsection-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 1.5rem 0 0.75rem 0;
+    padding: 0;
+}
+
+.sf-subsection-legend {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: -0.5rem 0 0.75rem 0;
+    padding: 0;
+}
+
+/* ============================================
+   ARCHIVED ROW (COMPACT)
+   ============================================ */
+
+.sf-archived-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.125rem;
+    margin: 1rem 0;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+}
+
+.sf-archived-row:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateX(2px);
+}
+
+.sf-archived-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.sf-archived-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.sf-archived-text {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.sf-archived-arrow {
+    font-size: 1.25rem;
+    color: #9ca3af;
+}
+
+.sf-archived-row:hover .sf-archived-arrow {
+    color: #3b82f6;
+}
+
+/* ============================================
+   STATISTICS CARDS - INLINE LAYOUT
+   [Icon] [Label]                    [Count]
+   ============================================ */
+
+.sf-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.sf-stat-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1.125rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sf-stat-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Colored left border */
+.sf-stat-card--red {
+    border-left: 4px solid #dc2626;
+}
+
+.sf-stat-card--yellow {
+    border-left: 4px solid #f59e0b;
+}
+
+.sf-stat-card--green {
+    border-left: 4px solid #16a34a;
+}
+
+.sf-stat-card--total {
+    border-left: 4px solid #3b82f6;
+}
+
+/* Icon - Larger, centered */
+.sf-stat-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sf-stat-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Label - Takes remaining space, vertically centered */
+.sf-stat-label {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.3;
+    /* Explicit height matching */
+    display: flex;
+    align-items: center;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* Count - Right aligned, large, vertically centered */
+.sf-stat-count {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+    min-width: 2.5rem;
+    text-align: right;
+    /* Explicit height matching */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.sf-stat-card--red .sf-stat-count {
+    color: #dc2626;
+}
+
+.sf-stat-card--yellow .sf-stat-count {
+    color: #f59e0b;
+}
+
+.sf-stat-card--green .sf-stat-count {
+    color: #16a34a;
+}
+
+.sf-stat-card--total .sf-stat-count {
+    color: #3b82f6;
+}
+
+/* ============================================
+   ORIGINAL TYPE STATISTICS SECTION
+   ============================================ */
+
+.sf-dashboard-stats--original {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.sf-dashboard-stats--original-simple {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.sf-stats-header {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.125rem 1.25rem;
+}
+
+.sf-stats-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0;
+    padding: 0;
+    line-height: 1.3;
+}
+
+.sf-stats-subtitle {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #6b7280;
+    margin: 0.25rem 0 0 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+.sf-stat-card--plain {
+    pointer-events: none;
+    cursor: default;
+}
+
+.sf-stat-card--plain:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-color: #e5e7eb;
+}
+
+/* ============================================
+   MIDDLE SECTION - TWO COLUMNS
+   ============================================ */
+
+.sf-dashboard-middle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: stretch;
+}
+
+/* ============================================
+   CONTENT CARDS
+   ============================================ */
+
+.sf-content-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Section header - icon and title aligned */
+/* ============================================
+   SECTION HEADER - PERFECTLY ALIGNED
+   ============================================ */
+
+.sf-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding-bottom: 0.875rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Icon container - fixed size, centered content */
+.sf-section-icon {
+    width: 1.7rem;
+    height: 1.7rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sf-section-icon img {
+    width: 1.7rem;
+    height: 1.7rem;
+    object-fit: contain;
+    display: block;
+    /* Poistaa inline-elementin extra-tilan */
+}
+
+/* Title - vertically centered with icon */
+.sf-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5rem;
+    /* Sama kuin ikonin korkeus */
+}
+
+/* Show all link - aligned */
+.sf-show-all-link {
+    font-size: 0.8rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+    line-height: 1.5rem;
+    /* Sama kuin ikonin korkeus */
+}
+
+.sf-show-all-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* ============================================
+   PENDING SECTION
+   ============================================ */
+
+.sf-pending-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+    color: #9ca3af;
+    text-align: center;
+    min-height: 100px;
+}
+
+.sf-pending-empty svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #22c55e;
+    opacity: 0.6;
+}
+
+.sf-pending-empty span {
+    font-size: 0.875rem;
+}
+
+.sf-pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sf-pending-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+}
+
+.sf-pending-item:hover {
+    background: #f3f4f6;
+    transform: translateX(2px);
+}
+
+.sf-pending-title {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1e293b;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.sf-pending-site {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+/* ============================================
+   TYPE DOTS
+   ============================================ */
+
+.sf-type-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: box-shadow 0.15s ease;
+}
+
+.sf-type-dot--red {
+    background: #dc2626;
+}
+
+.sf-type-dot--yellow {
+    background: #eab308;
+}
+
+.sf-type-dot--green {
+    background: #22c55e;
+}
+
+.sf-pending-item:hover .sf-type-dot--red,
+.sf-recent-card:hover .sf-type-dot--red {
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+}
+
+.sf-pending-item:hover .sf-type-dot--yellow,
+.sf-recent-card:hover .sf-type-dot--yellow {
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+}
+
+.sf-pending-item:hover .sf-type-dot--green,
+.sf-recent-card:hover .sf-type-dot--green {
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+/* ============================================
+   WORKSITE BARS
+   ============================================ */
+
+.sf-worksite-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.sf-worksite-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.sf-worksite-bar-row:hover .sf-worksite-bar {
+    filter: brightness(1.08);
+}
+
+.sf-worksite-name {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.sf-worksite-bar-wrap {
+    flex: 1;
+    height: 1.5rem;
+    background: #f3f4f6;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.sf-worksite-bar {
+    height: 100%;
+    min-width: 2rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.5rem;
+    width: var(--bar-width, 0%);
+    animation: sf-bar-grow 0.5s ease-out forwards;
+    animation-delay: var(--bar-delay, 0s);
+    transition: filter 0.15s ease;
+}
+
+@keyframes sf-bar-grow {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: var(--bar-width, 100%);
+    }
+}
+
+.sf-worksite-bar-row:nth-child(1) .sf-worksite-bar {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.sf-worksite-bar-row:nth-child(2) .sf-worksite-bar {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.sf-worksite-bar-row:nth-child(3) .sf-worksite-bar {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.sf-worksite-bar-row:nth-child(n+4) .sf-worksite-bar {
+    background: linear-gradient(90deg, #94a3b8, #cbd5e1);
+}
+
+.sf-worksite-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   RECENT GRID
+   ============================================ */
+
+.sf-recent-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.sf-recent-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+    animation: sf-card-appear 0.3s ease-out forwards;
+    animation-delay: var(--card-delay, 0s);
+    opacity: 0;
+}
+
+@keyframes sf-card-appear {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sf-recent-card:hover {
+    background: #f8fafc;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateX(2px);
+}
+
+.sf-recent-card .sf-type-dot {
+    margin-top: 4px;
+}
+
+.sf-recent-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sf-recent-card-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.sf-recent-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.sf-recent-card-time {
+    color: #9ca3af;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .sf-dashboard-middle {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-dashboard-stats-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sf-dashboard {
+        overflow-x: hidden;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sf-published-section {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding: 1rem;
+    }
+
+    .sf-dashboard-stats-section {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats--original {
+        grid-template-columns: 1fr 1fr;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats--original-simple {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-stats-header {
+        grid-column: 1 / -1;
+        padding: 0.875rem 1rem;
+    }
+
+    .sf-recent-grid {
+        grid-template-columns: 1fr;
+        overflow-x: hidden;
+    }
+
+    .sf-stat-icon {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .sf-stat-count {
+        font-size: 1.5rem;
+    }
+
+    .sf-stat-label {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .sf-dashboard {
+        overflow-x: hidden;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sf-published-section {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding: 1rem;
+    }
+
+    .sf-dashboard-stats-section {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats--original {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .sf-dashboard-stats--original-simple {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-stats-header {
+        grid-column: 1;
+    }
+
+    .sf-stat-card {
+        padding: 0.75rem;
+        gap: 0.5rem;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sf-stat-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .sf-stat-label {
+        font-size: 0.8rem;
+        min-width: 0;
+        flex: 1;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .sf-stat-count {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .sf-worksite-bar-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        max-width: 100%;
+    }
+
+    .sf-worksite-name {
+        font-size: 0.75rem;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .sf-worksite-bar-wrap {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .sf-worksite-bars {
+        max-width: 100%;
+        overflow: hidden;
+    }
+}
+
+.sf-pending-site {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.sf-pending-site-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.5;
+}
+
+/* ============================================
+   TIME FILTER PILLS
+   ============================================ */
+
+.sf-time-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sf-time-filter-btn {
+    padding: 0.5rem 1rem;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.sf-time-filter-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+.sf-time-filter-btn.sf-active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.sf-time-filter-btn.sf-active:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+/* ============================================
+   NEW TIME FILTER LAYOUT
+   ============================================ */
+
+.sf-time-filter-container {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.sf-time-filter-dropdowns {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.sf-time-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.sf-filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.sf-filter-select {
+    min-width: 180px;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+}
+
+.sf-filter-select:hover {
+    border-color: #9ca3af;
+    background-color: #fafafa;
+}
+
+.sf-filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sf-time-filter-quick {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.sf-filter-quick-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.sf-time-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+
+/* ============================================
+   COMPACT STATS CARDS (NO LINKS)
+   ============================================ */
+
+.sf-dashboard-stats--compact {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.sf-stat-card--no-link {
+    pointer-events: none;
+    cursor: default;
+}
+
+.sf-stat-card--no-link:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-color: #e5e7eb;
+}
+
+/* ============================================
+   WORKSITE SHOW ALL TOGGLE
+   ============================================ */
+
+.sf-worksite-show-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.625rem 1rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #3b82f6;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.sf-worksite-show-all:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.sf-toggle-icon {
+    font-size: 0.75rem;
+}
+
+.sf-worksite-hidden {
+    display: none;
+}
+
+.sf-worksite-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ============================================
+   COMPACT ACTIVE/RECENT CARDS
+   ============================================ */
+
+.sf-compact-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.sf-active-compact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sf-active-compact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+}
+
+.sf-active-compact-item:hover {
+    background: #f3f4f6;
+    transform: translateX(2px);
+}
+
+.sf-active-compact-emoji {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sf-active-compact-emoji img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.sf-active-compact-text {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.sf-active-compact-count {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.sf-recent-compact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.sf-recent-compact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+}
+
+.sf-recent-compact-item:hover {
+    background: #f3f4f6;
+    transform: translateX(2px);
+}
+
+.sf-recent-compact-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sf-recent-compact-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.sf-recent-compact-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.sf-recent-compact-time {
+    color: #9ca3af;
+}
+
+/* ============================================
+   RESPONSIVE FOR NEW ELEMENTS
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .sf-compact-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sf-dashboard-stats--compact {
+        grid-template-columns: 1fr;
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    /* Allow horizontal scrolling when content overflows, only shows scrollbar when needed */
+    .sf-time-filter {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .sf-time-filter-dropdowns {
+        flex-wrap: wrap;
+        overflow-x: hidden;
+    }
+
+    .sf-published-section {
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 480px) {
+    .sf-dashboard-stats--compact {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        max-width: 100%;
+        overflow: hidden;
+    }
+}
+/* ============================================
+   INJURY HEATMAP MODULE
+   ============================================ */
+
+.sf-injury-card {
+    overflow: visible;
+}
+
+/* Section header flex-wrap for the site filter */
+.sf-section-header--wrap {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+}
+
+.sf-injury-site-wrap {
+    margin-left: auto;
+}
+
+.sf-filter-select--sm {
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.5rem;
+    height: auto;
+    min-width: 9rem;
+}
+
+/* Three-area grid: top-left (60%) SVGs | top-right (40%) chart | bottom (100%) list */
+.sf-injury-layout {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: auto auto;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+    align-items: start;
+}
+
+/* SVG column – top-left */
+.sf-injury-svg-col {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Chart column – top-right */
+.sf-injury-chart-col {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+}
+
+/* List column – full bottom row */
+.sf-injury-list-col {
+    grid-column: 1 / -1;
+    grid-row: 2 / 3;
+}
+
+/* Figures wrapper – front + back side by side */
+.sf-injury-svg-figures {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+}
+
+.sf-heatmap-body-svg {
+    width: 160px;
+    height: auto;
+    cursor: pointer;
+    display: block;
+    touch-action: manipulation;
+}
+
+/* Body-part paths in heatmap mode */
+.sf-heatmap-body-svg [id^="bp-"] {
+    fill: #e5e7eb;
+    transition: fill 0.3s ease, opacity 0.15s ease, stroke 0.15s ease;
+    cursor: pointer;
+}
+
+.sf-heatmap-body-svg [id^="bp-"]:hover {
+    opacity: 0.75;
+    stroke: #6b7280;
+    stroke-width: 2px;
+}
+
+.sf-heatmap-body-svg [id^="bp-"].sf-bp-active {
+    stroke: #1d4ed8;
+    stroke-width: 3px;
+    opacity: 1;
+}
+
+/* Paths without a body-part id (background/outline shapes) */
+.sf-heatmap-body-svg path:not([id^="bp-"]) {
+    fill: #f3f4f6;
+    pointer-events: none;
+}
+
+.sf-injury-svg-hint {
+    font-size: 0.6875rem;
+    color: #6b7280;
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.sf-injury-svg-hint-icon {
+    font-style: normal;
+    color: #9ca3af;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+}
+
+/* Chart column */
+.sf-injury-chart-col {
+    min-width: 0;
+}
+
+/* Chart section */
+.sf-injury-chart-section {
+    /* inherits grid flow */
+}
+
+.sf-injury-section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.5rem;
+}
+
+.sf-injury-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.sf-injury-chart-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sf-injury-chart-label {
+    font-size: 0.75rem;
+    color: #374151;
+    width: 7rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sf-injury-chart-bar-wrap {
+    flex: 1;
+    height: 1.125rem;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sf-injury-chart-bar {
+    height: 100%;
+    min-width: 1.5rem;
+    width: var(--bar-width, 0%);
+    background: linear-gradient(90deg, #f97316, #dc2626);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.3rem;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Zero-value bars: neutral grey, no min-width */
+.sf-injury-chart-bar--zero {
+    background: #e5e7eb;
+    min-width: 0;
+}
+
+.sf-injury-chart-label--zero {
+    color: #9ca3af;
+}
+
+.sf-injury-chart-count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1;
+}
+
+.sf-injury-chart-bar--zero .sf-injury-chart-count {
+    color: #6b7280;
+    padding-right: 0.25rem;
+}
+
+/* List section */
+.sf-injury-list-section {
+    /* inherits sf-injury-list-col flow */
+}
+
+/* Full-width list: 2-column grid on desktop */
+.sf-injury-list-col .sf-recent-compact-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+}
+
+@media (max-width: 768px) {
+    .sf-injury-list-col .sf-recent-compact-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sf-injury-list-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.375rem;
+}
+
+.sf-injury-active-filter {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #1d4ed8;
+    border-radius: 12px;
+    padding: 0.1rem 0.6rem;
+    display: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.sf-injury-active-filter:hover {
+    background: #1e40af;
+}
+
+/* Injury flash list item – hover lift + coloured left border */
+.sf-injury-flash-item {
+    border-left: 3px solid transparent;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.sf-injury-flash-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: #f9fafb;
+}
+
+.sf-injury-flash-item[data-flash-type="red"] {
+    border-left-color: #dc2626;
+}
+
+.sf-injury-flash-item[data-flash-type="yellow"] {
+    border-left-color: #eab308;
+}
+
+.sf-injury-flash-item[data-flash-type="green"] {
+    border-left-color: #22c55e;
+}
+
+.sf-heatmap-legend {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    margin-top: 0.25rem;
+}
+
+.sf-heatmap-legend-grad {
+    width: 60px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e5e7eb, #fde68a, #f97316, #dc2626);
+    flex-shrink: 0;
+}
+
+.sf-heatmap-legend-label {
+    font-size: 0.6rem;
+    color: #9ca3af;
+}
+
+/* ============================================
+   RESPONSIVE – INJURY HEATMAP
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .sf-injury-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .sf-injury-svg-col,
+    .sf-injury-chart-col,
+    .sf-injury-list-col {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+
+    .sf-injury-svg-col {
+        align-items: center;
+    }
+
+    .sf-injury-svg-figures {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .sf-heatmap-body-svg {
+        width: 130px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sf-heatmap-body-svg {
+        width: 110px;
+    }
+}
+
+/* ============================================
+   INJURY – SHOW ALL BUTTON
+   ============================================ */
+
+.sf-injury-show-all-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    background: transparent;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    gap: 0.375rem;
+}
+
+.sf-injury-show-all-btn:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fff5f5;
+}
+
+/* ============================================
+   INJURY MODAL
+   ============================================ */
+
+.sf-injury-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.sf-injury-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    cursor: pointer;
+}
+
+.sf-injury-modal-box {
+    position: relative;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sf-injury-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.sf-injury-modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sf-injury-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sf-injury-modal-close:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Modal body: two columns */
+.sf-injury-modal-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Left: sticky SVG column */
+.sf-injury-modal-svg-col {
+    width: 400px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem 1.25rem 1.5rem;
+    border-right: 1px solid #f3f4f6;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    /* sticky within the flex row – the column itself doesn't scroll */
+    overflow-y: auto;
+    /* 4.5rem = approximate modal header height (padding + title + border) */
+    max-height: calc(90vh - 4.5rem);
+}
+
+.sf-injury-modal-active-filter-wrap {
+    min-height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Right: scrollable list */
+.sf-injury-modal-list-col {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 1.25rem 1.25rem;
+    min-width: 0;
+}
+
+.sf-injury-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   INJURY MODAL – RESPONSIVE
+   ============================================ */
+
+@media (max-width: 700px) {
+    .sf-injury-modal {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .sf-injury-modal-box {
+        border-radius: 20px 20px 0 0;
+        max-height: 92vh;
+        max-width: 100%;
+    }
+
+    .sf-injury-modal-body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sf-injury-modal-svg-col {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #f3f4f6;
+        padding: 1rem 1rem 0.75rem;
+        position: static;
+        max-height: none;
+        flex-direction: column;
+    }
+
+    .sf-injury-modal-list-col {
+        padding: 1rem;
+        overflow-y: visible;
+    }
+}

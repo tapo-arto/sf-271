@@ -1,0 +1,1591 @@
+/**
+ * SafetyFlash - Display TTL & Playlist Management Styles
+ * 
+ * Tyylit infonäyttöjen TTL-valitsimelle ja playlist-statukselle.
+ * 
+ * @package SafetyFlash
+ * @subpackage CSS
+ * @created 2026-02-19
+ */
+
+/* ============================================================================
+   TTL Selector (Publish Modal)
+   ========================================================================= */
+
+.sf-publish-ttl-section {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: var(--sf-bg-secondary, #f8f9fa);
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 8px;
+}
+
+.sf-ttl-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.sf-ttl-icon {
+    color: var(--sf-primary, #0066cc);
+    flex-shrink: 0;
+}
+
+.sf-ttl-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sf-text-primary, #212529);
+}
+
+.sf-ttl-description {
+    margin: 0 0 1rem 0;
+    font-size: 0.875rem;
+    color: var(--sf-text-secondary, #6c757d);
+}
+
+/* TTL Chips (Radio Buttons as Pills) */
+.sf-ttl-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.sf-ttl-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid var(--sf-border, #dee2e6);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--sf-text-primary, #212529);
+    user-select: none;
+}
+
+.sf-ttl-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sf-chip-icon {
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.sf-chip-label {
+    white-space: nowrap;
+}
+
+/* Hover State */
+.sf-ttl-chip:hover {
+    border-color: var(--sf-primary, #0066cc);
+    background: rgba(0, 102, 204, 0.05);
+    transform: translateY(-1px);
+}
+
+/* Selected State */
+.sf-ttl-chip-selected,
+.sf-ttl-chip:has(.sf-ttl-radio:checked) {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-ttl-chip-selected .sf-chip-icon,
+.sf-ttl-chip:has(.sf-ttl-radio:checked) .sf-chip-icon {
+    opacity: 1;
+    color: white;
+}
+
+/* TTL Preview */
+.sf-ttl-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--sf-text-primary, #212529);
+}
+
+.sf-ttl-preview.sf-ttl-preview-hidden {
+    display: none;
+}
+
+.sf-preview-icon {
+    flex-shrink: 0;
+    color: var(--sf-text-secondary, #6c757d);
+}
+
+#ttlPreviewDate {
+    color: var(--sf-primary, #0066cc);
+    font-weight: 600;
+}
+
+/* ============================================================================
+   Playlist Status Card (View Page)
+   ========================================================================= */
+
+.sf-playlist-status-card {
+    margin: 0 0 1.5rem 0;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 2px solid;
+    background: white;
+}
+
+/* Active Status (Green) */
+.sf-playlist-status-active {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.sf-playlist-status-active .sf-playlist-status-header h4 {
+    color: #28a745;
+}
+
+/* Expired Status (Yellow/Warning) */
+.sf-playlist-status-expired {
+    border-color: #ffc107;
+    background: #fffbf0;
+}
+
+.sf-playlist-status-expired .sf-playlist-status-header h4 {
+    color: #e69500;
+}
+
+/* Removed Status (Gray) */
+.sf-playlist-status-removed {
+    border-color: #6c757d;
+    background: #f8f9fa;
+}
+
+.sf-playlist-status-removed .sf-playlist-status-header h4 {
+    color: #6c757d;
+}
+
+.sf-playlist-status-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.sf-status-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.sf-playlist-status-body {
+    margin-bottom: 1rem;
+}
+
+.sf-playlist-status-body p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--sf-text-primary, #212529);
+}
+
+.sf-playlist-status-body small {
+    font-size: 0.75rem;
+    color: var(--sf-text-secondary, #6c757d);
+}
+
+.sf-playlist-expires,
+.sf-playlist-no-limit,
+.sf-playlist-expired-at,
+.sf-playlist-removed-at {
+    line-height: 1.6;
+}
+
+/* Playlist Actions */
+.sf-playlist-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.sf-btn-outline-danger,
+.sf-btn-outline-primary {
+    padding: 0.5rem 1rem;
+    border: 2px solid;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sf-btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.sf-btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.sf-btn-outline-primary {
+    border-color: #fff;
+    color: var(--sf-primary, #0066cc);
+    background-color: #fff;
+}
+
+.sf-btn-outline-primary:hover {
+    background: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-btn-outline-danger:disabled,
+.sf-btn-outline-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================================
+   Duration Selector (Publish Modal)
+   ========================================================================= */
+
+.sf-publish-duration-section {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: var(--sf-bg-secondary, #f8f9fa);
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 8px;
+}
+
+.sf-duration-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.sf-duration-icon {
+    color: var(--sf-primary, #0066cc);
+    flex-shrink: 0;
+}
+
+.sf-duration-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sf-text-primary, #212529);
+}
+
+.sf-duration-description {
+    margin: 0 0 1rem 0;
+    font-size: 0.875rem;
+    color: var(--sf-text-secondary, #6c757d);
+}
+
+/* Duration Chips (Radio Buttons as Pills) */
+.sf-duration-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.sf-duration-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid var(--sf-border, #dee2e6);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--sf-text-primary, #212529);
+    user-select: none;
+}
+
+.sf-duration-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hover State */
+.sf-duration-chip:hover {
+    border-color: var(--sf-primary, #0066cc);
+    background: rgba(0, 102, 204, 0.05);
+    transform: translateY(-1px);
+}
+
+/* Selected State */
+.sf-duration-chip-selected,
+.sf-duration-chip:has(.sf-duration-radio:checked) {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-duration-chip-selected .sf-chip-icon,
+.sf-duration-chip:has(.sf-duration-radio:checked) .sf-chip-icon {
+    opacity: 1;
+    color: white;
+}
+
+/* ============================================================================
+   Lang-specific Display Sections (Publish Modal)
+   ========================================================================= */
+
+.sf-display-targets-section {
+    margin: 1.5rem 0 0 0;
+}
+
+.sf-display-per-lang-info {
+    margin-bottom: 0.75rem;
+}
+
+.sf-lang-display-section {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--sf-border, #e0e0e0);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.sf-lang-display-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95em;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.sf-display-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.sf-display-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.sf-display-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.sf-display-group {
+    color: var(--sf-text-secondary, #6c757d);
+}
+
+.sf-help-text {
+    font-size: 0.8125rem;
+    color: var(--sf-text-secondary, #6c757d);
+    margin: 0 0 0.5rem 0;
+}
+
+.sf-help-text-muted {
+    font-style: italic;
+}
+
+/* ============================================================================
+   Playlist Manager
+   ========================================================================= */
+
+/* Page container */
+#playlistManagerWrap {
+    max-width: 760px;
+    padding: 1.5rem;
+}
+
+/* Heading icon */
+.sf-pm-heading-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-right: 6px;
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+/* Page header layout — remove the boxed .sf-page-title look */
+.sf-pm-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sf-border, #dee2e6);
+}
+
+.sf-pm-page-header .sf-page-title {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+}
+
+.sf-pm-page-header .sf-page-title::after {
+    display: none;
+}
+
+/* Display navigation */
+.sf-pm-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 1.5rem;
+    background: white;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.sf-pm-nav-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #4b5563;
+    white-space: nowrap;
+}
+
+.sf-pm-nav-select {
+    font-size: 0.9rem;
+    padding: 0.5625rem 0.875rem;
+    border: 1.5px solid var(--sf-border, #dee2e6);
+    border-radius: 10px;
+    background: white;
+    color: var(--sf-text-primary, #212529);
+    cursor: pointer;
+    min-width: 180px;
+    max-width: 360px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sf-pm-nav-select:focus {
+    outline: none;
+    border-color: var(--sf-primary, #0066cc);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+}
+
+/* Preview modal */
+.sf-pm-preview-modal {
+    width: 90vw;
+    max-width: 1100px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sf-pm-preview-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sf-pm-preview-iframe {
+    width: 100%;
+    height: 76vh;
+    border: none;
+    display: block;
+}
+
+@media (max-width: 640px) {
+    .sf-pm-preview-modal {
+        width: 100%;
+        max-height: 95vh;
+    }
+
+    .sf-pm-preview-iframe {
+        height: 65vh;
+    }
+}
+
+/* ============================================================================
+   Playlist Preview Navigation Bar
+   ========================================================================= */
+
+.sf-playlist-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--sf-bg-secondary, #f8f9fa);
+    border-bottom: 1px solid var(--sf-border, #dee2e6);
+    flex-shrink: 0;
+}
+
+.sf-playlist-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: white;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--sf-text-primary, #212529);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.sf-playlist-nav-btn:hover {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-playlist-nav-btn[aria-pressed="true"] {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-playlist-counter {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sf-text-primary, #212529);
+    min-width: 3rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+    .sf-playlist-nav {
+        padding: 0.375rem 0.75rem;
+        gap: 0.375rem;
+    }
+
+    .sf-playlist-nav-btn {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+}
+
+.sf-playlist-manager-list {
+    list-style: none;
+    margin: 0 0 1.25rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sf-playlist-manager-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.625rem 0.875rem;
+    background: white;
+    border: 1px solid var(--sf-border, #e9ecef);
+    border-radius: 12px;
+    cursor: grab;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.sf-playlist-manager-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.sf-playlist-manager-item.sf-pm-dragging {
+    opacity: 0.5;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+}
+
+.sf-pm-drag-handle {
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: grab;
+    flex-shrink: 0;
+    user-select: none;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.sf-playlist-manager-item:hover .sf-pm-drag-handle {
+    opacity: 0.9;
+}
+
+.sf-pm-thumb {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.sf-playlist-manager-item:hover .sf-pm-thumb {
+    transform: scale(1.05);
+}
+
+.sf-pm-title {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--sf-text-primary, #212529);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sf-pm-order-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.sf-pm-btn-up,
+.sf-pm-btn-down {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--sf-bg-secondary, #f8f9fa);
+    border: 1px solid var(--sf-border, #e9ecef);
+    border-radius: 6px;
+    padding: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--sf-text-secondary, #6c757d);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sf-pm-btn-up:hover:not(:disabled),
+.sf-pm-btn-down:hover:not(:disabled) {
+    background: var(--sf-primary, #0066cc);
+    color: white;
+    border-color: var(--sf-primary, #0066cc);
+}
+
+.sf-pm-btn-up:disabled,
+.sf-pm-btn-down:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.sf-playlist-manager-actions {
+    position: sticky;
+    bottom: 0;
+    margin: 0 -1.5rem -1.5rem;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--sf-border, #dee2e6);
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.sf-playlist-manager-actions.sf-pm-dirty {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.sf-playlist-manager-actions .sf-btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--sf-primary, #0066cc), var(--sf-primary-dark, #0052a3));
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+    transition: box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.sf-playlist-manager-actions .sf-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4);
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+.sf-btn-sm {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8125rem;
+}
+
+/* ============================================================================
+   Display Target Chip Selector (Publish Modal)
+   ========================================================================= */
+
+.sf-display-target-selector {
+    margin-top: 0.5rem;
+}
+
+.sf-display-group-heading {
+    margin: 0.75rem 0 0.375rem 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--sf-text-secondary, #6c757d);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sf-display-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.sf-display-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.875rem;
+    background: white;
+    border: 2px solid var(--sf-border, #dee2e6);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--sf-text-primary, #212529);
+    user-select: none;
+}
+
+.sf-display-chip-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+.sf-display-chip:hover {
+    border-color: var(--sf-primary, #0066cc);
+    background: rgba(0, 102, 204, 0.05);
+}
+
+.sf-display-chip-selected,
+.sf-display-chip:has(.sf-display-chip-input:checked) {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+/* ============================================================================
+   Playlist Manager Empty State
+   ========================================================================= */
+
+.sf-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 3rem 1.5rem;
+    color: var(--sf-text-secondary, #6c757d);
+    text-align: center;
+    background-color: #fff;
+    border-radius: 20px;
+}
+
+.sf-empty-state-icon {
+    width: 48px;
+    height: 48px;
+    opacity: 0.35;
+}
+
+.sf-empty-state p {
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+/* ============================================================================
+   Worksite Table Flash Counter
+   ========================================================================= */
+
+.sf-flash-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.375rem;
+    background: var(--sf-primary, #0066cc);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.sf-table-worksites tbody tr:hover {
+    background: rgba(0, 102, 204, 0.04);
+}
+
+.sf-table-worksites tbody tr.is-inactive {
+    opacity: 0.6;
+}
+
+
+
+@media (max-width: 768px) {
+
+    .sf-publish-ttl-section,
+    .sf-publish-duration-section {
+        padding: 1rem;
+    }
+
+    .sf-ttl-chips,
+    .sf-duration-chips {
+        gap: 0.375rem;
+    }
+
+    .sf-ttl-chip,
+    .sf-duration-chip {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .sf-chip-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .sf-ttl-preview {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    .sf-playlist-status-card {
+        padding: 1rem;
+    }
+
+    .sf-playlist-status-header h4 {
+        font-size: 0.9375rem;
+    }
+
+    .sf-playlist-actions {
+        gap: 0.5rem;
+    }
+
+    .sf-btn-outline-danger,
+    .sf-btn-outline-primary {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .sf-ttl-chips,
+    .sf-duration-chips {
+        flex-direction: column;
+    }
+
+    .sf-ttl-chip,
+    .sf-duration-chip {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============================================================================
+   Display Targets Modal
+   ========================================================================= */
+
+/* Ensure modals open above the page header */
+.sf-modal {
+    z-index: 10000;
+}
+
+.sf-dt-modal-content {
+    max-width: 600px;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.sf-dt-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--sf-border, #dee2e6);
+}
+
+.sf-dt-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Compact two-column row for TTL + Duration */
+.sf-dt-compact-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.sf-dt-compact-row .sf-dt-section {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-bottom: 0;
+    padding-bottom: 1rem;
+    border-bottom: none;
+    border-right: 1px solid var(--sf-border, #dee2e6);
+}
+
+.sf-dt-compact-row .sf-dt-section:last-child {
+    border-right: none;
+    padding-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+    .sf-dt-compact-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .sf-dt-compact-row .sf-dt-section {
+        border-right: none;
+        border-bottom: 1px solid var(--sf-border, #dee2e6);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .sf-dt-compact-row .sf-dt-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+}
+
+.sf-dt-displays-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.sf-dt-displays-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sf-text-primary, #212529);
+}
+
+.sf-dt-status {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    min-height: 1.25rem;
+}
+
+.sf-dt-status-ok {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.sf-dt-status-error {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Footer button: Infonäytöt */
+.footer-btn.fb-display-targets {
+    background: transparent;
+    border: none;
+    color: var(--sf-primary, #0066cc);
+}
+
+.footer-btn.fb-display-targets:hover {
+    background: rgba(0, 102, 204, 0.08);
+}
+
+@media (min-width: 769px) {
+    .sf-dt-modal-content {
+        border-radius: 12px;
+    }
+}
+
+/* ============================================================================
+   Display Target Selector — Country Lang Chips + Search + Selection Tags
+   ========================================================================= */
+
+.sf-dt-lang-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+}
+
+.sf-dt-lang-chip,
+.sf-dt-special-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.875rem;
+    background: white;
+    border: 2px solid var(--sf-border, #dee2e6);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--sf-text-primary, #212529);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.sf-dt-lang-chip:hover,
+.sf-dt-special-chip:hover {
+    border-color: var(--sf-primary, #0066cc);
+    background: rgba(0, 102, 204, 0.05);
+}
+
+.sf-dt-lang-chip.sf-dt-lang-chip-active,
+.sf-dt-special-chip.sf-dt-lang-chip-active {
+    background: var(--sf-primary, #0066cc);
+    border-color: var(--sf-primary, #0066cc);
+    color: white;
+}
+
+.sf-dt-lang-count {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
+.sf-dt-lang-chip.sf-dt-lang-chip-active .sf-dt-lang-count,
+.sf-dt-special-chip.sf-dt-lang-chip-active .sf-dt-lang-count {
+    opacity: 0.9;
+}
+
+.sf-dt-search-row {
+    margin-bottom: 0.5rem;
+}
+
+.sf-dt-search-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--sf-text-primary, #212529);
+    background: white;
+    box-sizing: border-box;
+}
+
+.sf-dt-search-input:focus {
+    outline: 2px solid var(--sf-primary, #0066cc);
+    outline-offset: 1px;
+    border-color: var(--sf-primary, #0066cc);
+}
+
+.sf-dt-search-hint {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.8125rem;
+    color: var(--sf-text-secondary, #6c757d);
+    font-style: italic;
+}
+
+.sf-dt-search-results {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+}
+
+.sf-dt-search-results.hidden {
+    display: none !important;
+}
+
+.sf-dt-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--sf-text-primary, #212529);
+    transition: background 0.15s ease;
+}
+
+.sf-dt-result-item.hidden {
+    display: none !important;
+}
+
+.sf-dt-result-item:hover {
+    background: rgba(0, 102, 204, 0.05);
+}
+
+.sf-dt-result-item input[type="checkbox"] {
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.sf-dt-selection-display {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--sf-bg-secondary, #f8f9fa);
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 6px;
+}
+
+.sf-dt-selection-display.hidden {
+    display: none !important;
+}
+
+.sf-dt-selection-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sf-text-secondary, #6c757d);
+    margin-bottom: 0.375rem;
+}
+
+.sf-dt-selection-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.sf-dt-sel-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    background: var(--sf-primary, #0066cc);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.sf-dt-sel-tag-remove {
+    cursor: pointer;
+    opacity: 0.8;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 0.125rem;
+}
+
+.sf-dt-sel-tag-remove:hover {
+    opacity: 1;
+}
+
+.sf-dt-clear-all-btn {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--sf-border, #dee2e6);
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    color: var(--sf-text-secondary, #6c757d);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sf-dt-clear-all-btn:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* ============================================================================
+   Playlist Manager — Modernization
+   ========================================================================= */
+
+/* Prevent modal flash on page load */
+.sf-modal.hidden {
+    display: none !important;
+}
+
+/* Loading overlay during display navigation */
+.sf-pm-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: sfPmFadeIn 0.2s ease;
+}
+
+@keyframes sfPmFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.sf-pm-loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sf-pm-spinner-svg {
+    width: 40px;
+    height: 40px;
+    color: #fee000;
+}
+
+.sf-pm-loading-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.02em;
+}
+
+/* Tab navigation */
+.sf-pm-nav-tabs {
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 1.5rem;
+    padding: 0.375rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.sf-pm-nav-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.sf-pm-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.sf-pm-nav-tab:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sf-pm-nav-tab-active {
+    background: #fee000;
+    color: #000;
+    border-color: #fee000;
+    box-shadow: 0 2px 8px rgba(254, 224, 0, 0.3);
+}
+
+.sf-pm-nav-tab-active:hover {
+    background: #fee000;
+    color: #000;
+}
+
+.sf-pm-nav-tab svg {
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.sf-pm-nav-tab-active svg {
+    opacity: 1;
+}
+
+/* List item index number */
+.sf-pm-item-index {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--sf-primary, #0066cc);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Item content wrapper */
+.sf-pm-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+/* Type badge */
+.sf-pm-type-badge {
+    display: inline-flex;
+    padding: 0.125rem 0.5rem;
+    background: rgba(0, 102, 204, 0.08);
+    color: var(--sf-primary, #0066cc);
+    border-radius: 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    width: fit-content;
+}
+
+/* Stats card */
+.sf-pm-stats-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: white;
+    border: 1px solid var(--sf-border, #e9ecef);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sf-pm-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.sf-pm-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--sf-primary, #0066cc);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.sf-pm-stat-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--sf-text-secondary, #6c757d);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sf-pm-stat-divider {
+    width: 1px;
+    height: 2rem;
+    background: var(--sf-border, #e9ecef);
+}
+
+.sf-pm-stat-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--sf-text-secondary, #6c757d);
+    margin-left: auto;
+}
+/* ================================
+   PLAYLIST MANAGER MODERN STYLE
+================================ */
+
+.sf-playlist-manager-list {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* CARD */
+
+.sf-playlist-manager-item {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 1px solid #e6e8ec;
+    border-radius: 14px;
+    transition: all 0.15s ease;
+}
+
+.sf-playlist-manager-item:hover {
+    border-color: #d8dbe1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* DRAG HANDLE */
+
+.sf-pm-drag-handle {
+    cursor: grab;
+    color: #a0a4ab;
+}
+
+.sf-pm-drag-handle:hover {
+    color: #6c7078;
+}
+
+/* INDEX */
+
+.sf-pm-item-index {
+    font-weight: 600;
+    color: #8c9098;
+    min-width: 24px;
+}
+
+/* THUMB */
+
+.sf-pm-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: contain;
+}
+
+/* CONTENT */
+
+.sf-pm-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+/* TITLE */
+
+.sf-pm-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #20242b;
+    line-height: 1.35;
+}
+
+/* TYPE BADGE */
+
+.sf-pm-type-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #eef2f7;
+    color: #4a4f57;
+    width: fit-content;
+}
+
+/* META */
+
+.sf-pm-meta {
+    font-size: 12px;
+    color: #8a8f97;
+}
+
+.sf-pm-expiry-label {
+    margin-right: 4px;
+}
+
+/* ACTION AREA */
+
+.sf-pm-order-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* EDIT BUTTON */
+
+.sf-pm-order-btns .sf-btn {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+/* ARROW BUTTONS */
+
+.sf-pm-btn-up,
+.sf-pm-btn-down {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e4e6ea;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sf-pm-btn-up:hover,
+.sf-pm-btn-down:hover {
+    background: #f6f7f9;
+    border-color: #d7dbe2;
+}
+
+.sf-btn a {
+    text-decoration: none!important;
+}
+
+.sf-pm-btn-up:disabled,
+.sf-pm-btn-down:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* ================================
+   MOBILE
+================================ */
+
+@media (max-width: 768px) {
+
+    .sf-playlist-manager-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .sf-pm-thumb {
+        width: 100%;
+        height: auto;
+        max-height: 180px;
+    }
+
+    .sf-pm-order-btns {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+}

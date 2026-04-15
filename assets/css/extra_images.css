@@ -1,0 +1,691 @@
+/**
+ * Extra Images Styling
+ * 
+ * Styles for the additional images upload feature.
+ */
+
+/* Extra Images Section - Form Page */
+.extra-images-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.extra-images-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.extra-images-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #333;
+}
+
+.extra-images-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.extra-images-upload {
+    margin-bottom: 1rem;
+}
+
+#extra-image-upload-btn {
+    padding: 0.5rem 1.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+#extra-image-upload-btn:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+#extra-image-upload-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+#extra-image-input {
+    display: none;
+}
+
+.extra-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.extra-image-item {
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.extra-image-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.extra-image-preview {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    overflow: hidden;
+}
+
+.extra-image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.extra-image-loading {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+.extra-image-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s;
+}
+
+.extra-image-remove:hover {
+    background: rgba(200, 35, 51, 1);
+}
+
+.extra-image-filename {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Extra Images Tab - View Page */
+.images-tab-content {
+    padding: 1.5rem;
+}
+
+.images-loading {
+    text-align: center;
+    padding: 3rem;
+}
+
+.images-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.image-grid-item {
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.image-grid-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.image-grid-item img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+.image-grid-item-info {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.image-grid-item-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s;
+}
+
+.image-grid-item:hover .image-grid-item-delete {
+    display: flex;
+}
+
+.image-grid-item-delete:hover {
+    background: rgba(200, 35, 51, 1);
+}
+
+.no-images-message {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+/* Modern Lightbox */
+.sf-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sf-lightbox.active {
+    display: flex;
+    opacity: 1;
+}
+
+.sf-lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: lightbox-zoom-in 0.3s ease;
+}
+
+@keyframes lightbox-zoom-in {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.sf-lightbox-content .sf-lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.sf-lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10001;
+}
+
+.sf-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Lightbox navigation arrows */
+.sf-lightbox-nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10001;
+}
+
+.sf-lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.sf-lightbox-nav.sf-lightbox-prev {
+    left: 16px;
+}
+
+.sf-lightbox-nav.sf-lightbox-next {
+    right: 16px;
+}
+
+.sf-lightbox-nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.sf-lightbox-nav:disabled:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-50%) scale(1);
+}
+
+/* Lightbox caption */
+.sf-lightbox-caption {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    margin-top: 12px;
+    text-align: center;
+    max-width: 80vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Lightbox counter */
+.sf-lightbox-counter {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* Lightbox mobile adjustments */
+@media (max-width: 768px) {
+    .sf-lightbox-close {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .sf-lightbox-nav {
+        width: 40px;
+        height: 40px;
+    }
+
+    .sf-lightbox-nav.sf-lightbox-prev {
+        left: 8px;
+    }
+
+    .sf-lightbox-nav.sf-lightbox-next {
+        right: 8px;
+    }
+
+    .sf-lightbox-content .sf-lightbox-img {
+        border-radius: 4px;
+    }
+}
+
+/* Gallery items for view page */
+.sf-gallery-item {
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sf-gallery-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.sf-gallery-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+/* Delete button for gallery items - always visible so it works on mobile/touch */
+.sf-gallery-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.75);
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+    opacity: 0.7;
+    z-index: 2;
+}
+
+.sf-gallery-item:hover .sf-gallery-delete {
+    opacity: 1;
+    background: rgba(220, 53, 69, 0.9);
+}
+
+.sf-gallery-delete:hover {
+    background: rgba(200, 35, 51, 1);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* On touch devices, always show delete button fully */
+@media (hover: none) {
+    .sf-gallery-delete {
+        opacity: 1;
+        background: rgba(220, 53, 69, 0.9);
+    }
+}
+
+.sf-gallery-item-main {
+    border: 2px solid #007bff;
+}
+
+.sf-gallery-item-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    cursor: default;
+}
+
+.sf-gallery-item-loading:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.sf-gallery-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.image-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-lightbox.active {
+    display: flex;
+}
+
+.image-lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+}
+
+.image-lightbox-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.image-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    font-size: 3rem;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+}
+
+.image-lightbox-close:hover {
+    opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .extra-images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .images-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .image-lightbox-close {
+        top: 10px;
+        right: 10px;
+        font-size: 2rem;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Upload Modal Styles */
+.sf-upload-modal-content {
+    max-width: 600px;
+    width: 90%;
+}
+
+.sf-upload-drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.sf-upload-drop-zone:hover {
+    border-color: #007bff;
+    background: #e7f1ff;
+}
+
+.sf-upload-drop-zone.drag-over {
+    border-color: #007bff;
+    background: #e7f1ff;
+    border-style: solid;
+}
+
+.sf-upload-drop-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+.sf-upload-drop-text {
+    font-size: 1.125rem;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.sf-upload-drop-hint {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.sf-upload-browse-btn {
+    margin-top: 1rem;
+}
+
+.sf-upload-progress {
+    display: none;
+    margin-top: 1rem;
+}
+
+.sf-upload-progress.active {
+    display: block;
+}
+
+.sf-upload-progress-bar {
+    width: 100%;
+    height: 30px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.sf-upload-progress-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.sf-upload-progress-text {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Image Caption Styles */
+.image-caption-display {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    padding: 8px 4px;
+    text-align: center;
+    min-height: 20px;
+}
+
+.image-caption-display.editable {
+    cursor: pointer;
+}
+
+.image-caption-display.editable:hover {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.image-caption-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.image-caption-placeholder {
+    color: #aaa;
+}
