@@ -2494,92 +2494,111 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
 .sf-events-timeline {
     max-width: 700px;
     margin: 0 auto;
+    padding: 0 0.25rem;
 }
 
 .sf-event-item {
     display: flex;
-    gap: 1rem;
-    padding: 0.5rem 0;
-    border-left: 2px solid #e5e7eb;
-    padding-left: 1.5rem;
+    gap: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(60, 60, 100, 0.07);
+    border: 1px solid #eef0f5;
+    margin-bottom: 0.55rem;
     position: relative;
+    transition: box-shadow 0.17s ease, background 0.13s ease;
+}
+
+.sf-event-item:hover {
+    box-shadow: 0 4px 16px rgba(32, 64, 210, 0.10);
+    background: #f6f8fc;
 }
 
 .sf-event-item:last-child {
-    border-left-color: transparent;
+    margin-bottom: 0;
 }
 
 .sf-event-icon {
-    position: absolute;
-    left: -13px;
-    top: 0.5rem;
-    width: 24px;
-    height: 24px;
-    background: #ffffff;
-    border: 2px solid #e5e7eb;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: #f0f4ff;
+    border: 1px solid #dde3f4;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
+    padding: 5px;
+    margin-top: 1px;
+    position: static;
 }
 
 .sf-event-icon img {
     width: 100%;
     height: 100%;
+    opacity: 0.75;
 }
 
 .sf-event-content {
     flex: 1;
+    min-width: 0;
 }
 
 .sf-event-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.25rem;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 2px;
 }
 
 .sf-event-label {
-    font-weight: 600;
-    color: #111827;
-    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a2440;
+    font-size: 0.88rem;
+    flex: 1;
+    min-width: 0;
 }
 
 .sf-event-time {
-    font-size: 0.8rem;
-    color: #9ca3af;
+    font-size: 0.77rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .sf-event-user {
-    font-size: 0.85rem;
-    color: #6b7280;
-    margin-bottom: 0.25rem;
+    font-size: 0.81rem;
+    color: #64748b;
+    margin-bottom: 3px;
 }
 
 .sf-event-description {
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     color: #475569;
-    line-height: 1.5;
-    padding: 6px 10px;
-    background-color: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-left: 4px solid #3b82f6;
-    border-radius: 6px;
+    line-height: 1.45;
+    background: none;
+    border: none;
+    border-left: 2px solid #dde3f4;
+    padding: 2px 0 2px 8px;
     margin-top: 4px;
     word-break: break-word;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
 }
 
 .sf-event-batch-list {
     margin: 0;
-    padding: 0 0 0 1.1rem;
+    padding: 0 0 0 0.9rem;
     list-style: disc;
 }
 
 .sf-event-batch-list li {
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.15rem;
     word-break: break-word;
+    font-size: 0.84rem;
+    color: #475569;
+    padding-left: 0;
 }
 
 .sf-event-batch-list li:last-child {
@@ -2639,13 +2658,13 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
     }
 
     .sf-event-item {
-        padding-left: 1rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 10px;
     }
 
     .sf-event-icon {
-        left: -12px;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
 }
 

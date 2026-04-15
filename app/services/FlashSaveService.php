@@ -105,8 +105,6 @@ class FlashSaveService
         }
         
         // Log detailed image-related changes
-        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-
         // Resolve new image values (same logic as updateFlash)
         $newImageMain = trim((string)($data['library_image_1'] ?? ''));
         if ($newImageMain === '') {
@@ -121,15 +119,15 @@ class FlashSaveService
             $newImage3 = trim((string)($data['existing_image_3'] ?? ''));
         }
 
-        // Per-image: detect image swap
+        // Per-image: detect image swap – store term key, view.php translates at render time
         if ((string)($flash['image_main'] ?? '') !== $newImageMain) {
-            sf_log_event($flashId, 'image_1_changed', sf_term('log_image_1_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'image_1_changed', 'log_image_1_changed', $batchId);
         }
         if ((string)($flash['image_2'] ?? '') !== $newImage2) {
-            sf_log_event($flashId, 'image_2_changed', sf_term('log_image_2_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'image_2_changed', 'log_image_2_changed', $batchId);
         }
         if ((string)($flash['image_3'] ?? '') !== $newImage3) {
-            sf_log_event($flashId, 'image_3_changed', sf_term('log_image_3_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'image_3_changed', 'log_image_3_changed', $batchId);
         }
 
         // Per-image: detect transform (repositioning) changes
@@ -142,7 +140,7 @@ class FlashSaveService
             $oldVal = (string)($flash[$dbField] ?? '');
             $newVal = trim((string)($data[$dbField] ?? ''));
             if ($oldVal !== $newVal) {
-                sf_log_event($flashId, $eventType, sf_term($termKey, $currentUiLang), $batchId);
+                sf_log_event($flashId, $eventType, $termKey, $batchId);
             }
         }
 
@@ -156,7 +154,7 @@ class FlashSaveService
             $oldVal = (string)($flash[$dbField] ?? '');
             $newVal = trim((string)($data[$dbField] ?? ''));
             if ($oldVal !== $newVal) {
-                sf_log_event($flashId, $eventType, sf_term($termKey, $currentUiLang), $batchId);
+                sf_log_event($flashId, $eventType, $termKey, $batchId);
             }
         }
 
@@ -164,7 +162,7 @@ class FlashSaveService
         $oldAnnotations = (string)($flash['annotations_data'] ?? '');
         $newAnnotations = trim((string)($data['annotations_data'] ?? '[]'));
         if ($oldAnnotations !== $newAnnotations) {
-            sf_log_event($flashId, 'annotations_changed', sf_term('log_annotations_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'annotations_changed', 'log_annotations_changed', $batchId);
         }
 
         // Grid layout / bitmap changes
@@ -172,7 +170,7 @@ class FlashSaveService
         $newGridLayout = trim((string)($data['grid_layout'] ?? 'grid-1'));
         $oldGridBitmap = (string)($flash['grid_bitmap'] ?? '');
         if ($oldGridLayout !== $newGridLayout || ($resolvedGridBitmap !== '' && $oldGridBitmap !== $resolvedGridBitmap)) {
-            sf_log_event($flashId, 'grid_layout_changed', sf_term('log_grid_layout_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'grid_layout_changed', 'log_grid_layout_changed', $batchId);
         }
 
         // Appearance settings (font size, layout mode)
@@ -181,7 +179,7 @@ class FlashSaveService
         $oldLayoutMode = (string)($flash['layout_mode'] ?? '');
         $newLayoutMode = !empty($data['layout_mode']) ? trim((string)$data['layout_mode']) : 'auto';
         if ($oldFontSize !== $newFontSize || $oldLayoutMode !== $newLayoutMode) {
-            sf_log_event($flashId, 'appearance_changed', sf_term('log_appearance_changed', $currentUiLang), $batchId);
+            sf_log_event($flashId, 'appearance_changed', 'log_appearance_changed', $batchId);
         }
         
         // 7. Create worker job for image generation

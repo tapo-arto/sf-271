@@ -37,10 +37,8 @@ class FlashLogService
         $stmt->execute([$flashId]);
         $groupId = $stmt->fetchColumn();
         $logFlashId = $groupId ?: $flashId;
-        
-        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
-        // Map raw field names to localized term keys
+        // Map raw field names to term keys (stored as keys, translated at display time)
         $fieldTermMap = [
             'title'       => 'log_title_changed',
             'title_short' => 'log_title_short_changed',
@@ -53,28 +51,29 @@ class FlashLogService
             'actions'     => 'log_actions_changed',
         ];
 
-        // Fields whose content is too long to show old→new; only show the localized label
+        // Fields whose content is too long to show old→new; only store the term key
         $longFields = ['description', 'root_causes', 'actions', 'summary'];
         
-        // Build description of changes
+        // Build description using term keys so the UI can translate them at render time
         $changeDescriptions = [];
         foreach ($changes as $field => $change) {
             if (isset($change['old']) && isset($change['new'])) {
-                $localizedName = isset($fieldTermMap[$field])
-                    ? sf_term($fieldTermMap[$field], $currentUiLang)
-                    : $field;
+                $termKey = $fieldTermMap[$field] ?? $field;
 
                 if (in_array($field, $longFields, true)) {
-                    $changeDescriptions[] = $localizedName;
+                    // Just store the term key – view.php pattern 9 will translate it
+                    $changeDescriptions[] = $termKey;
                 } else {
-                    $changeDescriptions[] = "{$localizedName}: {$change['old']} → {$change['new']}";
+                    // Store as "term_key: old → new" – view.php pattern 7 translates the key
+                    $changeDescriptions[] = "{$termKey}: {$change['old']} → {$change['new']}";
                 }
             }
         }
         
+        // Store as term key so view.php can translate it; join long-field keys with newline
         $description = !empty($changeDescriptions) 
-            ? implode(', ', $changeDescriptions)
-            : sf_term('log_flash_edited', $currentUiLang);
+            ? implode("\n", $changeDescriptions)
+            : 'log_flash_edited';
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
@@ -103,23 +102,8 @@ class FlashLogService
         $groupId = $stmt->fetchColumn();
         $logFlashId = $groupId ?: $flashId;
         
-        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-        
-        // Localized type labels
-        $typeTermMap = [
-            'red'    => 'first_release',
-            'yellow' => 'dangerous_situation',
-            'green'  => 'investigation_report',
-        ];
-        
-        $oldLabel = isset($typeTermMap[$oldType])
-            ? sf_term($typeTermMap[$oldType], $currentUiLang)
-            : $oldType;
-        $newLabel = isset($typeTermMap[$newType])
-            ? sf_term($typeTermMap[$newType], $currentUiLang)
-            : $newType;
-        
-        $description = sf_term('log_type_changed', $currentUiLang) . ": {$oldLabel} → {$newLabel}";
+        // Store raw type slugs so view.php pattern 6b (sf_translate_flash_type) can translate them
+        $description = "type: {$oldType} → {$newType}";
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
@@ -148,25 +132,8 @@ class FlashLogService
         $groupId = $stmt->fetchColumn();
         $logFlashId = $groupId ?: $flashId;
         
-        // Try to get localized state labels if available
-        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-        
-        // Load statuses file if sf_status_label function is not defined
-        if (!function_exists('sf_status_label')) {
-            $statusesFile = __DIR__ . '/../includes/statuses.php';
-            if (file_exists($statusesFile)) {
-                require_once $statusesFile;
-            }
-        }
-        
-        $oldStateLabel = function_exists('sf_status_label') 
-            ? sf_status_label($oldState, $currentUiLang)
-            : $oldState;
-        $newStateLabel = function_exists('sf_status_label')
-            ? sf_status_label($newState, $currentUiLang)
-            : $newState;
-        
-        $description = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+        // Store raw state slugs so view.php pattern 7 (sf_status_label) can translate them
+        $description = "log_state_changed: {$oldState} → {$newState}";
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)

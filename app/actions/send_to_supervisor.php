@@ -164,7 +164,7 @@ if ($submissionComment !== '') {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_sent_to_supervisor', $currentUiLang) . ": " . $submissionComment,
+        ':description' => "log_comment_label: log_sent_to_supervisor: " . $submissionComment,
     ]);
 }
 

@@ -231,14 +231,12 @@ try {
         ':flash_id' => $logFlashId,
         ':user_id' => $userId,
         ':event_type' => 'published_direct',
-        ':description' => sf_term('log_published_direct', $currentUiLang),
+        ':description' => 'log_published_direct',
         ':batch_id' => $publishDirectBatchId,
     ]);
 
     if ($oldState !== 'published') {
-        $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-        $newStateLabel = sf_status_label('published', $currentUiLang);
-        $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+        $stateChangeDesc = "log_state_changed: {$oldState} → published";
 
         $stmtStateChange = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)

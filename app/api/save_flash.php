@@ -351,12 +351,8 @@ try {
                 // Log state change
                 try {
                     require_once __DIR__ . '/../includes/log.php';
-                    require_once __DIR__ . '/../includes/statuses.php';
-                    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
-                    $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-                    $newStateLabel = sf_status_label($newState, $currentUiLang);
-                    $logStatus = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+                    $logStatus = "log_state_changed: {$oldState} → {$newState}";
                     sf_log_event($newId, 'state_changed', $logStatus);
                     
                     // Log submission comment if provided (not batched – comments are always separate)
@@ -418,7 +414,6 @@ try {
         // 1. Arkistoi alkuperäinen sisältö lokiin
         try {
             require_once __DIR__ . '/../includes/log.php';
-            $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
             
             $originalData = [
                 'id' => $origFlash['id'],
@@ -432,7 +427,7 @@ try {
                 'updated_at' => $origFlash['updated_at'],
             ];
             
-            $archiveDesc = sf_term('log_original_archived', $currentUiLang) . '|data:' . json_encode($originalData, JSON_UNESCAPED_UNICODE);
+            $archiveDesc = 'log_original_archived|data:' . json_encode($originalData, JSON_UNESCAPED_UNICODE);
             sf_log_event($translationGroupId, 'original_archived', $archiveDesc);
         } catch (Throwable $e) {
             error_log('save_flash: Alkuperäisen arkistointi epäonnistui: ' . $e->getMessage());
@@ -450,7 +445,7 @@ try {
             
             if (!empty($translations)) {
                 $archiveData = json_encode($translations, JSON_UNESCAPED_UNICODE);
-                $archiveDesc = sf_term('log_translations_archived', $currentUiLang) . '|count:' . count($translations) . '|data:' . $archiveData;
+                $archiveDesc = 'log_translations_archived|count:' . count($translations) . '|data:' . $archiveData;
                 sf_log_event($translationGroupId, 'translations_archived', $archiveDesc);
                 
                 // Poista kieliversiot
@@ -523,20 +518,16 @@ try {
 
         // 4. Kirjaa lokiin tutkintatiedotteen luonti
         try {
-            require_once __DIR__ . '/../includes/statuses.php';
-            $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
             $batchId = sf_log_generate_batch_id();
             
-            sf_log_event($relatedFlashId, 'investigation_created', sf_term('log_investigation_created', $currentUiLang), $batchId);
+            sf_log_event($relatedFlashId, 'investigation_created', 'log_investigation_created', $batchId);
             
             if ($oldState !== $newState) {
-                $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-                $newStateLabel = sf_status_label($newState, $currentUiLang);
-                $logStatus = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+                $logStatus = "log_state_changed: {$oldState} → {$newState}";
                 sf_log_event($relatedFlashId, 'state_changed', $logStatus, $batchId);
             }
             
-            $logType = sf_term('log_type_changed', $currentUiLang) . ": {$oldType} → green";
+            $logType = "type: {$oldType} → green";
             sf_log_event($relatedFlashId, 'type_changed', $logType, $batchId);
         } catch (Throwable $e) {
             error_log('save_flash: Lokitus epäonnistui (investigation): ' . $e->getMessage());
@@ -670,15 +661,12 @@ try {
 
         try {
             require_once __DIR__ . '/../includes/log.php';
-            require_once __DIR__ . '/../includes/statuses.php';
-            $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
             $batchId = sf_log_generate_batch_id();
             sf_log_event($newId, 'created', 'flash_create', $batchId);
             
-            // Log initial state for new flashes
+            // Log initial state for new flashes – use pipe format for single status
             if ($newState !== '') {
-                $stateLabel = sf_status_label($newState, $currentUiLang);
-                $logStatus = sf_term('log_state_changed', $currentUiLang) . ": → {$stateLabel}";
+                $logStatus = "log_state_changed|status:{$newState}";
                 sf_log_event($newId, 'state_changed', $logStatus, $batchId);
             }
             

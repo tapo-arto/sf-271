@@ -311,7 +311,6 @@ if ($oldState !== 'published') {
 // ===================================
 
 // Lokimerkintä safetyflash_logs-tauluun
-$statusLabel = sf_status_label('published', $currentUiLang);
 
 // Tallennetaan avaimella
 $desc = "log_status_set: published";
@@ -332,11 +331,8 @@ $log->execute([
 ]);
 
 // Kirjataan myös erillinen state_changed tapahtuma
-require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 if ($oldState !== 'published') {
-    $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-    $newStateLabel = sf_status_label('published', $currentUiLang);
-    $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+    $stateChangeDesc = "log_state_changed: {$oldState} → published";
     
     $logStateChange = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
@@ -401,15 +397,12 @@ if ($sendToDistribution && function_exists('sf_mail_to_distribution_by_country')
 
 // Lokimerkintä jakeluista
 if (!empty($distributionResults)) {
-    $distParts = [];
+    // Store country codes and counts as machine-readable keys; view.php translates at render time
+    $countParts = [];
     foreach ($distributionResults as $country => $count) {
-        $countryName = sf_term("country_name_{$country}", $currentUiLang) ?? strtoupper($country);
-        $recipientsLabel = sf_term('log_recipients_count', $currentUiLang) ?? 'recipients';
-        $distParts[] = "{$countryName}: {$count} {$recipientsLabel}";
+        $countParts[] = "{$country}:{$count}";
     }
-    
-    $distDesc = "log_distribution_sent|countries:" . implode(',', array_keys($distributionResults)) . 
-                "|details:" . implode('; ', $distParts);
+    $distDesc = "log_distribution_sent|counts:" . implode(',', $countParts);
     
     $logDist = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)

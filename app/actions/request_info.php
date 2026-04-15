@@ -57,10 +57,6 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 // Lomakkeelta tullut viesti
 $message = trim($_POST['message'] ?? '');
 
-// Loki-otsikko ja kuvaus
-$currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-$statusLabel   = sf_status_label($newState, $currentUiLang);
-
 // Kirjataan info_requested tapahtuma
 $desc = "log_status_set|status:{$newState}";
 if ($message !== '') {
@@ -75,9 +71,7 @@ sf_log_event($logFlashId, 'info_requested', $desc, $requestInfoBatchId);
 
 // Kirjataan myös erillinen state_changed tapahtuma
 if ($oldState !== $newState) {
-    $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-    $newStateLabel = sf_status_label($newState, $currentUiLang);
-    $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+    $stateChangeDesc = "log_state_changed: {$oldState} → {$newState}";
     sf_log_event($logFlashId, 'state_changed', $stateChangeDesc, $requestInfoBatchId);
 }
 
@@ -98,7 +92,7 @@ sf_audit_log(
 // Save message as system comment so it appears in Comments tab
 if ($message !== '') {
     $userId = $user ? (int)$user['id'] : ($_SESSION['user_id'] ?? null);
-    $systemCommentDesc = sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_return_reason_label', $currentUiLang) . ": " . mb_substr($message, 0, 2000);
+    $systemCommentDesc = "log_comment_label: log_return_reason_label: " . mb_substr($message, 0, 2000);
     $stmtSysComment = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
         VALUES (:flash_id, :user_id, :event_type, :description, NOW())
