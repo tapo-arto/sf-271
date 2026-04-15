@@ -100,11 +100,10 @@ class FlashSaveService
             $this->logService->logEdit($flashId, $changes, (int)($user['id'] ?? 0));
         }
         
-        // Log image changes
-        $oldImageMain = (string)($flash['image_main'] ?? '');
-        $oldImage2    = (string)($flash['image_2'] ?? '');
-        $oldImage3    = (string)($flash['image_3'] ?? '');
+        // Log detailed image-related changes
+        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
+        // Resolve new image values (same logic as updateFlash)
         $newImageMain = trim((string)($data['library_image_1'] ?? ''));
         if ($newImageMain === '') {
             $newImageMain = trim((string)($data['existing_image_1'] ?? ''));
@@ -118,9 +117,67 @@ class FlashSaveService
             $newImage3 = trim((string)($data['existing_image_3'] ?? ''));
         }
 
-        if ($oldImageMain !== $newImageMain || $oldImage2 !== $newImage2 || $oldImage3 !== $newImage3) {
-            $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-            sf_log_event($flashId, 'image_changed', sf_term('log_image_changed', $currentUiLang));
+        // Per-image: detect image swap
+        if ((string)($flash['image_main'] ?? '') !== $newImageMain) {
+            sf_log_event($flashId, 'image_1_changed', sf_term('log_image_1_changed', $currentUiLang));
+        }
+        if ((string)($flash['image_2'] ?? '') !== $newImage2) {
+            sf_log_event($flashId, 'image_2_changed', sf_term('log_image_2_changed', $currentUiLang));
+        }
+        if ((string)($flash['image_3'] ?? '') !== $newImage3) {
+            sf_log_event($flashId, 'image_3_changed', sf_term('log_image_3_changed', $currentUiLang));
+        }
+
+        // Per-image: detect transform (repositioning) changes
+        $transformMap = [
+            'image1_transform' => ['log_image_1_repositioned', 'image_1_repositioned'],
+            'image2_transform' => ['log_image_2_repositioned', 'image_2_repositioned'],
+            'image3_transform' => ['log_image_3_repositioned', 'image_3_repositioned'],
+        ];
+        foreach ($transformMap as $dbField => [$termKey, $eventType]) {
+            $oldVal = (string)($flash[$dbField] ?? '');
+            $newVal = trim((string)($data[$dbField] ?? ''));
+            if ($oldVal !== $newVal) {
+                sf_log_event($flashId, $eventType, sf_term($termKey, $currentUiLang));
+            }
+        }
+
+        // Per-image: detect caption changes
+        $captionMap = [
+            'image1_caption' => ['log_image_caption_1_changed', 'image_caption_1_changed'],
+            'image2_caption' => ['log_image_caption_2_changed', 'image_caption_2_changed'],
+            'image3_caption' => ['log_image_caption_3_changed', 'image_caption_3_changed'],
+        ];
+        foreach ($captionMap as $dbField => [$termKey, $eventType]) {
+            $oldVal = (string)($flash[$dbField] ?? '');
+            $newVal = trim((string)($data[$dbField] ?? ''));
+            if ($oldVal !== $newVal) {
+                sf_log_event($flashId, $eventType, sf_term($termKey, $currentUiLang));
+            }
+        }
+
+        // Annotations changes
+        $oldAnnotations = (string)($flash['annotations_data'] ?? '');
+        $newAnnotations = trim((string)($data['annotations_data'] ?? '[]'));
+        if ($oldAnnotations !== $newAnnotations) {
+            sf_log_event($flashId, 'annotations_changed', sf_term('log_annotations_changed', $currentUiLang));
+        }
+
+        // Grid layout / bitmap changes
+        $oldGridLayout = (string)($flash['grid_layout'] ?? '');
+        $newGridLayout = trim((string)($data['grid_layout'] ?? 'grid-1'));
+        $oldGridBitmap = (string)($flash['grid_bitmap'] ?? '');
+        if ($oldGridLayout !== $newGridLayout || ($resolvedGridBitmap !== '' && $oldGridBitmap !== $resolvedGridBitmap)) {
+            sf_log_event($flashId, 'grid_layout_changed', sf_term('log_grid_layout_changed', $currentUiLang));
+        }
+
+        // Appearance settings (font size, layout mode)
+        $oldFontSize  = (string)($flash['font_size_override'] ?? '');
+        $newFontSize  = !empty($data['font_size_override']) ? trim((string)$data['font_size_override']) : '';
+        $oldLayoutMode = (string)($flash['layout_mode'] ?? '');
+        $newLayoutMode = !empty($data['layout_mode']) ? trim((string)$data['layout_mode']) : 'auto';
+        if ($oldFontSize !== $newFontSize || $oldLayoutMode !== $newLayoutMode) {
+            sf_log_event($flashId, 'appearance_changed', sf_term('log_appearance_changed', $currentUiLang));
         }
         
         // 7. Create worker job for image generation
