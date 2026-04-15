@@ -563,7 +563,7 @@
             }
 
             const finalDataUrl = await generateGridBitmap(chosen, imgs);
-            if (out && finalDataUrl) {
+            if (out && finalDataUrl !== null) {
                 // Try to upload to server; fall back to base64 if upload fails
                 const tempFilename = await uploadTempGrid(finalDataUrl);
                 out.value = tempFilename || finalDataUrl;

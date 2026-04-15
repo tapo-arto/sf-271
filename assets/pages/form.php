@@ -1549,8 +1549,10 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
           || $state_val === 'request_info'
           || $state_val === '';
       $actionUrl = $base . '/app/api/save_flash.php';
+      // Show the bundle info bar unless we are in the "only Tallenna" single-button mode.
+      $showBundleInfoBar = $isInBundle && (!$editing || $showSendToReview || $parentIsAdvancedState);
       ?>
-      <?php if ($isInBundle && (!($editing && !$showSendToReview) || $parentIsAdvancedState)): ?>
+      <?php if ($showBundleInfoBar): ?>
         <!-- Bundle info bar above the button row -->
         <div class="sf-bundle-info-bar">
           <span class="sf-bundle-info-label">
