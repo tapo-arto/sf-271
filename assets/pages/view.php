@@ -1213,7 +1213,15 @@ $iconBase = $base .'/assets/img/icons/';
                                 $fullName = trim($first . ' ' . $last);
                                 
                                 $eventType = $event['event_type'] ?? 'UNKNOWN_EVENT';
-                                $eventLabel = sf_term($eventType, $currentUiLang) ?: $eventType;
+                                // Try with log_ prefix first (terms are keyed as log_<event_type>),
+                                // then try the raw event_type as fallback
+                                $eventLabel = sf_term('log_' . $eventType, $currentUiLang);
+                                if ($eventLabel === 'log_' . $eventType) {
+                                    $eventLabel = sf_term($eventType, $currentUiLang);
+                                    if ($eventLabel === $eventType) {
+                                        $eventLabel = $eventType;
+                                    }
+                                }
                                 
                                 // Määritä ikoni event_type:n perusteella
                                 $eventIcons = [
