@@ -300,7 +300,18 @@ try {
             
             // 1) Save content changes (service does NOT change state)
             $result = $saveService->save($id, $normalizedPost, $user);
-            
+
+            // After FlashSaveService::save(), the temp grid bitmap file has been
+            // moved to its permanent location and the DB has been updated.
+            // Read the resolved permanent filename back from DB so that the
+            // $jobData built later (line ~750) contains the correct value.
+            $gridStmt = $pdo->prepare("SELECT grid_bitmap FROM sf_flashes WHERE id = ?");
+            $gridStmt->execute([$id]);
+            $gridRow = $gridStmt->fetch(PDO::FETCH_ASSOC);
+            if ($gridRow && !empty($gridRow['grid_bitmap'])) {
+                $post['grid_bitmap'] = $gridRow['grid_bitmap'];
+            }
+
             $newId = $id;
 
             // 2) If sending again for review FROM draft/request_info -> advance state + store selected approvers
