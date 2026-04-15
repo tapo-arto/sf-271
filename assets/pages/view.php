@@ -188,6 +188,15 @@ if ($currentUserIdForComments > 0) {
     }
 }
 
+// Varmista, että batch_id-sarake on olemassa safetyflash_logs-taulussa
+try {
+    $pdo->exec("ALTER TABLE safetyflash_logs ADD COLUMN IF NOT EXISTS batch_id VARCHAR(36) DEFAULT NULL");
+    $pdo->exec("ALTER TABLE safetyflash_logs ADD INDEX IF NOT EXISTS idx_batch_id (batch_id)");
+} catch (Throwable $e) {
+    // Kirjataan varoitus lokiin, mutta ei kaadeta sivua – sarake lisätään myöhemmin
+    error_log('view.php: batch_id migration warning: ' . $e->getMessage());
+}
+
 // Hae lokit (ryhmän juurella)
 $logs = [];
 $logStmt = $pdo->prepare("
@@ -197,13 +206,14 @@ $logStmt = $pdo->prepare("
         l.description,
         l.created_at,
         l.user_id,
+        l.batch_id,
         l.parent_comment_id as parent_id,
         u.first_name,
         u.last_name
     FROM safetyflash_logs l
     LEFT JOIN sf_users u ON u.id = l.user_id
     WHERE l.flash_id = ?
-    ORDER BY l.created_at DESC
+    ORDER BY l.created_at DESC, l.id DESC
 ");
 $logStmt->execute([$logFlashId]);
 $logs = $logStmt->fetchAll();
@@ -1199,15 +1209,60 @@ $iconBase = $base .'/assets/img/icons/';
                         $events = array_filter($logs, function($log) {
                             return ($log['event_type'] ?? '') !== 'comment_added';
                         });
-                        
-                        if (empty($events)):
+                        $events = array_values($events);
+
+                        // Ryhmittele tapahtumat batch_id:n mukaan
+                        // Vanhat lokit ilman batch_id:tä ryhmitellään aikaleiman perusteella (±2s, sama käyttäjä)
+                        $batchGroups  = []; // batch_id → [events]
+                        $noIdGroups   = []; // array of [events] arrays (aika-ryhmitellyt)
+                        // Toleranssi vanhoille lokeille ilman batch_id:tä (sekunteina)
+                        $legacyGroupingWindowSeconds = 2;
+
+                        foreach ($events as $event) {
+                            $bid = $event['batch_id'] ?? null;
+                            if (!empty($bid)) {
+                                $batchGroups[$bid][] = $event;
+                            } else {
+                                $matched = false;
+                                foreach ($noIdGroups as &$group) {
+                                    $firstTs  = strtotime($group[0]['created_at'] ?? '');
+                                    $thisTs   = strtotime($event['created_at'] ?? '');
+                                    $sameUser = ($group[0]['user_id'] ?? '') === ($event['user_id'] ?? '');
+                                    if ($sameUser && $firstTs !== false && $thisTs !== false && abs($firstTs - $thisTs) <= $legacyGroupingWindowSeconds) {
+                                        $group[] = $event;
+                                        $matched = true;
+                                        break;
+                                    }
+                                }
+                                unset($group);
+                                if (!$matched) {
+                                    $noIdGroups[] = [$event];
+                                }
+                            }
+                        }
+
+                        // Yhdistä kaikki ryhmät yhdeksi listaksi
+                        $displayGroups = array_values($batchGroups);
+                        foreach ($noIdGroups as $group) {
+                            $displayGroups[] = $group;
+                        }
+
+                        // Lajittele uusimmat ensin (ensimmäisen rivin created_at mukaan)
+                        usort($displayGroups, function($a, $b) {
+                            $ta = strtotime($a[0]['created_at'] ?? '') ?: 0;
+                            $tb = strtotime($b[0]['created_at'] ?? '') ?: 0;
+                            return $tb - $ta;
+                        });
+
+                        if (empty($displayGroups)):
                         ?>
                             <div class="sf-empty-state">
                                 <img src="<?= $base ?>/assets/img/icons/no-events.svg" alt="" class="sf-empty-icon">
                                 <p><?= htmlspecialchars(sf_term('events_empty', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                         <?php else: ?>
-                            <?php foreach ($events as $event):
+                            <?php foreach ($displayGroups as $group):
+                                $event = $group[0]; // Ensisijainen tapahtuma ryhmässä
                                 $first = trim((string)($event['first_name'] ?? ''));
                                 $last = trim((string)($event['last_name'] ?? ''));
                                 $fullName = trim($first . ' ' . $last);
@@ -1236,167 +1291,111 @@ $iconBase = $base .'/assets/img/icons/';
                                 $iconFile = $eventIcons[$eventType] ?? 'info.svg';
                                 
                                 $timeAgo = sf_time_ago($event['created_at'], $currentUiLang);
-                                
-                                // Parse event description with same logic as All tab
-                                $descRaw = $event['description'] ?? '';
-                                $descToShow = '';
-                                
-                                // Käsittele monirivinen kuvaus
-                                $lines = explode("\n", $descRaw);
-                                
-                                foreach ($lines as $line) {
-                                    $line = trim($line);
-                                    if ($line === '') {
-                                        continue;
-                                    }
-                                    
-                                    $translatedLine = $line;
-                                    
-                                    // 1. OCCURRED_AT -muoto: occurred_at: 2026-01-16 16:33:00 → 2026-01-16T16:33
-                                    if (preg_match('/^occurred_at:\s*(.+?)\s*→\s*(.+)$/u', $line, $matches)) {
-                                        $beforeLabel = sf_term('occurred_at', $currentUiLang);
-                                        $before = trim($matches[1]);
-                                        $after = trim($matches[2]);
-                                        
-                                        // Poista T-kirjain päivämäärästä jos on
-                                        $after = str_replace('T', ' ', $after);
-                                        
-                                        $translatedLine = '<strong>' . $beforeLabel . ':</strong> ' . $before . ' → ' . $after;
-                                    }
-                                    // 2. STATUS PIPE -muoto: log_status_set|status:published
-                                    elseif (preg_match('/^(log_\w+)\|status:(\w+)$/u', $line, $matches)) {
-                                        $logKey = $matches[1];
-                                        $statusKey = $matches[2];
-                                        
-                                        $logTranslated = sf_term($logKey, $currentUiLang);
-                                        $statusTranslated = sf_status_label($statusKey, $currentUiLang);
-                                        
-                                        $translatedLine = '<strong>' . $logTranslated . ':</strong> ' . $statusTranslated;
-                                    }
-                                    // 3. DISTRIBUTION SENT -muoto: log_distribution_sent|countries:fi|details:Suomi: 1 vastaanottajaa
-                                    elseif (preg_match('/^log_distribution_sent\|countries:([^|]+)\|details:(.+)$/u', $line, $matches)) {
-                                        $logTranslated = sf_term('log_distribution_sent', $currentUiLang);
-                                        $details = trim($matches[2]);
-                                        
-                                        $translatedLine = '<strong>' . $logTranslated . ':</strong> ' . $details;
-                                    }
-                                    // 4. MULTI-PARAM PIPE -muoto: log_something|param1:value1|param2:value2
-                                    elseif (preg_match('/^(log_\w+)\|(.+)$/u', $line, $matches)) {
-                                        $logKey = $matches[1];
-                                        $paramsStr = $matches[2];
-                                        
-                                        $logTranslated = sf_term($logKey, $currentUiLang);
-                                        
-                                        // Parse parameters
-                                        $params = [];
-                                        $paramParts = explode('|', $paramsStr);
-                                        
-                                        foreach ($paramParts as $part) {
-                                            if (strpos($part, ':') !== false) {
-                                                [$key, $val] = array_map('trim', explode(':', $part, 2));
-                                                $params[$key] = $val;
+
+                                // Helper closure: kääntää yhden tapahtuman kuvauksen HTML:ksi
+                                $parseEventDesc = function(string $descRaw) use ($currentUiLang): string {
+                                    $descToShow = '';
+                                    $lines = explode("\n", $descRaw);
+                                    foreach ($lines as $line) {
+                                        $line = trim($line);
+                                        if ($line === '') {
+                                            continue;
+                                        }
+                                        $translatedLine = $line;
+                                        // 1. OCCURRED_AT
+                                        if (preg_match('/^occurred_at:\s*(.+?)\s*→\s*(.+)$/u', $line, $matches)) {
+                                            $beforeLabel = sf_term('occurred_at', $currentUiLang);
+                                            $before = trim($matches[1]);
+                                            $after  = str_replace('T', ' ', trim($matches[2]));
+                                            $translatedLine = '<strong>' . $beforeLabel . ':</strong> ' . $before . ' → ' . $after;
+                                        }
+                                        // 2. STATUS PIPE
+                                        elseif (preg_match('/^(log_\w+)\|status:(\w+)$/u', $line, $matches)) {
+                                            $translatedLine = '<strong>' . sf_term($matches[1], $currentUiLang) . ':</strong> ' . sf_status_label($matches[2], $currentUiLang);
+                                        }
+                                        // 3. DISTRIBUTION SENT
+                                        elseif (preg_match('/^log_distribution_sent\|countries:([^|]+)\|details:(.+)$/u', $line, $matches)) {
+                                            $translatedLine = '<strong>' . sf_term('log_distribution_sent', $currentUiLang) . ':</strong> ' . trim($matches[2]);
+                                        }
+                                        // 4. MULTI-PARAM PIPE
+                                        elseif (preg_match('/^(log_\w+)\|(.+)$/u', $line, $matches)) {
+                                            $logTranslated = sf_term($matches[1], $currentUiLang);
+                                            $params = [];
+                                            foreach (explode('|', $matches[2]) as $part) {
+                                                if (strpos($part, ':') !== false) {
+                                                    [$k, $v] = array_map('trim', explode(':', $part, 2));
+                                                    $params[$k] = $v;
+                                                }
+                                            }
+                                            $translatedLine = isset($params['details'])
+                                                ? '<strong>' . $logTranslated . ':</strong> ' . $params['details']
+                                                : '<strong>' . $logTranslated . '</strong>';
+                                        }
+                                        // 5. LABEL
+                                        elseif (preg_match('/^(log_\w+_label):\s*(.+)$/u', $line, $matches)) {
+                                            $translatedLine = '<strong>' . sf_term($matches[1], $currentUiLang) . ':</strong> ' . trim($matches[2]);
+                                        }
+                                        // 6. FIELD CHANGE with quotes
+                                        elseif (preg_match('/^([a-z_]+):\s*"([^"]+)"\s*→\s*"([^"]+)"$/u', $line, $matches)) {
+                                            $translatedLine = '<strong>' . sf_term($matches[1], $currentUiLang) . ':</strong> ' . $matches[2] . ' → ' . $matches[3];
+                                        }
+                                        // 6b. TYPE CHANGE
+                                        elseif (preg_match('/^type:\s*(\w+)\s*→\s*(\w+)$/u', $line, $matches)) {
+                                            $translatedLine = '<strong>' . sf_term('type', $currentUiLang) . ':</strong> '
+                                                . sf_translate_flash_type(trim($matches[1]), $currentUiLang)
+                                                . ' → '
+                                                . sf_translate_flash_type(trim($matches[2]), $currentUiLang);
+                                        }
+                                        // 7. FIELD CHANGE without quotes
+                                        elseif (preg_match('/^([a-z_]+):\s*([^→]+)\s*→\s*(.+)$/u', $line, $matches)) {
+                                            $oldValue = trim($matches[2]);
+                                            $newValue = trim($matches[3]);
+                                            $oldT = sf_status_label($oldValue, $currentUiLang);
+                                            if ($oldT && $oldT !== $oldValue && preg_match('/^[a-z_]+$/', $oldValue)) $oldValue = $oldT;
+                                            $newT = sf_status_label($newValue, $currentUiLang);
+                                            if ($newT && $newT !== $newValue && preg_match('/^[a-z_]+$/', $newValue)) $newValue = $newT;
+                                            $translatedLine = '<strong>' . sf_term($matches[1], $currentUiLang) . ':</strong> ' . $oldValue . ' → ' . $newValue;
+                                        }
+                                        // 8. SIMPLE KEY:VALUE
+                                        elseif (preg_match('/^(log_\w+|[a-z_]+):\s*(.+)$/u', $line, $matches)) {
+                                            $key   = $matches[1];
+                                            $value = trim($matches[2]);
+                                            $keyT  = sf_term($key, $currentUiLang);
+                                            if ($keyT === $key && strpos($key, 'log_') !== 0) {
+                                                $translatedLine = $line;
+                                            } else {
+                                                $translatedLine = '<strong>' . $keyT . ':</strong> ' . $value;
                                             }
                                         }
-                                        
-                                        // Jos on details, näytä vain se
-                                        if (isset($params['details'])) {
-                                            $translatedLine = '<strong>' . $logTranslated . ':</strong> ' . $params['details'];
-                                        } else {
-                                            $translatedLine = '<strong>' . $logTranslated . '</strong>';
-                                        }
-                                    }
-                                    // 5. LABEL -muoto: log_comment_label: kommenttiteksti
-                                    elseif (preg_match('/^(log_\w+_label):\s*(.+)$/u', $line, $matches)) {
-                                        $labelKey = $matches[1];
-                                        $content = trim($matches[2]);
-                                        
-                                        $labelTranslated = sf_term($labelKey, $currentUiLang);
-                                        
-                                        $translatedLine = '<strong>' . $labelTranslated . ':</strong> ' . $content;
-                                    }
-                                    // 6. FIELD CHANGE -muoto: title_short: "old" → "new" (with quotes)
-                                    elseif (preg_match('/^([a-z_]+):\s*"([^"]+)"\s*→\s*"([^"]+)"$/u', $line, $matches)) {
-                                        $fieldKey = $matches[1];
-                                        $oldValue = trim($matches[2]);
-                                        $newValue = trim($matches[3]);
-                                        
-                                        $fieldTranslated = sf_term($fieldKey, $currentUiLang);
-                                        
-                                        $translatedLine = '<strong>' . $fieldTranslated . ':</strong> ' . $oldValue . ' → ' . $newValue;
-                                    }
-                                    // 6b. TYPE CHANGE - special handling: type: red → yellow
-                                    elseif (preg_match('/^type:\s*(\w+)\s*→\s*(\w+)$/u', $line, $matches)) {
-                                        $oldType = trim($matches[1]);
-                                        $newType = trim($matches[2]);
-                                        
-                                        $oldTranslated = sf_translate_flash_type($oldType, $currentUiLang);
-                                        $newTranslated = sf_translate_flash_type($newType, $currentUiLang);
-                                        
-                                        $fieldTranslated = sf_term('type', $currentUiLang);
-                                        
-                                        $translatedLine = '<strong>' . $fieldTranslated . ':</strong> ' . $oldTranslated . ' → ' . $newTranslated;
-                                    }
-                                    // 7. FIELD CHANGE without quotes: title_short: old → new
-                                    elseif (preg_match('/^([a-z_]+):\s*([^→]+)\s*→\s*(.+)$/u', $line, $matches)) {
-                                        $fieldKey = $matches[1];
-                                        $oldValue = trim($matches[2]);
-                                        $newValue = trim($matches[3]);
-                                        
-                                        // If values look like status keys, translate them
-                                        if (preg_match('/^[a-z_]+$/', $oldValue)) {
-                                            $oldTranslated = sf_status_label($oldValue, $currentUiLang);
-                                            if ($oldTranslated && $oldTranslated !== $oldValue) {
-                                                $oldValue = $oldTranslated;
+                                        // 9. Käännä koko rivi
+                                        else {
+                                            $translated = sf_term($line, $currentUiLang);
+                                            if ($translated !== $line) {
+                                                $translatedLine = $translated;
                                             }
                                         }
-                                        
-                                        if (preg_match('/^[a-z_]+$/', $newValue)) {
-                                            $newTranslated = sf_status_label($newValue, $currentUiLang);
-                                            if ($newTranslated && $newTranslated !== $newValue) {
-                                                $newValue = $newTranslated;
-                                            }
+                                        if ($descToShow !== '') {
+                                            $descToShow .= "\n";
                                         }
-                                        
-                                        $fieldTranslated = sf_term($fieldKey, $currentUiLang);
-                                        
-                                        $translatedLine = '<strong>' . $fieldTranslated . ':</strong> ' . $oldValue . ' → ' . $newValue;
+                                        $descToShow .= $translatedLine;
                                     }
-                                    // 8. SIMPLE KEY:VALUE -muoto: log_something: value
-                                    elseif (preg_match('/^(log_\w+|[a-z_]+):\s*(.+)$/u', $line, $matches)) {
-                                        $key = $matches[1];
-                                        $value = trim($matches[2]);
-                                        
-                                        $keyTranslated = sf_term($key, $currentUiLang);
-                                        
-                                        // Jos avain on tuntematon, älä käännä
-                                        if ($keyTranslated === $key && strpos($key, 'log_') !== 0) {
-                                            $translatedLine = $line; // Pidä alkuperäinen
-                                        } else {
-                                            $translatedLine = '<strong>' . $keyTranslated . ':</strong> ' . $value;
-                                        }
+                                    $descProcessed = function_exists('sf_log_status_replace')
+                                        ? sf_log_status_replace($descToShow, $currentUiLang)
+                                        : $descToShow;
+                                    return strip_tags($descProcessed, '<span><strong>');
+                                };
+
+                                // Kerää kaikkien ryhmän tapahtumien kuvaukset
+                                $groupDescriptions = [];
+                                foreach ($group as $groupEvent) {
+                                    $parsed = $parseEventDesc($groupEvent['description'] ?? '');
+                                    if ($parsed !== '') {
+                                        $groupDescriptions[] = $parsed;
                                     }
-                                    // 9. Yritä kääntää koko rivi
-                                    else {
-                                        $translated = sf_term($line, $currentUiLang);
-                                        if ($translated !== $line) {
-                                            $translatedLine = $translated;
-                                        }
-                                    }
-                                    
-                                    if ($descToShow !== '') {
-                                        $descToShow .= "\n";
-                                    }
-                                    $descToShow .= $translatedLine;
                                 }
-                                
-                                // Process and sanitize
-                                $descProcessed = function_exists('sf_log_status_replace')
-                                    ? sf_log_status_replace($descToShow, $currentUiLang)
-                                    : $descToShow;
-                                
-                                $descAllowed = strip_tags($descProcessed, '<span><strong>');
+                                $isBatch = count($group) > 1;
                             ?>
-                                <div class="sf-event-item" data-event-type="<?= htmlspecialchars($eventType, ENT_QUOTES, 'UTF-8') ?>">
+                                <div class="sf-event-item<?= $isBatch ? ' sf-event-item--batch' : '' ?>" data-event-type="<?= htmlspecialchars($eventType, ENT_QUOTES, 'UTF-8') ?>">
                                     <div class="sf-event-icon">
                                         <img src="<?= $base ?>/assets/img/icons/<?= htmlspecialchars($iconFile, ENT_QUOTES, 'UTF-8') ?>" alt="">
                                     </div>
@@ -1410,9 +1409,17 @@ $iconBase = $base .'/assets/img/icons/';
                                                 <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>
                                             </div>
                                         <?php endif; ?>
-                                        <?php if (!empty($descToShow)): ?>
+                                        <?php if (!empty($groupDescriptions)): ?>
                                             <div class="sf-event-description">
-                                                <?= nl2br($descAllowed) ?>
+                                                <?php if ($isBatch): ?>
+                                                    <ul class="sf-event-batch-list">
+                                                        <?php foreach ($groupDescriptions as $descItem): ?>
+                                                            <li><?= nl2br($descItem) ?></li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                <?php else: ?>
+                                                    <?= nl2br($groupDescriptions[0]) ?>
+                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>

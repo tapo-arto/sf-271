@@ -359,7 +359,7 @@ try {
                     $logStatus = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
                     sf_log_event($newId, 'state_changed', $logStatus);
                     
-                    // Log submission comment if provided (for resubmission)
+                    // Log submission comment if provided (not batched – comments are always separate)
                     if ($submissionComment !== '') {
                         sf_log_event($newId, 'submission_comment', $submissionComment);
                     }
@@ -525,18 +525,19 @@ try {
         try {
             require_once __DIR__ . '/../includes/statuses.php';
             $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+            $batchId = sf_log_generate_batch_id();
             
-            sf_log_event($relatedFlashId, 'investigation_created', sf_term('log_investigation_created', $currentUiLang));
+            sf_log_event($relatedFlashId, 'investigation_created', sf_term('log_investigation_created', $currentUiLang), $batchId);
             
             if ($oldState !== $newState) {
                 $oldStateLabel = sf_status_label($oldState, $currentUiLang);
                 $newStateLabel = sf_status_label($newState, $currentUiLang);
                 $logStatus = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
-                sf_log_event($relatedFlashId, 'state_changed', $logStatus);
+                sf_log_event($relatedFlashId, 'state_changed', $logStatus, $batchId);
             }
             
             $logType = sf_term('log_type_changed', $currentUiLang) . ": {$oldType} → green";
-            sf_log_event($relatedFlashId, 'type_changed', $logType);
+            sf_log_event($relatedFlashId, 'type_changed', $logType, $batchId);
         } catch (Throwable $e) {
             error_log('save_flash: Lokitus epäonnistui (investigation): ' . $e->getMessage());
         }
@@ -671,16 +672,17 @@ try {
             require_once __DIR__ . '/../includes/log.php';
             require_once __DIR__ . '/../includes/statuses.php';
             $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-            sf_log_event($newId, 'created', 'flash_create');
+            $batchId = sf_log_generate_batch_id();
+            sf_log_event($newId, 'created', 'flash_create', $batchId);
             
             // Log initial state for new flashes
             if ($newState !== '') {
                 $stateLabel = sf_status_label($newState, $currentUiLang);
                 $logStatus = sf_term('log_state_changed', $currentUiLang) . ": → {$stateLabel}";
-                sf_log_event($newId, 'state_changed', $logStatus);
+                sf_log_event($newId, 'state_changed', $logStatus, $batchId);
             }
             
-            // Log submission comment if provided
+            // Log submission comment if provided (not batched – comments are always separate)
             if ($submissionComment !== '' && $submissionType === 'review') {
                 sf_log_event($newId, 'submission_comment', $submissionComment);
             }

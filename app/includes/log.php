@@ -5,20 +5,37 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 
 /**
+ * Generoi uniikki batch_id tallennusoperaatiolle.
+ * Kutsutaan kerran per save-operaatio ja välitetään kaikkiin sf_log_event-kutsuihin.
+ */
+function sf_log_generate_batch_id(): string
+{
+    return sprintf(
+        '%08x-%04x-4%03x-%04x-%012x',
+        random_int(0, 0xffffffff),
+        random_int(0, 0xffff),
+        random_int(0, 0x0fff),
+        random_int(0x8000, 0xbfff),
+        random_int(0, 0xffffffffffff)
+    );
+}
+
+/**
  * Kirjaa tapahtuman safetyflash-lokiin.
  *
- * @param int    $flashId     Safetyflashin ID (sf_flashes.id)
- * @param string $eventType   lyhyt koodi: created, updated, status_changed, comment_added, sent_to_review, published, etc.
- * @param string $description ihmisen luettava selite lokiin
+ * @param int         $flashId     Safetyflashin ID (sf_flashes.id)
+ * @param string      $eventType   lyhyt koodi: created, updated, status_changed, comment_added, sent_to_review, published, etc.
+ * @param string      $description ihmisen luettava selite lokiin
+ * @param string|null $batchId     Valinnainen batch-tunniste niputusta varten
  */
-function sf_log_event(int $flashId, string $eventType, string $description = ''): void
+function sf_log_event(int $flashId, string $eventType, string $description = '', ?string $batchId = null): void
 {
     $mysqli = sf_db();
     $user   = sf_current_user();
     $userId = $user['id'] ?? null;
 
-    $sql = "INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (?, ?, ?, ?, ?, NOW())";
 
     $stmt = $mysqli->prepare($sql);
     if (!$stmt) {
@@ -29,7 +46,7 @@ function sf_log_event(int $flashId, string $eventType, string $description = '')
 
     // user_id voi olla NULL -> bindataan iiss ja annetaan 0 jos tyhjä
     $uid = $userId ? (int)$userId : 0;
-    $stmt->bind_param('iiss', $flashId, $uid, $eventType, $description);
+    $stmt->bind_param('iisss', $flashId, $uid, $eventType, $description, $batchId);
 
     if (!$stmt->execute()) {
         error_log('sf_log_event execute failed: ' . $stmt->error);

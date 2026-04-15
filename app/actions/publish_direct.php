@@ -7,6 +7,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 
 try {
     require_once __DIR__ . '/../includes/protect.php';
+    require_once __DIR__ . '/../includes/log.php';
     require_once __DIR__ . '/../includes/log_app.php';
     require_once __DIR__ . '/../includes/statuses.php';
     require_once __DIR__ . '/../includes/audit_log.php';
@@ -219,15 +220,19 @@ try {
         ':description' => $commentDescription,
     ]);
 
+    // Generoi yksi batch_id tälle julkaisuoperaatiolle (ei kommenteille)
+    $publishDirectBatchId = sf_log_generate_batch_id();
+
     $stmtDirectLog = $pdo->prepare("
-        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-        VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
     ");
     $stmtDirectLog->execute([
         ':flash_id' => $logFlashId,
         ':user_id' => $userId,
         ':event_type' => 'published_direct',
         ':description' => sf_term('log_published_direct', $currentUiLang),
+        ':batch_id' => $publishDirectBatchId,
     ]);
 
     if ($oldState !== 'published') {
@@ -236,14 +241,15 @@ try {
         $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
 
         $stmtStateChange = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
         ");
         $stmtStateChange->execute([
             ':flash_id' => $logFlashId,
             ':user_id' => $userId,
             ':event_type' => 'state_changed',
             ':description' => $stateChangeDesc,
+            ':batch_id' => $publishDirectBatchId,
         ]);
     }
 
