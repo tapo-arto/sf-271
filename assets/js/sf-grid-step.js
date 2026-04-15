@@ -1,0 +1,631 @@
+// sf-grid-step.js
+(function () {
+    const el = (id) => document.getElementById(id);
+
+    /**
+     * Upload a base64 data URL to the server as a temp grid file.
+     * Returns the server filename on success, or null on failure.
+     * Falls back gracefully so the caller can keep the base64 value if needed.
+     */
+    async function uploadTempGrid(dataUrl) {
+        try {
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+            if (!csrfToken || !dataUrl || typeof dataUrl !== 'string') {
+                return null;
+            }
+
+            const matches = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+            if (!matches) {
+                console.warn('[Grid] Invalid data URL format');
+                return null;
+            }
+
+            const mimeType = matches[1];
+            const base64Data = matches[2];
+
+            const byteString = atob(base64Data);
+            const byteLength = byteString.length;
+            const byteArray = new Uint8Array(byteLength);
+
+            for (let i = 0; i < byteLength; i++) {
+                byteArray[i] = byteString.charCodeAt(i);
+            }
+
+            const extensionMap = {
+                'image/png': 'png',
+                'image/jpeg': 'jpg',
+                'image/jpg': 'jpg',
+                'image/gif': 'gif',
+                'image/webp': 'webp',
+            };
+
+            const extension = extensionMap[mimeType] || 'png';
+            const blob = new Blob([byteArray], { type: mimeType });
+
+            const baseUrl = (window.SF_BASE_URL || '').replace(/\/$/, '');
+            const formData = new FormData();
+            formData.append('grid_image', blob, `grid_bitmap.${extension}`);
+            formData.append('csrf_token', csrfToken);
+
+            const uploadResponse = await fetch(`${baseUrl}/app/api/upload_temp_grid.php`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+            });
+
+            if (!uploadResponse.ok) {
+                console.warn('[Grid] Temp upload failed with status:', uploadResponse.status);
+                return null;
+            }
+
+            const result = await uploadResponse.json();
+            if (result && result.ok && result.filename) {
+                return result.filename;
+            }
+
+            console.warn('[Grid] Temp upload returned unexpected response:', result);
+            return null;
+        } catch (e) {
+            console.warn('[Grid] Temp upload failed, using base64 fallback:', e);
+            return null;
+        }
+    }
+
+    window.SF_GRID_UPLOAD_TEMP = uploadTempGrid;
+
+    const CANVAS_W = 1080;
+    const CANVAS_H = 1080;
+
+    // Ei turvamarginaaleja - kuva täyttää koko alueen
+    const PAD = 0;
+    const GAP = 12;
+    const RADIUS = 24;
+
+    // Pääkuvan hienosäätö neliöbitmapiin:
+    // - hieman lisää kokoa
+    // - hieman alemmas ruudussa
+    const MAIN_IMAGE_ZOOM = 1.14;
+    const MAIN_IMAGE_FOCUS_X = 0.5;
+    const MAIN_IMAGE_FOCUS_Y = 0.30;
+
+    function t(key, fallback) {
+        if (window.SF_I18N && window.SF_I18N[key]) return window.SF_I18N[key];
+        return fallback || key;
+    }
+
+    function getOptionsByCount(count) {
+        const L = (upperKey, lowerKey, fallback) => t(upperKey, t(lowerKey, fallback));
+
+        if (count === 1) {
+            return [{ id: "grid-1", label: L("GRID_LAYOUT_1", "grid_layout_1", "Layout 1") }];
+        }
+        if (count === 2) {
+            return [
+                { id: "grid-2a", label: L("GRID_LAYOUT_2A", "grid_layout_2a", "Layout 1") },
+                { id: "grid-2b", label: L("GRID_LAYOUT_2B", "grid_layout_2b", "Layout 2") },
+            ];
+        }
+        if (count === 3) {
+            return [
+                { id: "grid-3a", label: L("GRID_LAYOUT_3A", "grid_layout_3a", "Layout 1") },
+                { id: "grid-3b", label: L("GRID_LAYOUT_3B", "grid_layout_3b", "Layout 2") },
+                { id: "grid-3c", label: L("GRID_LAYOUT_3C", "grid_layout_3c", "Layout 3") },
+            ];
+        }
+        return [];
+    }
+
+    function roundRectPath(ctx, x, y, w, h, r) {
+        const rr = Math.max(0, Math.min(r, Math.floor(Math.min(w, h) / 2)));
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + h, rr);
+        ctx.arcTo(x + w, y + h, x, y + h, rr);
+        ctx.arcTo(x, y + h, x, y, rr);
+        ctx.arcTo(x, y, x + w, y, rr);
+        ctx.closePath();
+    }
+
+    function drawImageCover(ctx, img, x, y, w, h, options = {}) {
+        const iw = img.naturalWidth || img.width;
+        const ih = img.naturalHeight || img.height;
+        if (!iw || !ih) return;
+
+        const zoom = typeof options.zoom === "number" ? options.zoom : 1;
+        const focusX = typeof options.focusX === "number" ? options.focusX : 0.5;
+        const focusY = typeof options.focusY === "number" ? options.focusY : 0.5;
+
+        const scale = Math.max(w / iw, h / ih) * zoom;
+        const dw = iw * scale;
+        const dh = ih * scale;
+
+        const overflowX = Math.max(0, dw - w);
+        const overflowY = Math.max(0, dh - h);
+
+        const dx = x - overflowX * focusX;
+        const dy = y - overflowY * focusY;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.clip();
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
+    }
+
+    function drawSlot(ctx, img, slot) {
+        const { x, y, w, h, r, border = 0, shadow = false } = slot;
+
+        ctx.save();
+
+        if (border > 0) {
+            if (shadow) {
+                ctx.save();
+                ctx.shadowColor = "rgba(15, 23, 42, 0.18)";
+                ctx.shadowBlur = 18;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 8;
+
+                roundRectPath(ctx, x, y, w, h, r);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+
+                ctx.restore();
+            } else {
+                roundRectPath(ctx, x, y, w, h, r);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+            }
+        }
+
+        const inset = border > 0 ? border : 0;
+        const innerX = x + inset;
+        const innerY = y + inset;
+        const innerW = w - inset * 2;
+        const innerH = h - inset * 2;
+        const innerR = Math.max(0, r - Math.round(inset / 2));
+
+        roundRectPath(ctx, innerX, innerY, innerW, innerH, innerR);
+        ctx.clip();
+        drawImageCover(ctx, img, innerX, innerY, innerW, innerH, {
+            zoom: slot.zoom,
+            focusX: slot.focusX,
+            focusY: slot.focusY,
+        });
+
+        ctx.restore();
+    }
+
+    function getLayout(layoutId) {
+        // Kuva-alue on neliö (1080x1080) - vastaa esikatselun kuva-aluetta
+        const area = {
+            x: PAD,
+            y: PAD,
+            w: CANVAS_W - PAD * 2,
+            h: CANVAS_H - PAD * 2,
+        };
+
+        const mainImageProps = {
+            zoom: MAIN_IMAGE_ZOOM,
+            focusX: MAIN_IMAGE_FOCUS_X,
+            focusY: MAIN_IMAGE_FOCUS_Y,
+        };
+
+        // 1 kuva: yksi iso ruutu
+        if (layoutId === "grid-1") {
+            return {
+                slots: [
+                    { key: "main", z: 1, x: area.x, y: area.y, w: area.w, h: area.h, r: RADIUS, ...mainImageProps },
+                ],
+            };
+        }
+
+        // 2 kuvaa, asettelu 1 (overlay): iso + pieni oikeaan alakulmaan
+        if (layoutId === "grid-2a") {
+            const oS = Math.round(area.w * 0.35);
+            const margin = Math.round(area.w * 0.03);
+
+            return {
+                slots: [
+                    { key: "main", z: 1, x: area.x, y: area.y, w: area.w, h: area.h, r: RADIUS, ...mainImageProps },
+                    {
+                        key: "img2",
+                        z: 2,
+                        x: area.x + area.w - oS - margin,
+                        y: area.y + area.h - oS - margin,
+                        w: oS,
+                        h: oS,
+                        r: Math.round(RADIUS * 0.85),
+                        border: 10,
+                        shadow: true,
+                    },
+                ],
+            };
+        }
+
+        // 2 kuvaa, asettelu 2 (päällekkäin): kaksi vaakaruutua päällekkäin
+        if (layoutId === "grid-2b") {
+            const totalH = area.h;
+            const h1 = Math.floor((totalH - GAP) / 2);
+            const h2 = totalH - GAP - h1;
+            const slotW = area.w;
+            const slotX = area.x;
+
+            return {
+                slots: [
+                    { key: "main", z: 1, x: slotX, y: area.y, w: slotW, h: h1, r: RADIUS, ...mainImageProps },
+                    { key: "img2", z: 1, x: slotX, y: area.y + h1 + GAP, w: slotW, h: h2, r: RADIUS },
+                ],
+            };
+        }
+
+        // 3 kuvaa, asettelu 1: iso ylhäällä + 2 ruutua alhaalla vierekkäin
+        if (layoutId === "grid-3a") {
+            const topH = Math.round(area.h * 0.62);
+            const bottomH = area.h - topH - GAP;
+            const bottomW = Math.round((area.w - GAP) / 2);
+            return {
+                slots: [
+                    { key: "main", z: 1, x: area.x, y: area.y, w: area.w, h: topH, r: RADIUS, ...mainImageProps },
+                    {
+                        key: "img2",
+                        z: 1,
+                        x: area.x,
+                        y: area.y + topH + GAP,
+                        w: bottomW,
+                        h: bottomH,
+                        r: RADIUS,
+                        border: 8,
+                        shadow: true,
+                    },
+                    {
+                        key: "img3",
+                        z: 1,
+                        x: area.x + bottomW + GAP,
+                        y: area.y + topH + GAP,
+                        w: area.w - bottomW - GAP,
+                        h: bottomH,
+                        r: RADIUS,
+                        border: 8,
+                        shadow: true,
+                    },
+                ],
+            };
+        }
+
+        // 3 kuvaa, asettelu 2: iso tausta + 2 overlay-ruutua alareunaan
+        if (layoutId === "grid-3b") {
+            const smallS = Math.round(area.w * 0.28);
+            const largeS = Math.round(area.w * 0.38);
+            const margin = Math.round(area.w * 0.03);
+
+            return {
+                slots: [
+                    { key: "main", z: 1, x: area.x, y: area.y, w: area.w, h: area.h, r: RADIUS, ...mainImageProps },
+                    {
+                        key: "img3",
+                        z: 2,
+                        x: area.x + margin,
+                        y: area.y + area.h - smallS - margin,
+                        w: smallS,
+                        h: smallS,
+                        r: Math.round(RADIUS * 0.8),
+                        border: 8,
+                        shadow: true,
+                    },
+                    {
+                        key: "img2",
+                        z: 3,
+                        x: area.x + area.w - largeS - margin,
+                        y: area.y + area.h - largeS - margin,
+                        w: largeS,
+                        h: largeS,
+                        r: Math.round(RADIUS * 0.85),
+                        border: 10,
+                        shadow: true,
+                    },
+                ],
+            };
+        }
+
+        // 3 kuvaa, asettelu 3: iso vasemmalla + 2 ruutua oikealla päällekkäin
+        if (layoutId === "grid-3c") {
+            const leftW = Math.round(area.w * 0.58);
+            const rightW = area.w - leftW - GAP;
+            const rightH1 = Math.round((area.h - GAP) / 2);
+            const rightH2 = area.h - GAP - rightH1;
+
+            return {
+                slots: [
+                    { key: "main", z: 1, x: area.x, y: area.y, w: leftW, h: area.h, r: RADIUS, ...mainImageProps },
+                    {
+                        key: "img2",
+                        z: 1,
+                        x: area.x + leftW + GAP,
+                        y: area.y,
+                        w: rightW,
+                        h: rightH1,
+                        r: RADIUS,
+                        border: 8,
+                        shadow: true,
+                    },
+                    {
+                        key: "img3",
+                        z: 1,
+                        x: area.x + leftW + GAP,
+                        y: area.y + rightH1 + GAP,
+                        w: rightW,
+                        h: rightH2,
+                        r: RADIUS,
+                        border: 8,
+                        shadow: true,
+                    },
+                ],
+            };
+        }
+
+        // fallback
+        return {
+            slots: [
+                { key: "main", z: 1, x: area.x, y: area.y, w: area.w, h: area.h, r: RADIUS, ...mainImageProps },
+            ],
+        };
+    }
+
+    async function generateGridBitmap(layoutId, images) {
+        const canvas = document.createElement("canvas");
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+        // Pyöristä koko bitmapin ulkoreunat
+        const outerRadius = 24;
+        ctx.beginPath();
+        ctx.moveTo(outerRadius, 0);
+        ctx.arcTo(CANVAS_W, 0, CANVAS_W, CANVAS_H, outerRadius);
+        ctx.arcTo(CANVAS_W, CANVAS_H, 0, CANVAS_H, outerRadius);
+        ctx.arcTo(0, CANVAS_H, 0, 0, outerRadius);
+        ctx.arcTo(0, 0, CANVAS_W, 0, outerRadius);
+        ctx.closePath();
+        ctx.clip();
+
+        const layout = getLayout(layoutId);
+
+        const map = {
+            main: images[0],
+            img2: images[1],
+            img3: images[2],
+        };
+
+        const slots = [...layout.slots].sort((a, b) => (a.z || 1) - (b.z || 1));
+        for (const slot of slots) {
+            const img = map[slot.key];
+            if (!img) continue;
+            drawSlot(ctx, img, slot);
+        }
+
+        return canvas.toDataURL("image/png");
+    }
+
+    async function loadImage(src) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                console.warn("[Grid] Image failed to load, using 1x1 fallback:", src);
+
+                const fallback = new Image();
+                fallback.crossOrigin = "anonymous";
+                fallback.onload = () => resolve(fallback);
+                fallback.onerror = () => resolve(fallback);
+                fallback.src =
+                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6XKq4cAAAAASUVORK5CYII=";
+            };
+
+            img.src = src;
+        });
+    }
+
+    function getEditedImageForSlot(slot) {
+        const editedInput = document.getElementById(`sf-image${slot}-edited-data`);
+        if (editedInput && editedInput.value && editedInput.value.startsWith('data:')) {
+            return editedInput.value;
+        }
+        return null;
+    }
+
+    function setSelectedLayout(layoutId) {
+        const input = el("sf-grid-layout");
+        if (input) input.value = layoutId;
+
+        document.querySelectorAll(".sf-grid-card").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.layout === layoutId);
+        });
+    }
+
+    async function renderGridOptions(selectedCount, imageUrls) {
+        const wrap = el("sfGridPicker");
+        if (!wrap) return;
+
+        const options = getOptionsByCount(selectedCount);
+        wrap.innerHTML = "";
+        wrap.dataset.count = String(selectedCount);
+
+        const imgs = [];
+        for (let i = 0; i < imageUrls.length; i++) {
+            const url = imageUrls[i];
+            if (!url) continue;
+
+            const slot = i + 1;
+            const editedData = getEditedImageForSlot(slot);
+            const srcToUse = editedData || url;
+
+            imgs.push(await loadImage(srcToUse));
+        }
+
+        for (const opt of options) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "sf-grid-card";
+            btn.dataset.layout = opt.id;
+
+            const previewWrap = document.createElement("div");
+            previewWrap.className = "sf-grid-card-preview";
+
+            const thumb = document.createElement("img");
+            thumb.className = "sf-grid-card-thumb";
+            thumb.alt = opt.label;
+
+            const dataUrl = await generateGridBitmap(opt.id, imgs);
+            thumb.src = dataUrl;
+
+            const badge = document.createElement("span");
+            badge.className = "sf-grid-card-badge";
+            badge.textContent = t("GRID_SELECTED", "Selected");
+
+            previewWrap.appendChild(thumb);
+            previewWrap.appendChild(badge);
+
+            const meta = document.createElement("div");
+            meta.className = "sf-grid-card-meta";
+
+            const label = document.createElement("div");
+            label.className = "sf-grid-card-label";
+            label.textContent = opt.label;
+
+            const hint = document.createElement("div");
+            hint.className = "sf-grid-card-hint";
+            hint.textContent = t("GRID_SELECT_HINT", "Click to select this layout");
+
+            meta.appendChild(label);
+            meta.appendChild(hint);
+
+            btn.appendChild(previewWrap);
+            btn.appendChild(meta);
+
+            btn.addEventListener("click", async () => {
+                setSelectedLayout(opt.id);
+
+                const finalDataUrl = await generateGridBitmap(opt.id, imgs);
+                const out = el("sf-grid-bitmap");
+                if (out) {
+                    // Try to upload to server; fall back to base64 if upload fails
+                    const tempFilename = await uploadTempGrid(finalDataUrl);
+                    out.value = tempFilename || finalDataUrl;
+                    // Keep base64 in a data attribute so preview-server.js can use it
+                    if (tempFilename) {
+                        out.dataset.gridBitmapBase64 = finalDataUrl;
+                    } else {
+                        delete out.dataset.gridBitmapBase64;
+                    }
+
+                    out.dispatchEvent(new Event("input", { bubbles: true }));
+                    out.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            });
+
+            wrap.appendChild(btn);
+        }
+
+        const input = el("sf-grid-layout");
+        const current = (input && input.value) ? input.value : "";
+
+        // Check if current selection is valid for this image count
+        const validOptions = options.map(o => o.id);
+        const isCurrentValid = current && validOptions.includes(current);
+
+        // Auto-select first option if no valid selection exists
+        const chosen = isCurrentValid ? current : (options[0] ? options[0].id : "");
+
+        if (chosen) {
+            setSelectedLayout(chosen);
+
+            const finalDataUrl = await generateGridBitmap(chosen, imgs);
+            const out = el("sf-grid-bitmap");
+            if (out) {
+                // Try to upload to server; fall back to base64 if upload fails
+                const tempFilename = await uploadTempGrid(finalDataUrl);
+                out.value = tempFilename || finalDataUrl;
+                // Keep base64 in a data attribute so preview-server.js can use it
+                if (tempFilename) {
+                    out.dataset.gridBitmapBase64 = finalDataUrl;
+                } else {
+                    delete out.dataset.gridBitmapBase64;
+                }
+
+                // TÄRKEÄ: laukaise eventit, jotta ServerPreview huomaa muutoksen heti
+                out.dispatchEvent(new Event('input', { bubbles: true }));
+                out.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    }
+
+    window.SF_GRID_STEP_INIT = async function (selectedCount, imageUrls) {
+        try {
+            await renderGridOptions(selectedCount, imageUrls);
+        } catch (e) {
+            console.error("Grid step init failed:", e);
+        }
+    };
+
+    // Helper function to re-count images and re-render grid
+    function reRenderGridForImageChange() {
+        // Check if we're on the grid step (step 5)
+        const gridPicker = el('sfGridPicker');
+        if (!gridPicker || !gridPicker.offsetParent) return; // Not visible, skip
+
+        // Re-count images and re-render
+        const isPlaceholder = (src) => {
+            if (!src) return true;
+            const s = String(src).toLowerCase();
+            if (s.includes('camera-placeholder')) return true;
+            if (s.includes('placeholder')) return true;
+            if (s.includes('no-image')) return true;
+            if (s === '' || s === 'about:blank') return true;
+            // Issue 5: Also check for data: URLs that might be empty/transparent
+            if (s.startsWith('data:') && s.length < 100) return true;
+            return false;
+        };
+
+        const urls = [];
+        const t1 = el('sfImageThumb1') || el('sf-upload-preview1');
+        const t2 = el('sfImageThumb2') || el('sf-upload-preview2');
+        const t3 = el('sfImageThumb3') || el('sf-upload-preview3');
+
+        [t1, t2, t3].forEach((img, idx) => {
+            const slot = idx + 1;
+
+            // Issue 5: Check sf-existing-image-X hidden field to detect removed images
+            const hiddenField = el(`sf-existing-image-${slot}`);
+            const hasExistingImage = hiddenField && hiddenField.value && hiddenField.value.trim() !== '';
+
+            if (!img || !img.src) {
+                // No image element, but check if there's a hidden field value
+                if (hasExistingImage) {
+                    // Image exists in hidden field but not rendered yet - skip for now
+                }
+                return;
+            }
+            if (isPlaceholder(img.src)) {
+                // Check if hidden field indicates an image was removed
+                if (hasExistingImage) {
+                    // Image was removed, clear the hidden field
+                    hiddenField.value = '';
+                }
+                return;
+            }
+            urls.push(img.src);
+        });
+
+        const count = urls.length || 1;
+        window.SF_GRID_STEP_INIT(count, urls);
+    }
+
+    // Listen for image changes and re-render grid options if on grid step
+    document.addEventListener('sf:image-selected', reRenderGridForImageChange);
+    document.addEventListener('sf:image-removed', reRenderGridForImageChange);
+})();
