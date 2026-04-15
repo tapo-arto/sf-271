@@ -69,7 +69,14 @@ class FlashSaveService
         $changes = $this->detectChanges($flash, $data);
         
         // 5. Update database (state NEVER changes in inline edit)
-        $this->updateFlash($flashId, $data, $flash);
+        $resolvedGridBitmap = $this->updateFlash($flashId, $data, $flash);
+
+        // Propagate the resolved permanent grid bitmap filename so that the
+        // worker job (created below) receives the correct filename and not the
+        // now-moved temp file.
+        if ($resolvedGridBitmap !== '') {
+            $data['grid_bitmap'] = $resolvedGridBitmap;
+        }
         
         // 6. Log changes
         if (isset($changes['type'])) {
@@ -175,10 +182,10 @@ class FlashSaveService
      * @param int $flashId Flash ID
      * @param array $data Form data
      * @param array $currentFlash Current flash data from database (optional, fetched if not provided)
-     * @return void
+     * @return string Resolved permanent grid bitmap filename (empty string if none)
      * @throws Exception If database update fails
      */
-    public function updateFlash(int $flashId, array $data, ?array $currentFlash = null): void
+    public function updateFlash(int $flashId, array $data, ?array $currentFlash = null): string
     {
         $pdo = Database::getInstance();
         
@@ -337,6 +344,8 @@ class FlashSaveService
         if (!$success) {
             throw new Exception('Failed to update flash in database');
         }
+
+        return $gridBitmapFilename;
     }
     
     /**

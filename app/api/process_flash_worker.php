@@ -327,6 +327,17 @@ try {
     $post = $job_data['post'];
     $uploadedFiles = $job_data['files'];
 
+    // Always read grid_bitmap from the database as the authoritative source.
+    // By the time the worker runs, any temp->permanent file move has already
+    // been completed and the DB holds the correct permanent filename.
+    // This is a safety net for all save paths (create, edit, investigation update).
+    $gridBitmapStmt = $pdo->prepare("SELECT grid_bitmap FROM sf_flashes WHERE id = ?");
+    $gridBitmapStmt->execute([$flash_id]);
+    $gridBitmapRow = $gridBitmapStmt->fetch(PDO::FETCH_ASSOC);
+    if ($gridBitmapRow && !empty($gridBitmapRow['grid_bitmap'])) {
+        $post['grid_bitmap'] = $gridBitmapRow['grid_bitmap'];
+    }
+
     $update_fields = [];
 
     // Get type early since it's needed for both previews
