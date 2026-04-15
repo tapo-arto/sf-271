@@ -91,7 +91,7 @@ if (!empty($message)) {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_supervisor_approved', $currentUiLang) . ": " . $safeMessage,
+        ':description' => "log_comment_label: log_supervisor_approved: " . $safeMessage,
     ]);
 }
 

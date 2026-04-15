@@ -303,11 +303,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 
     // Separate state_changed event
     if ($oldState !== $newState) {
-        require_once __DIR__ . '/../../assets/lib/sf_terms.php';
-
-        $oldStateLabel = sf_status_label($oldState, $currentUiLang);
-        $newStateLabel = sf_status_label($newState, $currentUiLang);
-        $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
+        $stateChangeDesc = "log_state_changed: {$oldState} → {$newState}";
 
         if (function_exists('sf_log_event')) {
             sf_log_event($logFlashId, 'state_changed', $stateChangeDesc, $commsBatchId);
@@ -365,7 +361,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 
     // Save message as system comment so it appears in Comments tab
     if ($message !== '') {
-        $systemCommentDesc = sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_sent_to_comms', $currentUiLang) . ": " . $message;
+        $systemCommentDesc = "log_comment_label: log_sent_to_comms: " . $message;
         $stmtSysComment = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
             VALUES (:flash_id, :user_id, :event_type, :description, NOW())

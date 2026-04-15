@@ -1115,8 +1115,20 @@ $iconBase = $base .'/assets/img/icons/';
                                 // Parse kommentti description-kentästä
                                 $descRaw = $comment['description'] ?? '';
                                 $commentText = '';
-                                if (preg_match('/log_comment_label:\s*(.+)/i', $descRaw, $match)) {
+                                if (preg_match('/log_comment_label:\s*(.+)/is', $descRaw, $match)) {
                                     $commentText = trim($match[1]);
+                                    // Translate a nested log_ key prefix if present
+                                    // e.g. "log_sent_to_comms: <message>" → "Sent to communications: <message>"
+                                    if (preg_match('/^(log_\w+):\s*(.*)$/su', $commentText, $nestedMatch)) {
+                                        $nestedKey   = $nestedMatch[1];
+                                        $nestedValue = trim($nestedMatch[2]);
+                                        $nestedT     = sf_term($nestedKey, $currentUiLang);
+                                        if ($nestedT !== $nestedKey) {
+                                            $commentText = $nestedValue !== ''
+                                                ? $nestedT . ': ' . $nestedValue
+                                                : $nestedT;
+                                        }
+                                    }
                                 } else {
                                     $commentText = $descRaw;
                                 }
@@ -1313,7 +1325,28 @@ $iconBase = $base .'/assets/img/icons/';
                                         elseif (preg_match('/^(log_\w+)\|status:(\w+)$/u', $line, $matches)) {
                                             $translatedLine = '<strong>' . sf_term($matches[1], $currentUiLang) . ':</strong> ' . sf_status_label($matches[2], $currentUiLang);
                                         }
-                                        // 3. DISTRIBUTION SENT
+                                        // 3. DISTRIBUTION SENT (new format: counts:fi:5,se:3)
+                                        elseif (preg_match('/^log_distribution_sent\|counts:(.+)$/u', $line, $matches)) {
+                                            $recipientsLabel = sf_term('log_recipients_count', $currentUiLang);
+                                            $parts = [];
+                                            foreach (explode(',', $matches[1]) as $pair) {
+                                                $pairParts = explode(':', trim($pair), 2);
+                                                if (count($pairParts) !== 2) {
+                                                    continue;
+                                                }
+                                                $cc  = trim($pairParts[0]);
+                                                $cnt = trim($pairParts[1]);
+                                                if ($cc !== '') {
+                                                    $countryName = sf_term("country_name_{$cc}", $currentUiLang);
+                                                    if ($countryName === "country_name_{$cc}") {
+                                                        $countryName = strtoupper($cc);
+                                                    }
+                                                    $parts[] = $countryName . ($cnt !== '' ? ': ' . $cnt . ' ' . $recipientsLabel : '');
+                                                }
+                                            }
+                                            $translatedLine = '<strong>' . sf_term('log_distribution_sent', $currentUiLang) . ':</strong> ' . implode('; ', $parts);
+                                        }
+                                        // 3b. DISTRIBUTION SENT (legacy format: countries:…|details:…)
                                         elseif (preg_match('/^log_distribution_sent\|countries:([^|]+)\|details:(.+)$/u', $line, $matches)) {
                                             $translatedLine = '<strong>' . sf_term('log_distribution_sent', $currentUiLang) . ':</strong> ' . trim($matches[2]);
                                         }
