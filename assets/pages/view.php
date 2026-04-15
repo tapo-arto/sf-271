@@ -1418,7 +1418,21 @@ $iconBase = $base .'/assets/img/icons/';
                                                         <?php endforeach; ?>
                                                     </ul>
                                                 <?php else: ?>
-                                                    <?= nl2br($groupDescriptions[0]) ?>
+                                                    <?php
+                                                    $descLines = array_values(array_filter(
+                                                        explode("\n", $groupDescriptions[0]),
+                                                        fn($l) => trim($l) !== ''
+                                                    ));
+                                                    ?>
+                                                    <?php if (count($descLines) > 1): ?>
+                                                        <ul class="sf-event-batch-list">
+                                                            <?php foreach ($descLines as $descLine): ?>
+                                                                <li><?= $descLine ?></li>
+                                                            <?php endforeach; ?>
+                                                        </ul>
+                                                    <?php else: ?>
+                                                        <?= $groupDescriptions[0] ?>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
