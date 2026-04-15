@@ -96,7 +96,7 @@ sf_audit_log(
 // Save message as system comment so it appears in Comments tab
 if ($message !== '') {
     $userId = $user ? (int)$user['id'] : ($_SESSION['user_id'] ?? null);
-    $systemCommentDesc = "log_comment_label: " . mb_strtoupper(sf_term('log_returned_for_corrections', $currentUiLang)) . ": " . mb_substr($message, 0, 2000);
+    $systemCommentDesc = sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_return_reason_label', $currentUiLang) . ": " . mb_substr($message, 0, 2000);
     $stmtSysComment = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
         VALUES (:flash_id, :user_id, :event_type, :description, NOW())
