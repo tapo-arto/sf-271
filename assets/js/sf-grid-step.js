@@ -406,7 +406,12 @@
             drawSlot(ctx, img, slot);
         }
 
-        return canvas.toDataURL("image/png");
+        try {
+            return canvas.toDataURL("image/png");
+        } catch (e) {
+            console.warn('[Grid] canvas.toDataURL failed (possibly tainted canvas):', e);
+            return null;
+        }
     }
 
     async function loadImage(src) {
@@ -544,9 +549,21 @@
         if (chosen) {
             setSelectedLayout(chosen);
 
-            const finalDataUrl = await generateGridBitmap(chosen, imgs);
+            // Only regenerate the bitmap if we have real images.
+            // If all images resolved to 1x1 fallbacks (e.g. due to load failures or
+            // a tainted canvas from cross-origin caching), preserve the existing value
+            // so a valid stored bitmap is not overwritten with a blank placeholder.
+            const hasRealImages = imgs.some(img => img && img.naturalWidth > 1 && img.naturalHeight > 1);
             const out = el("sf-grid-bitmap");
-            if (out) {
+            const existingBitmapValue = out ? (out.value || '').trim() : '';
+
+            if (!hasRealImages && existingBitmapValue) {
+                console.log('[Grid] Preserving existing grid bitmap – no real images available');
+                return;
+            }
+
+            const finalDataUrl = await generateGridBitmap(chosen, imgs);
+            if (out && finalDataUrl !== null) {
                 // Try to upload to server; fall back to base64 if upload fails
                 const tempFilename = await uploadTempGrid(finalDataUrl);
                 out.value = tempFilename || finalDataUrl;
