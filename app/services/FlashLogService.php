@@ -36,12 +36,36 @@ class FlashLogService
         $logFlashId = $groupId ?: $flashId;
         
         $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+
+        // Map raw field names to localized term keys
+        $fieldTermMap = [
+            'title'       => 'log_title_changed',
+            'title_short' => 'log_title_short_changed',
+            'summary'     => 'log_summary_changed',
+            'description' => 'log_description_changed',
+            'site'        => 'log_site_changed',
+            'site_detail' => 'log_site_detail_changed',
+            'occurred_at' => 'log_occurred_at_changed',
+            'root_causes' => 'log_root_causes_changed',
+            'actions'     => 'log_actions_changed',
+        ];
+
+        // Fields whose content is too long to show old→new; only show the localized label
+        $longFields = ['description', 'root_causes', 'actions', 'summary'];
         
         // Build description of changes
         $changeDescriptions = [];
         foreach ($changes as $field => $change) {
             if (isset($change['old']) && isset($change['new'])) {
-                $changeDescriptions[] = "{$field}: {$change['old']} → {$change['new']}";
+                $localizedName = isset($fieldTermMap[$field])
+                    ? sf_term($fieldTermMap[$field], $currentUiLang)
+                    : $field;
+
+                if (in_array($field, $longFields, true)) {
+                    $changeDescriptions[] = $localizedName;
+                } else {
+                    $changeDescriptions[] = "{$localizedName}: {$change['old']} → {$change['new']}";
+                }
             }
         }
         
