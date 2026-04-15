@@ -563,6 +563,27 @@ return [
     'it' => 'Aggiornato',
     'el' => 'Ενημερώθηκε',
 ],
+'log_image_changed' => [
+    'fi' => 'Kuva muutettu',
+    'sv' => 'Bild ändrad',
+    'en' => 'Image changed',
+    'it' => 'Immagine modificata',
+    'el' => 'Η εικόνα άλλαξε',
+],
+'log_original_type_changed' => [
+    'fi' => 'Alkuperäinen tyyppi muutettu',
+    'sv' => 'Ursprunglig typ ändrad',
+    'en' => 'Original type changed',
+    'it' => 'Tipo originale modificato',
+    'el' => 'Ο αρχικός τύπος άλλαξε',
+],
+'log_settings_updated' => [
+    'fi' => 'Järjestelmäasetukset päivitetty',
+    'sv' => 'Systeminställningar uppdaterade',
+    'en' => 'System settings updated',
+    'it' => 'Impostazioni di sistema aggiornate',
+    'el' => 'Οι ρυθμίσεις συστήματος ενημερώθηκαν',
+],
 'log_original_flash_merged' => [
     'fi' => 'Alkuperäinen SafetyFlash "{title}" (ID {id}, tyyppi {type}, tila {state}) yhdistettiin tutkintatiedotteeseen. Yhdistäjä: {user}.',
     'sv' => 'Den ursprungliga SafetyFlashen "{title}" (ID {id}, typ {type}, status {state}) sammanfogades med utredningsrapporten. Sammanfogad av: {user}.',

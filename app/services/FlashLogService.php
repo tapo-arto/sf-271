@@ -11,6 +11,10 @@
 
 declare(strict_types=1);
 
+if (!function_exists('sf_term')) {
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+}
+
 class FlashLogService
 {
     /**
@@ -31,6 +35,8 @@ class FlashLogService
         $groupId = $stmt->fetchColumn();
         $logFlashId = $groupId ?: $flashId;
         
+        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+        
         // Build description of changes
         $changeDescriptions = [];
         foreach ($changes as $field => $change) {
@@ -41,7 +47,7 @@ class FlashLogService
         
         $description = !empty($changeDescriptions) 
             ? implode(', ', $changeDescriptions)
-            : 'Flash edited';
+            : sf_term('log_flash_edited', $currentUiLang);
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
@@ -69,17 +75,23 @@ class FlashLogService
         $groupId = $stmt->fetchColumn();
         $logFlashId = $groupId ?: $flashId;
         
-        // Finnish type labels
-        $typeLabels = [
-            'red' => 'Ensitiedote',
-            'yellow' => 'Vaaratilanne',
-            'green' => 'Tutkintatiedote'
+        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+        
+        // Localized type labels
+        $typeTermMap = [
+            'red'    => 'first_release',
+            'yellow' => 'dangerous_situation',
+            'green'  => 'investigation_report',
         ];
         
-        $oldLabel = $typeLabels[$oldType] ?? $oldType;
-        $newLabel = $typeLabels[$newType] ?? $newType;
+        $oldLabel = isset($typeTermMap[$oldType])
+            ? sf_term($typeTermMap[$oldType], $currentUiLang)
+            : $oldType;
+        $newLabel = isset($typeTermMap[$newType])
+            ? sf_term($typeTermMap[$newType], $currentUiLang)
+            : $newType;
         
-        $description = "Type changed: {$oldLabel} → {$newLabel}";
+        $description = sf_term('log_type_changed', $currentUiLang) . ": {$oldLabel} → {$newLabel}";
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
@@ -125,7 +137,7 @@ class FlashLogService
             ? sf_status_label($newState, $currentUiLang)
             : $newState;
         
-        $description = "State changed: {$oldStateLabel} → {$newStateLabel}";
+        $description = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
         
         $stmt = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
