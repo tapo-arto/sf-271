@@ -165,9 +165,21 @@ try {
 
     // Log the event
     require_once __DIR__ . '/../includes/log.php';
+    require_once __DIR__ . '/../includes/audit_log.php';
     require_once __DIR__ . '/../../assets/lib/sf_terms.php';
     $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
     sf_log_event($newId, 'CREATED', sf_term('log_bundle_language_created', $currentUiLang) . ': ' . $targetLang);
+
+    sf_audit_log(
+        'flash_language_version_created',
+        'flash',
+        $newId,
+        [
+            'source_id'   => $sourceId,
+            'target_lang' => $targetLang,
+            'group_id'    => $groupId,
+        ]
+    );
 
     sf_app_log("[bundle_add_language] Created new draft id={$newId} lang={$targetLang} group={$groupId}");
 

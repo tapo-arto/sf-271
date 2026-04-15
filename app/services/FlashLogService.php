@@ -5,6 +5,8 @@
  * Centralized logging service for SafetyFlash.
  * Handles logging of edits, type changes, state changes, and field changes to safetyflash_logs table.
  * 
+ * @deprecated Use direct INSERT into safetyflash_logs combined with sf_audit_log() instead.
+ *
  * @package SafetyFlash
  * @subpackage Services
  */

@@ -20,6 +20,7 @@ require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../services/ApprovalRouting.php';
 require_once __DIR__ . '/../includes/log_app.php';
 require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+require_once __DIR__ . '/../includes/audit_log.php';
 
 $flashId = isset($_POST['flash_id']) ? (int)$_POST['flash_id'] : 0;
 $approverIds = isset($_POST['approver_ids']) ? json_decode($_POST['approver_ids'], true) : [];
@@ -146,6 +147,8 @@ if ($bundleGroupId !== null) {
 require_once __DIR__ . '/../includes/log.php';
 sf_log_event($flashId, 'sent_to_supervisor', 'log_sent_to_supervisor');
 
+$currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+
 // If submission comment is provided, save it as a separate event
 if ($submissionComment !== '') {
     $submissionComment = mb_substr($submissionComment, 0, 1000);
@@ -161,7 +164,7 @@ if ($submissionComment !== '') {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => "log_comment_label: " . mb_strtoupper(sf_term('log_sent_to_safety_team', $currentUiLang ?? ($_SESSION['ui_lang'] ?? 'fi'))) . ": " . $submissionComment,
+        ':description' => sf_term('log_comment_label', $currentUiLang) . ": " . sf_term('log_sent_to_supervisor', $currentUiLang) . ": " . $submissionComment,
     ]);
 }
 
@@ -180,6 +183,8 @@ foreach ($approvers as $approver) {
         error_log("send_to_supervisor: Email FAILED to {$approver['email']}");
     }
 }
+
+sf_audit_log('flash_sent_to_supervisor', 'flash', $flashId);
 
 echo json_encode([
     'ok' => true,

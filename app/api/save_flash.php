@@ -931,7 +931,7 @@ try {
 
     // Audit
     try {
-        $action = ($id > 0) ? 'flash_update' :  'flash_create';
+        $action = ($id > 0) ? 'flash_updated' :  'flash_created';
         sf_audit_log(
             $action,
             'flash',
