@@ -251,6 +251,14 @@ class FlashSaveService
                 $oldValue = (string)$original[$field];
                 $newValue = (string)$data[$field];
                 
+                if ($field === 'occurred_at') {
+                    $oldTs = strtotime($oldValue);
+                    $newTs = strtotime($newValue);
+                    if ($oldTs !== false && $newTs !== false && $oldTs === $newTs) {
+                        continue; // Same datetime, just different format
+                    }
+                }
+                
                 if ($oldValue !== $newValue) {
                     $changes[$field] = [
                         'old' => $oldValue,
