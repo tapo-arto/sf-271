@@ -70,7 +70,8 @@ class FlashLogService
             }
         }
         
-        // Store as term key so view.php can translate it; join long-field keys with newline
+        // Each change is stored on a separate line so parseEventDesc in view.php
+        // can process and translate each entry individually (splits on "\n")
         $description = !empty($changeDescriptions) 
             ? implode("\n", $changeDescriptions)
             : 'log_flash_edited';

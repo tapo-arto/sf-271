@@ -1330,9 +1330,12 @@ $iconBase = $base .'/assets/img/icons/';
                                             $recipientsLabel = sf_term('log_recipients_count', $currentUiLang);
                                             $parts = [];
                                             foreach (explode(',', $matches[1]) as $pair) {
-                                                [$cc, $cnt] = array_pad(explode(':', $pair, 2), 2, '');
-                                                $cc  = trim($cc);
-                                                $cnt = trim($cnt);
+                                                $pairParts = explode(':', trim($pair), 2);
+                                                if (count($pairParts) !== 2) {
+                                                    continue;
+                                                }
+                                                $cc  = trim($pairParts[0]);
+                                                $cnt = trim($pairParts[1]);
                                                 if ($cc !== '') {
                                                     $countryName = sf_term("country_name_{$cc}", $currentUiLang);
                                                     if ($countryName === "country_name_{$cc}") {
