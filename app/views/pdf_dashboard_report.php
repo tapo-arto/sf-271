@@ -90,11 +90,11 @@ arsort($categoryTotals);
 $sortedCategories = array_values($categoryTotals);
 $maxCategoryCount = !empty($sortedCategories) ? max(array_column($sortedCategories, 'count')) : 0;
 
-// Type label map
+// Type label map using existing terms
 $typeLabels = [
-    'red'    => ['fi' => 'Ensitiedote',    'sv' => 'Första meddelande', 'en' => 'First Release',      'it' => 'Prima notifica',    'el' => 'Πρώτη ειδοποίηση'],
-    'yellow' => ['fi' => 'Vaaratilanne',   'sv' => 'Farlig situation',  'en' => 'Dangerous Situation', 'it' => 'Situazione pericolosa', 'el' => 'Επικίνδυνη κατάσταση'],
-    'green'  => ['fi' => 'Tutkintatiedote','sv' => 'Undersökningsrapport','en' => 'Investigation',     'it' => 'Indagine',          'el' => 'Έρευνα'],
+    'red'    => sf_term('dashboard_stat_red',    $uiLang),
+    'yellow' => sf_term('dashboard_stat_yellow', $uiLang),
+    'green'  => sf_term('dashboard_stat_green',  $uiLang),
 ];
 ?>
 <!DOCTYPE html>
@@ -528,7 +528,7 @@ $typeLabels = [
                 }
                 $bpList = implode(', ', array_slice($flash['body_parts'] ?? [], 0, 3));
                 if (count($flash['body_parts'] ?? []) > 3) $bpList .= '…';
-                $typeLbl = $typeLabels[$flashType][$uiLang] ?? ($typeLabels[$flashType]['fi'] ?? $flashType);
+                $typeLbl = $typeLabels[$flashType] ?? $flashType;
             ?>
             <tr>
                 <td>

@@ -106,7 +106,10 @@
         var includeRecent    = document.getElementById('sf-report-include-recent')    ? document.getElementById('sf-report-include-recent').checked    : true;
 
         if (!includeStats && !includeWorksites && !includeInjuries && !includeRecent) {
-            alert(I18N.error);
+            var selectMsg = (window.SF_REPORT_I18N && window.SF_REPORT_I18N.selectContent)
+                ? window.SF_REPORT_I18N.selectContent
+                : 'Please select at least one content section.';
+            alert(selectMsg);
             return;
         }
 

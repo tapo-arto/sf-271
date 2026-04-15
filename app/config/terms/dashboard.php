@@ -460,6 +460,13 @@ return [
     'it' => 'Impossibile creare il report',
     'el' => 'Αποτυχία δημιουργίας αναφοράς',
 ],
+'dashboard_report_select_content' => [
+    'fi' => 'Valitse vähintään yksi sisältöosio.',
+    'sv' => 'Välj minst ett innehållsavsnitt.',
+    'en' => 'Please select at least one content section.',
+    'it' => 'Seleziona almeno una sezione di contenuto.',
+    'el' => 'Επιλέξτε τουλάχιστον μία ενότητα περιεχομένου.',
+],
 
 /* ---- Injury heatmap module ---- */
 'dashboard_injury_title' => [

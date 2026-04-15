@@ -321,7 +321,10 @@ $bpDir      = $appRoot . '/assets/img/body-map/';
 
 function dashboardReportLoadSvg(string $path): string
 {
-    $raw = @file_get_contents($path);
+    if (!file_exists($path) || !is_readable($path)) {
+        return '';
+    }
+    $raw = file_get_contents($path);
     if ($raw === false || $raw === '') return '';
     $raw = preg_replace('/<\?xml[^?]*\?>\s*/', '', $raw);
     return $raw;

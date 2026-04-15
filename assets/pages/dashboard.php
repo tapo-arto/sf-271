@@ -711,9 +711,10 @@ window.SF_INJURY_I18N = {
     showAllCount:  <?= json_encode(sf_term('dashboard_injury_show_all_count', $uiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
 };
 window.SF_REPORT_I18N = {
-    generating:  <?= json_encode(sf_term('dashboard_report_generating', $uiLang),  JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
-    generate:    <?= json_encode(sf_term('dashboard_report_generate', $uiLang),    JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
-    error:       <?= json_encode(sf_term('dashboard_report_error', $uiLang),       JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    generating:    <?= json_encode(sf_term('dashboard_report_generating', $uiLang),    JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    generate:      <?= json_encode(sf_term('dashboard_report_generate', $uiLang),      JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    error:         <?= json_encode(sf_term('dashboard_report_error', $uiLang),         JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    selectContent: <?= json_encode(sf_term('dashboard_report_select_content', $uiLang),JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
 };
 window.SF_CSRF_TOKEN = <?= json_encode(sf_csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 window.SF_REPORT_SITES = <?= json_encode($worksiteStats ? array_column($worksiteStats, 'site') : [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
