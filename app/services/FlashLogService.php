@@ -25,9 +25,10 @@ class FlashLogService
      * @param int $flashId Flash ID
      * @param array $changes Array of changes made
      * @param int $userId User ID who made the edit
+     * @param string|null $batchId Optional batch ID for grouping
      * @return void
      */
-    public function logEdit(int $flashId, array $changes, int $userId): void
+    public function logEdit(int $flashId, array $changes, int $userId, ?string $batchId = null): void
     {
         $pdo = Database::getInstance();
         
@@ -76,10 +77,10 @@ class FlashLogService
             : sf_term('log_flash_edited', $currentUiLang);
         
         $stmt = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (?, ?, 'edited', ?, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (?, ?, 'edited', ?, ?, NOW())
         ");
-        $stmt->execute([$logFlashId, $userId, $description]);
+        $stmt->execute([$logFlashId, $userId, $description, $batchId]);
     }
     
     /**
@@ -89,9 +90,10 @@ class FlashLogService
      * @param string $oldType Old type (red/yellow/green)
      * @param string $newType New type (red/yellow/green)
      * @param int $userId User ID who made the change
+     * @param string|null $batchId Optional batch ID for grouping
      * @return void
      */
-    public function logTypeChange(int $flashId, string $oldType, string $newType, int $userId): void
+    public function logTypeChange(int $flashId, string $oldType, string $newType, int $userId, ?string $batchId = null): void
     {
         $pdo = Database::getInstance();
         
@@ -120,10 +122,10 @@ class FlashLogService
         $description = sf_term('log_type_changed', $currentUiLang) . ": {$oldLabel} → {$newLabel}";
         
         $stmt = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (?, ?, 'type_changed', ?, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (?, ?, 'type_changed', ?, ?, NOW())
         ");
-        $stmt->execute([$logFlashId, $userId, $description]);
+        $stmt->execute([$logFlashId, $userId, $description, $batchId]);
     }
     
     /**
@@ -133,9 +135,10 @@ class FlashLogService
      * @param string $oldState Old state
      * @param string $newState New state
      * @param int $userId User ID who made the change
+     * @param string|null $batchId Optional batch ID for grouping
      * @return void
      */
-    public function logStateChange(int $flashId, string $oldState, string $newState, int $userId): void
+    public function logStateChange(int $flashId, string $oldState, string $newState, int $userId, ?string $batchId = null): void
     {
         $pdo = Database::getInstance();
         
@@ -166,10 +169,10 @@ class FlashLogService
         $description = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
         
         $stmt = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (?, ?, 'state_changed', ?, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (?, ?, 'state_changed', ?, ?, NOW())
         ");
-        $stmt->execute([$logFlashId, $userId, $description]);
+        $stmt->execute([$logFlashId, $userId, $description, $batchId]);
     }
     
     /**
@@ -180,9 +183,10 @@ class FlashLogService
      * @param string $oldValue Old value
      * @param string $newValue New value
      * @param int $userId User ID who made the change
+     * @param string|null $batchId Optional batch ID for grouping
      * @return void
      */
-    public function logFieldChange(int $flashId, string $fieldName, string $oldValue, string $newValue, int $userId): void
+    public function logFieldChange(int $flashId, string $fieldName, string $oldValue, string $newValue, int $userId, ?string $batchId = null): void
     {
         $pdo = Database::getInstance();
         
@@ -206,9 +210,9 @@ class FlashLogService
         $description = "{$fieldName}: \"{$oldValueShort}\" → \"{$newValueShort}\"";
         
         $stmt = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (?, ?, 'field_changed', ?, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (?, ?, 'field_changed', ?, ?, NOW())
         ");
-        $stmt->execute([$logFlashId, $userId, $description]);
+        $stmt->execute([$logFlashId, $userId, $description, $batchId]);
     }
 }

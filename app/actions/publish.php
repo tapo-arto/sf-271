@@ -10,6 +10,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 try {
 
 require_once __DIR__ . '/../includes/protect.php';
+require_once __DIR__ . '/../includes/log.php';
 require_once __DIR__ . '/../includes/log_app.php';
 require_once __DIR__ . '/../includes/statuses.php';
 require_once __DIR__ . '/../includes/audit_log.php';
@@ -315,15 +316,19 @@ $statusLabel = sf_status_label('published', $currentUiLang);
 // Tallennetaan avaimella
 $desc = "log_status_set: published";
 
+// Generoi yksi batch_id tälle julkaisuoperaatiolle
+$publishBatchId = sf_log_generate_batch_id();
+
 $log = $pdo->prepare("
-    INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-    VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+    INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+    VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
 ");
 $log->execute([
     ':flash_id'   => $logFlashId,
     ':user_id'    => $userId,
     ':event_type' => 'published',
     ':description'=> $desc,
+    ':batch_id'   => $publishBatchId,
 ]);
 
 // Kirjataan myös erillinen state_changed tapahtuma
@@ -334,14 +339,15 @@ if ($oldState !== 'published') {
     $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
     
     $logStateChange = $pdo->prepare("
-        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-        VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
     ");
     $logStateChange->execute([
         ':flash_id'   => $logFlashId,
         ':user_id'    => $userId,
         ':event_type' => 'state_changed',
         ':description'=> $stateChangeDesc,
+        ':batch_id'   => $publishBatchId,
     ]);
 }
 
@@ -406,14 +412,15 @@ if (!empty($distributionResults)) {
                 "|details:" . implode('; ', $distParts);
     
     $logDist = $pdo->prepare("
-        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-        VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
     ");
     $logDist->execute([
         ':flash_id'   => $logFlashId,
         ':user_id'    => $userId,
         ':event_type' => 'distribution_sent',
         ':description'=> $distDesc,
+        ':batch_id'   => $publishBatchId,
     ]);
 }
 

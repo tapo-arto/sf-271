@@ -172,6 +172,9 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
         $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
+    // Generoi yksi batch_id tälle lähetysoperaatiolle (ei kommenteille)
+    $commsBatchId = sf_log_generate_batch_id();
+
     // Resolve all language version IDs in this translation group
     $groupId = !empty($flash['translation_group_id'])
         ? (int) $flash['translation_group_id']
@@ -222,7 +225,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
             }
 
             if (function_exists('sf_log_event')) {
-                sf_log_event($logFlashId, 'display_targets_preselected', sf_term('log_display_targets_preselected', $currentUiLang));
+                sf_log_event($logFlashId, 'display_targets_preselected', sf_term('log_display_targets_preselected', $currentUiLang), $commsBatchId);
             }
 
             sf_app_log("send_to_comms.php: Display targets preselected for flash {$id}");
@@ -283,17 +286,18 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 
     // Log event
     if (function_exists('sf_log_event')) {
-        sf_log_event($logFlashId, 'sent_to_comms', $desc);
+        sf_log_event($logFlashId, 'sent_to_comms', $desc, $commsBatchId);
     } else {
         $log = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-            VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
         ");
         $log->execute([
             ':flash_id'   => $logFlashId,
             ':user_id'    => $userId,
             ':event_type' => 'sent_to_comms',
             ':description'=> $desc,
+            ':batch_id'   => $commsBatchId,
         ]);
     }
 
@@ -306,17 +310,18 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
         $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
 
         if (function_exists('sf_log_event')) {
-            sf_log_event($logFlashId, 'state_changed', $stateChangeDesc);
+            sf_log_event($logFlashId, 'state_changed', $stateChangeDesc, $commsBatchId);
         } else {
             $logStateChange = $pdo->prepare("
-                INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-                VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+                INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+                VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
             ");
             $logStateChange->execute([
                 ':flash_id'   => $logFlashId,
                 ':user_id'    => $userId,
                 ':event_type' => 'state_changed',
                 ':description'=> $stateChangeDesc,
+                ':batch_id'   => $commsBatchId,
             ]);
         }
     }

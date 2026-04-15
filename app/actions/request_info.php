@@ -69,14 +69,16 @@ if ($message !== '') {
 }
 
 // Kirjataan loki RYHMÄN JUUREEN → näkyy kaikissa kieliversioissa
-sf_log_event($logFlashId, 'info_requested', $desc);
+// Generoi yksi batch_id tälle operaatiolle
+$requestInfoBatchId = sf_log_generate_batch_id();
+sf_log_event($logFlashId, 'info_requested', $desc, $requestInfoBatchId);
 
 // Kirjataan myös erillinen state_changed tapahtuma
 if ($oldState !== $newState) {
     $oldStateLabel = sf_status_label($oldState, $currentUiLang);
     $newStateLabel = sf_status_label($newState, $currentUiLang);
     $stateChangeDesc = sf_term('log_state_changed', $currentUiLang) . ": {$oldStateLabel} → {$newStateLabel}";
-    sf_log_event($logFlashId, 'state_changed', $stateChangeDesc);
+    sf_log_event($logFlashId, 'state_changed', $stateChangeDesc, $requestInfoBatchId);
 }
 
 // Audit log

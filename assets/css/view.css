@@ -2572,6 +2572,22 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.sf-event-batch-list {
+    margin: 0;
+    padding: 0 0 0 1.1rem;
+    list-style: disc;
+}
+
+.sf-event-batch-list li {
+    margin-bottom: 0.2rem;
+    white-space: pre-line;
+    word-break: break-word;
+}
+
+.sf-event-batch-list li:last-child {
+    margin-bottom: 0;
+}
+
 /* ========================================
    TYHJÄ TILA
    ======================================== */
