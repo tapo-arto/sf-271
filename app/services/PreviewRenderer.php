@@ -869,10 +869,13 @@ class PreviewRenderer
             // 2) Try common upload locations (match PreviewImageGenerator behaviour)
             $candidates = [
                 // preferred location for grid bitmap
-                $this->uploadsDir . '/grids/' . basename($gridBitmap),
+                $this->basePath . '/uploads/grids/' . basename($gridBitmap),
 
                 // temp location for newly uploaded (not yet made permanent) grid bitmaps
-                $this->uploadsDir . '/temp/' . basename($gridBitmap),
+                $this->basePath . '/uploads/temp/' . basename($gridBitmap),
+
+                // alternative grid bitmap directory
+                $this->basePath . '/uploads/grid_bitmaps/' . basename($gridBitmap),
 
                 // fallback locations (older/other)
                 $this->uploadsDir . '/' . basename($gridBitmap),
@@ -890,7 +893,7 @@ class PreviewRenderer
         // Validate that the file is within the uploads directory
         if ($fullPath && file_exists($fullPath)) {
             $realPath = realpath($fullPath);
-            $realUploadsDir = realpath($this->uploadsDir);
+            $realUploadsDir = realpath($this->basePath . '/uploads');
 
             if ($realPath !== false && $realUploadsDir !== false && strpos($realPath, $realUploadsDir) === 0) {
                 $srcImage = $this->loadImage($realPath);
