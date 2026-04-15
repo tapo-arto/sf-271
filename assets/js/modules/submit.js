@@ -250,17 +250,28 @@ async function doSubmit(form, isDraft, isInlineSave = false) {
             const currentGridValue = (gridBitmapInput.value || '').trim();
 
             if (currentGridValue.startsWith('data:image/') && typeof window.SF_GRID_UPLOAD_TEMP === 'function') {
-                try {
-                    const tempFilename = await window.SF_GRID_UPLOAD_TEMP(currentGridValue);
-                    if (tempFilename) {
-                        gridBitmapInput.value = tempFilename;
-                        gridBitmapInput.dataset.gridBitmapBase64 = currentGridValue;
-                        console.log('[submit.js] Grid bitmap converted to temp file before submit:', tempFilename);
-                    } else {
-                        console.warn('[submit.js] Grid temp upload failed before submit, keeping base64 fallback');
+                // Try up to 3 times with increasing delays
+                let uploaded = false;
+                for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
+                    const retryDelay = 1000 * attempt;
+                    try {
+                        const tempFilename = await window.SF_GRID_UPLOAD_TEMP(currentGridValue);
+                        if (tempFilename) {
+                            gridBitmapInput.value = tempFilename;
+                            gridBitmapInput.dataset.gridBitmapBase64 = currentGridValue;
+                            console.log(`[submit.js] Grid bitmap uploaded on attempt ${attempt}:`, tempFilename);
+                            uploaded = true;
+                        } else {
+                            console.warn(`[submit.js] Grid temp upload attempt ${attempt} returned null`);
+                            if (attempt < 3) await new Promise(r => setTimeout(r, retryDelay));
+                        }
+                    } catch (gridUploadError) {
+                        console.warn(`[submit.js] Grid temp upload attempt ${attempt} failed:`, gridUploadError);
+                        if (attempt < 3) await new Promise(r => setTimeout(r, retryDelay));
                     }
-                } catch (gridUploadError) {
-                    console.warn('[submit.js] Grid temp upload retry failed before submit:', gridUploadError);
+                }
+                if (!uploaded) {
+                    console.warn('[submit.js] All grid upload attempts failed, keeping base64 fallback');
                 }
             }
         }
@@ -286,10 +297,38 @@ async function doSubmit(form, isDraft, isInlineSave = false) {
             }
         }
 
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
-        });
+        let response;
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        while (retryCount <= maxRetries) {
+            try {
+                response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                // If server error (5xx), retry
+                if (response.status >= 500 && retryCount < maxRetries) {
+                    retryCount++;
+                    const retryDelay = 2000 * retryCount;
+                    console.warn(`[submit.js] Server error ${response.status}, retry ${retryCount}/${maxRetries}`);
+                    await new Promise(r => setTimeout(r, retryDelay));
+                    continue;
+                }
+
+                break; // Success or non-retryable error
+            } catch (fetchErr) {
+                if (retryCount < maxRetries && (fetchErr instanceof TypeError)) {
+                    retryCount++;
+                    const retryDelay = 2000 * retryCount;
+                    console.warn(`[submit.js] Fetch failed, retry ${retryCount}/${maxRetries}:`, fetchErr);
+                    await new Promise(r => setTimeout(r, retryDelay));
+                    continue;
+                }
+                throw fetchErr; // Rethrow if all retries exhausted
+            }
+        }
 
         const raw = await response.text();
         let result = null;

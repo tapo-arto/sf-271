@@ -312,10 +312,10 @@ export function updateUIForStep(stepNumber) {
 
         updatePreview();
 
-        // Alusta preview
+        // Alusta preview — wait longer to allow async grid bitmap upload from step 5 to complete
         setTimeout(() => {
             initializePreview(currentType);
-        }, 100);
+        }, 300);
 
         // Näytä supervisor-osio KAIKILLE tyypeille kun tullaan vaiheeseen 6
         setTimeout(() => {
