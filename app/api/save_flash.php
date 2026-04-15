@@ -638,6 +638,8 @@ try {
             if ($gridBitmapFilename !== '') {
                 $updateGridStmt = $pdo->prepare("UPDATE sf_flashes SET grid_bitmap = :grid_bitmap WHERE id = :id");
                 $updateGridStmt->execute([':grid_bitmap' => $gridBitmapFilename, ':id' => $newId]);
+                // Update post data so worker job receives the permanent grid bitmap filename
+                $post['grid_bitmap'] = $gridBitmapFilename;
             } else {
                 error_log("save_flash: Failed to save grid bitmap for flash {$newId}");
             }
