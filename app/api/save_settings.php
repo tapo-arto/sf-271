@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../includes/protect.php';
+require_once __DIR__ . '/../includes/audit_log.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -40,6 +41,15 @@ $userId = (int)$user['id'];
 try {
     $pdo = Database::getInstance();
     
+    // Read old values before updating
+    $oldValues = [];
+    $savedValues = [];
+    foreach ($allowedKeys as $key) {
+        $stmt = $pdo->prepare("SELECT setting_value FROM sf_settings WHERE setting_key = :key LIMIT 1");
+        $stmt->execute([':key' => $key]);
+        $oldValues[$key] = $stmt->fetchColumn();
+    }
+    
     foreach ($input as $key => $value) {
         if (in_array($key, $allowedKeys, true)) {
             if (is_bool($value)) {
@@ -59,7 +69,22 @@ try {
                 ':value' => $value,
                 ':user_id' => $userId
             ]);
+            
+            $savedValues[$key] = $value;
         }
+    }
+    
+    if (!empty($savedValues)) {
+        $changedOld = array_intersect_key($oldValues, $savedValues);
+        sf_audit_log(
+            'settings_updated',
+            'settings',
+            null,
+            [
+                'old_values' => $changedOld,
+                'new_values' => $savedValues,
+            ]
+        );
     }
     
     echo json_encode(['success' => true]);

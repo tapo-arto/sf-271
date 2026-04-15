@@ -19,6 +19,8 @@ header('Content-Type: application/json; charset=utf-8');
 
 define('SF_SKIP_AUTO_CSRF', true);
 require_once __DIR__ . '/../includes/protect.php';
+require_once __DIR__ . '/../includes/log.php';
+require_once __DIR__ . '/../includes/audit_log.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 
 global $config;
@@ -118,6 +120,27 @@ try {
         ':group_id2'     => $groupId,
         ':flash_id'      => $flashId,
     ]);
+
+    // Log the original_type change
+    $oldOriginalType = $flash['original_type'] ?? null;
+    if ($oldOriginalType !== $originalTypeValue) {
+        require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+        $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+        $logDesc = sf_term('log_original_type_changed', $currentUiLang)
+            . ': ' . ($oldOriginalType ?? '') . ' → ' . ($originalTypeValue ?? '');
+        sf_log_event($flashId, 'original_type_changed', $logDesc);
+
+        sf_audit_log(
+            'flash_update',
+            'flash',
+            $flashId,
+            [
+                'field'     => 'original_type',
+                'old_value' => $oldOriginalType,
+                'new_value' => $originalTypeValue,
+            ]
+        );
+    }
 
     echo json_encode(['ok' => true, 'original_type' => $originalTypeValue], JSON_UNESCAPED_UNICODE);
 

@@ -14,8 +14,13 @@ declare(strict_types=1);
 require_once __DIR__ . '/FlashPermissionService.php';
 require_once __DIR__ . '/FlashLogService.php';
 require_once __DIR__ . '/FlashImageService.php';
+require_once __DIR__ . '/../includes/log.php';
 require_once __DIR__ . '/../includes/log_app.php';
 require_once __DIR__ . '/../includes/image_helpers.php';
+
+if (!function_exists('sf_term')) {
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+}
 
 class PermissionException extends Exception {}
 
@@ -93,6 +98,29 @@ class FlashSaveService
         // Log all other changes
         if (!empty($changes)) {
             $this->logService->logEdit($flashId, $changes, (int)($user['id'] ?? 0));
+        }
+        
+        // Log image changes
+        $oldImageMain = (string)($flash['image_main'] ?? '');
+        $oldImage2    = (string)($flash['image_2'] ?? '');
+        $oldImage3    = (string)($flash['image_3'] ?? '');
+
+        $newImageMain = trim((string)($data['library_image_1'] ?? ''));
+        if ($newImageMain === '') {
+            $newImageMain = trim((string)($data['existing_image_1'] ?? ''));
+        }
+        $newImage2 = trim((string)($data['library_image_2'] ?? ''));
+        if ($newImage2 === '') {
+            $newImage2 = trim((string)($data['existing_image_2'] ?? ''));
+        }
+        $newImage3 = trim((string)($data['library_image_3'] ?? ''));
+        if ($newImage3 === '') {
+            $newImage3 = trim((string)($data['existing_image_3'] ?? ''));
+        }
+
+        if ($oldImageMain !== $newImageMain || $oldImage2 !== $newImage2 || $oldImage3 !== $newImage3) {
+            $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+            sf_log_event($flashId, 'image_changed', sf_term('log_image_changed', $currentUiLang));
         }
         
         // 7. Create worker job for image generation
