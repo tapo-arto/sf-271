@@ -10,7 +10,14 @@ require_once __DIR__ . '/auth.php';
  */
 function sf_log_generate_batch_id(): string
 {
-    return uniqid('batch_', true);
+    return sprintf(
+        '%08x-%04x-4%03x-%04x-%012x',
+        random_int(0, 0xffffffff),
+        random_int(0, 0xffff),
+        random_int(0, 0x0fff),
+        random_int(0x8000, 0xbfff),
+        random_int(0, 0xffffffffffff)
+    );
 }
 
 /**

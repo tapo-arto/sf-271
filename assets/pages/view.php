@@ -193,10 +193,8 @@ try {
     $pdo->exec("ALTER TABLE safetyflash_logs ADD COLUMN IF NOT EXISTS batch_id VARCHAR(36) DEFAULT NULL");
     $pdo->exec("ALTER TABLE safetyflash_logs ADD INDEX IF NOT EXISTS idx_batch_id (batch_id)");
 } catch (Throwable $e) {
-    // Sarake on jo olemassa tai tietokanta ei tue IF NOT EXISTS – ei haittaa
-    if (strpos($e->getMessage(), 'Duplicate column') === false && strpos($e->getMessage(), 'Duplicate key') === false) {
-        error_log('view.php: batch_id migration warning: ' . $e->getMessage());
-    }
+    // Kirjataan varoitus lokiin, mutta ei kaadeta sivua – sarake lisätään myöhemmin
+    error_log('view.php: batch_id migration warning: ' . $e->getMessage());
 }
 
 // Hae lokit (ryhmän juurella)
@@ -1217,6 +1215,8 @@ $iconBase = $base .'/assets/img/icons/';
                         // Vanhat lokit ilman batch_id:tä ryhmitellään aikaleiman perusteella (±2s, sama käyttäjä)
                         $batchGroups  = []; // batch_id → [events]
                         $noIdGroups   = []; // array of [events] arrays (aika-ryhmitellyt)
+                        // Toleranssi vanhoille lokeille ilman batch_id:tä (sekunteina)
+                        $legacyGroupingWindowSeconds = 2;
 
                         foreach ($events as $event) {
                             $bid = $event['batch_id'] ?? null;
@@ -1228,7 +1228,7 @@ $iconBase = $base .'/assets/img/icons/';
                                     $firstTs  = strtotime($group[0]['created_at'] ?? '');
                                     $thisTs   = strtotime($event['created_at'] ?? '');
                                     $sameUser = ($group[0]['user_id'] ?? '') === ($event['user_id'] ?? '');
-                                    if ($sameUser && $firstTs !== false && $thisTs !== false && abs($firstTs - $thisTs) <= 2) {
+                                    if ($sameUser && $firstTs !== false && $thisTs !== false && abs($firstTs - $thisTs) <= $legacyGroupingWindowSeconds) {
                                         $group[] = $event;
                                         $matched = true;
                                         break;
