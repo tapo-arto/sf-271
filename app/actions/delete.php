@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/statuses.php';
 require_once __DIR__ . '/../includes/audit_log.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../includes/log.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $base = rtrim($config['base_url'] ?? '', '/');
 
@@ -333,7 +334,7 @@ $desc = $isRoot
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'ok' => true,
-            'message' => 'Tiedote poistettu onnistuneesti.'
+            'message' => sf_term('flash_deleted_success', $currentUiLang)
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }

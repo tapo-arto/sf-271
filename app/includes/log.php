@@ -39,6 +39,24 @@ function sf_log_event(int $flashId, string $eventType, string $description = '')
 }
 function sf_log_changes(int $flashId, array $old, array $new): void
 {
+    if (!function_exists('sf_term')) {
+        require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+    }
+
+    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
+
+    $fieldTermMap = [
+        'title'       => 'log_title_changed',
+        'title_short' => 'log_title_short_changed',
+        'summary'     => 'log_summary_changed',
+        'description' => 'log_description_changed',
+        'site'        => 'log_site_changed',
+        'site_detail' => 'log_site_detail_changed',
+        'occurred_at' => 'log_occurred_at_changed',
+        'root_causes' => 'log_root_causes_changed',
+        'actions'     => 'log_actions_changed',
+    ];
+
     $changes = [];
 
     foreach ($new as $key => $value) {
@@ -57,7 +75,11 @@ function sf_log_changes(int $flashId, array $old, array $new): void
         $oldVal = (string)($old[$key] ?? '');
         $newVal = (string)($value ?? '');
 
-        $changes[] = ucfirst($key) . ": '{$oldVal}' → '{$newVal}'";
+        $localizedName = isset($fieldTermMap[$key])
+            ? sf_term($fieldTermMap[$key], $currentUiLang)
+            : ucfirst($key);
+
+        $changes[] = $localizedName . ": '{$oldVal}' → '{$newVal}'";
     }
 
     if (!$changes) {
@@ -65,6 +87,5 @@ function sf_log_changes(int $flashId, array $old, array $new): void
     }
 
     $msg = implode("\n", $changes);
-    // sf_log_event ottaa vain 3 parametriä
     sf_log_event($flashId, 'status_changed', $msg);
 }

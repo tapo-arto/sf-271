@@ -41,6 +41,10 @@ const CRITICAL_AUDIT_ACTIONS = [
     'csrf_validation_failed',
     'auth_failed',
     'permission_denied',
+    'settings_updated',
+    'flash_info_request',
+    'flash_to_comms',
+    'flash_publish_direct',
 ];
 
 // ---------------------------------------------------------------------------
@@ -515,6 +519,34 @@ function sf_audit_action_label(string $action, string $lang = 'fi'): string
             'en' => 'User password changed',
             'it' => 'Password utente modificata',
             'el' => 'Ο κωδικός χρήστη άλλαξε',
+        ],
+        'settings_updated' => [
+            'fi' => 'Asetukset päivitetty',
+            'sv' => 'Inställningar uppdaterade',
+            'en' => 'Settings updated',
+            'it' => 'Impostazioni aggiornate',
+            'el' => 'Οι ρυθμίσεις ενημερώθηκαν',
+        ],
+        'flash_info_request' => [
+            'fi' => 'Palautettu korjattavaksi',
+            'sv' => 'Returnerad för korrigering',
+            'en' => 'Returned for corrections',
+            'it' => 'Restituito per correzioni',
+            'el' => 'Επιστράφηκε για διορθώσεις',
+        ],
+        'flash_to_comms' => [
+            'fi' => 'Lähetetty viestintään',
+            'sv' => 'Skickad till kommunikation',
+            'en' => 'Sent to communications',
+            'it' => 'Inviato alle comunicazioni',
+            'el' => 'Στάλθηκε στις επικοινωνίες',
+        ],
+        'flash_publish_direct' => [
+            'fi' => 'Julkaistu suoraan',
+            'sv' => 'Publicerad direkt',
+            'en' => 'Published directly',
+            'it' => 'Pubblicato direttamente',
+            'el' => 'Δημοσιεύτηκε απευθείας',
         ],
     ];
 

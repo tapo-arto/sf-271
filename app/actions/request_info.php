@@ -15,6 +15,7 @@ require_once __DIR__ . '/../includes/log.php';
 require_once __DIR__ . '/../includes/log_app.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../../assets/services/email_services.php'; 
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $base = rtrim($config['base_url'], '/');
 
@@ -95,7 +96,7 @@ sf_audit_log(
 // Save message as system comment so it appears in Comments tab
 if ($message !== '') {
     $userId = $user ? (int)$user['id'] : ($_SESSION['user_id'] ?? null);
-    $systemCommentDesc = "log_comment_label: PALAUTETTU KORJATTAVAKSI: " . mb_substr($message, 0, 2000);
+    $systemCommentDesc = "log_comment_label: " . mb_strtoupper(sf_term('log_returned_for_corrections', $currentUiLang)) . ": " . mb_substr($message, 0, 2000);
     $stmtSysComment = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
         VALUES (:flash_id, :user_id, :event_type, :description, NOW())

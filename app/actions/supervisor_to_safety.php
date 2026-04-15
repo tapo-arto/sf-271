@@ -19,6 +19,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../services/ApprovalRouting.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $flashId = isset($_POST['flash_id']) ? (int)$_POST['flash_id'] : 0;
 $message = isset($_POST['message']) ? trim($_POST['message']) : '';
@@ -88,7 +89,7 @@ if (!empty($message)) {
         ':flash_id'    => $flashId,
         ':user_id'     => $userId,
         ':event_type'  => 'comment_added',
-        ':description' => "log_comment_label: TYÖMAAVASTAAVA: " . $safeMessage,
+        ':description' => "log_comment_label: " . mb_strtoupper(sf_term('log_role_supervisor', $currentUiLang ?? ($_SESSION['ui_lang'] ?? 'fi'))) . ": " . $safeMessage,
     ]);
 }
 

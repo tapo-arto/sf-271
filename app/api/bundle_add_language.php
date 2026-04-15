@@ -165,8 +165,9 @@ try {
 
     // Log the event
     require_once __DIR__ . '/../includes/log.php';
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
     $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
-    sf_log_event($newId, 'CREATED', 'Kieliversio luotu (bundle): ' . $targetLang);
+    sf_log_event($newId, 'CREATED', sf_term('log_bundle_language_created', $currentUiLang) . ': ' . $targetLang);
 
     sf_app_log("[bundle_add_language] Created new draft id={$newId} lang={$targetLang} group={$groupId}");
 

@@ -222,7 +222,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
             }
 
             if (function_exists('sf_log_event')) {
-                sf_log_event($logFlashId, 'display_targets_preselected', '');
+                sf_log_event($logFlashId, 'display_targets_preselected', sf_term('log_display_targets_preselected', $currentUiLang));
             }
 
             sf_app_log("send_to_comms.php: Display targets preselected for flash {$id}");
@@ -360,7 +360,7 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
 
     // Save message as system comment so it appears in Comments tab
     if ($message !== '') {
-        $systemCommentDesc = "log_comment_label: LÄHETETTY VIESTINTÄÄN: " . $message;
+        $systemCommentDesc = "log_comment_label: " . mb_strtoupper(sf_term('log_sent_to_comms', $currentUiLang)) . ": " . $message;
         $stmtSysComment = $pdo->prepare("
             INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
             VALUES (:flash_id, :user_id, :event_type, :description, NOW())
