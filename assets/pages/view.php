@@ -1218,9 +1218,6 @@ $iconBase = $base .'/assets/img/icons/';
                                 $eventLabel = sf_term('log_' . $eventType, $currentUiLang);
                                 if ($eventLabel === 'log_' . $eventType) {
                                     $eventLabel = sf_term($eventType, $currentUiLang);
-                                    if ($eventLabel === $eventType) {
-                                        $eventLabel = $eventType;
-                                    }
                                 }
                                 
                                 // Määritä ikoni event_type:n perusteella
