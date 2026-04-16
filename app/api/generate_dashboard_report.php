@@ -411,7 +411,7 @@ function dashboardReportColorSvg(string $svgRaw, array $bpCountMap, int $maxCoun
         static function (array $m) use ($bpCountMap, $maxCount): string {
             $svgId     = $m[2];
             $count     = $bpCountMap[$svgId] ?? 0;
-            $intensity = $maxCount > 0 ? $count / $maxCount : 0;
+            $intensity = $count / $maxCount;
             $color     = dashboardReportHeatmapColor((float)$intensity);
 
             $before = preg_replace('/\s+fill="[^"]*"/', '', $m[1]);
@@ -430,14 +430,27 @@ function dashboardReportSvgDataUri(string $svgContent, string $viewBox): string
     if ($svgContent === '') {
         return '';
     }
-    $fullSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' . htmlspecialchars($viewBox, ENT_QUOTES, 'UTF-8') . '" preserveAspectRatio="xMidYMid meet">' . $svgContent . '</svg>';
+
+    $safeSvgContent = $svgContent;
+    foreach ([
+        '/<\s*\/?\s*(script|foreignObject)\b[^>]*>/i',
+        '/\son[a-z]+\s*=\s*"[^"]*"/i',
+        '/\s(?:xlink:)?href\s*=\s*"javascript:[^"]*"/i',
+    ] as $sanitizePattern) {
+        $replaced = preg_replace($sanitizePattern, '', $safeSvgContent);
+        if (is_string($replaced)) {
+            $safeSvgContent = $replaced;
+        }
+    }
+
+    $fullSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' . htmlspecialchars($viewBox, ENT_QUOTES, 'UTF-8') . '" preserveAspectRatio="xMidYMid meet">' . $safeSvgContent . '</svg>';
     return 'data:image/svg+xml;base64,' . base64_encode($fullSvg);
 }
 
 $bpCountMap = [];
 $maxBpCount = 0;
 foreach ($bodyPartCounts as $bp) {
-    $svgId = (string)($bp['svg_id'] ?? '');
+    $svgId = $bp['svg_id'] ?? '';
     if ($svgId === '') {
         continue;
     }

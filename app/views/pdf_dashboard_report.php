@@ -194,7 +194,6 @@ $typeLabels = [
         /* ---- SVG body map ---- */
         .body-map-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .body-map-table td { width: 50%; vertical-align: top; text-align: center; padding: 0 4px; }
-        .body-map-svg { width: 120px; margin: 0 auto; }
         .body-map-svg img { width: 120px; height: auto; display: block; margin: 0 auto; }
         .body-map-label { font-size: 7.5pt; color: #6b7280; text-align: center; margin-top: 4px; }
 
