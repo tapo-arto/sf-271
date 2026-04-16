@@ -1,7 +1,7 @@
 <?php
 /**
  * PDF Dashboard Report Template
- * Modern A4 layout for dashboard statistics
+ * Uses SafetyFlash report base layout (A4 portrait, background, margins, footer logic)
  */
 
 // Variables available from generate_dashboard_report.php:
@@ -24,6 +24,12 @@ $bgBase64 = file_exists($bgImagePath) ? base64_encode(file_get_contents($bgImage
 
 $generatedAt = (new DateTime())->format('d.m.Y H:i');
 $reportTitle = sf_term('dashboard_report_title_pdf', $uiLang);
+// Dashboard PDF is intentionally fixed to a 3-page structure.
+// Even when a section has no data (or is excluded), its page is still rendered with an empty-state note.
+$totalPages  = 3;
+$maxBodyPartsDisplay = 3;
+$footerSite  = $site !== '' ? $site : sf_term('dashboard_report_all_sites', $uiLang);
+$footerMeta  = $periodLabel . ' | ' . $footerSite;
 
 // Sort categories for display
 arsort($categoryTotals);
@@ -58,57 +64,66 @@ $typeLabels = [
         }
         <?php endif; ?>
 
-        @page { size: A4; margin: 25mm 18mm 20mm 18mm; }
-
+        @page { size: A4; margin: 25mm 18mm 18mm 18mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Open Sans', 'DejaVu Sans', sans-serif;
-            font-size: 9pt;
-            line-height: 1.4;
+            font-size: 10pt;
+            line-height: 1.3;
             color: #1a1a1a;
         }
 
         .bg-img { position: fixed; top: -25mm; left: -18mm; width: 210mm; height: 297mm; z-index: -1000; }
-        .page { min-height: 0; }
+        .page-break { page-break-before: always; }
 
-        /* ---- Header ---- */
+        .page-content {
+            padding-bottom: 12mm;
+        }
+
         .report-header {
-            background: #000;
-            color: #fff;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
             border-radius: 6px;
             padding: 10px 12px;
-            margin-bottom: 14px;
         }
         .report-header table { width: 100%; border-collapse: collapse; }
         .report-header td { vertical-align: middle; }
         .header-logo-cell { width: 110px; }
-        .header-logo { max-width: 98px; max-height: 32px; }
-        .header-title-cell { padding-left: 10px; }
+        .header-logo { max-width: 98px; max-height: 34px; }
+        .header-title-cell { padding-left: 8px; }
         .header-report-title {
-            font-size: 15pt;
+            font-size: 17pt;
             font-weight: bold;
-            color: #facc15;
-            letter-spacing: 0.5px;
+            color: #009650;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             line-height: 1;
         }
-        .header-subtitle { font-size: 8pt; color: #d1d5db; margin-top: 3px; }
-        .header-meta-cell { text-align: right; font-size: 7.5pt; color: #9ca3af; }
-        .header-meta-cell .meta-date { color: #f3f4f6; font-weight: bold; }
-
-        /* ---- Period banner ---- */
-        .period-banner {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #dbeafe;
-            border-radius: 6px;
-            padding: 7px 12px;
-            margin-bottom: 14px;
-            font-size: 8.5pt;
-            color: #1e40af;
+        .header-meta-cell {
+            text-align: right;
+            font-size: 8pt;
+            color: #355e3b;
         }
-        .period-banner strong { color: #1d4ed8; }
 
-        /* ---- Section headers ---- */
+        .period-banner {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 9px 12px;
+            margin-bottom: 16px;
+            font-size: 8.5pt;
+            color: #1f2937;
+        }
+        .period-banner strong { color: #009650; }
+
+        .section {
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px 12px 12px 12px;
+        }
         .section-header {
             font-size: 11pt;
             font-weight: bold;
@@ -120,7 +135,6 @@ $typeLabels = [
             letter-spacing: 0.5px;
         }
 
-        /* ---- Statistics boxes ---- */
         .stats-table { width: 100%; border-collapse: collapse; }
         .stats-table td { width: 33.33%; padding: 0 6px; vertical-align: top; }
         .stats-table td:first-child { padding-left: 0; }
@@ -144,22 +158,21 @@ $typeLabels = [
             letter-spacing: 0.04em;
             margin-bottom: 5px;
         }
-        .stat-box--red    .stat-label { color: #b91c1c; }
+        .stat-box--red .stat-label { color: #b91c1c; }
         .stat-box--yellow .stat-label { color: #92400e; }
-        .stat-box--total  .stat-label { color: #1e40af; }
+        .stat-box--total .stat-label { color: #1e40af; }
 
         .stat-count {
             font-size: 23pt;
             font-weight: bold;
             line-height: 1;
         }
-        .stat-box--red    .stat-count { color: #dc2626; }
+        .stat-box--red .stat-count { color: #dc2626; }
         .stat-box--yellow .stat-count { color: #d97706; }
-        .stat-box--total  .stat-count { color: #2563eb; }
+        .stat-box--total .stat-count { color: #2563eb; }
 
-        /* ---- Worksite bars ---- */
         .worksite-table { width: 100%; border-collapse: collapse; }
-        .worksite-table td { padding: 3px 0; vertical-align: middle; }
+        .worksite-table td { padding: 4px 0; vertical-align: middle; }
         .worksite-name {
             font-size: 8.5pt;
             color: #374151;
@@ -181,29 +194,24 @@ $typeLabels = [
             font-size: 7.5pt;
         }
 
-        /* ---- Category bar chart ---- */
-        .cat-table { width: 100%; border-collapse: collapse; }
-        .cat-table td { padding: 3px 0; vertical-align: middle; }
-        .cat-name { font-size: 8.5pt; color: #374151; font-weight: 600; width: 46%; padding-right: 6px; }
-
-        /* ---- Injury section two-column layout ---- */
         .injury-layout-table { width: 100%; border-collapse: collapse; }
         .injury-svg-cell { width: 48%; vertical-align: top; padding-right: 10px; }
         .injury-chart-cell { width: 52%; vertical-align: top; }
 
-        /* ---- SVG body map ---- */
         .body-map-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .body-map-table td { width: 50%; vertical-align: top; text-align: center; padding: 0 4px; }
-        .body-map-svg img { width: 120px; height: auto; display: block; margin: 0 auto; }
+        .body-map-svg img { width: 118px; height: auto; display: block; margin: 0 auto; }
         .body-map-label { font-size: 7.5pt; color: #6b7280; text-align: center; margin-top: 4px; }
 
-        /* ---- Legend ---- */
         .heatmap-legend { margin-top: 10px; font-size: 7.5pt; color: #6b7280; }
         .legend-bar { height: 8px; border-radius: 4px; margin-bottom: 3px; background: #f59e0b; }
         .legend-table { width: 100%; border-collapse: collapse; }
         .legend-table td:last-child { text-align: right; }
 
-        /* ---- Recent injuries table ---- */
+        .cat-table { width: 100%; border-collapse: collapse; }
+        .cat-table td { padding: 3px 0; vertical-align: middle; }
+        .cat-name { font-size: 8.5pt; color: #374151; font-weight: 600; width: 46%; padding-right: 6px; }
+
         .injuries-table { width: 100%; border-collapse: collapse; }
         .injuries-table th {
             background: #f3f4f6;
@@ -233,25 +241,32 @@ $typeLabels = [
             font-weight: bold;
             color: #fff;
         }
-        .type-pill--red    { background: #dc2626; }
+        .type-pill--red { background: #dc2626; }
         .type-pill--yellow { background: #d97706; }
-        .type-pill--green  { background: #059669; }
+        .type-pill--green { background: #059669; }
 
-        /* ---- Footer ---- */
+        .empty-note {
+            font-size: 8.5pt;
+            color: #6b7280;
+            font-style: italic;
+            padding: 8px 0;
+        }
+
         .footer {
-            margin-top: 14px;
-            padding-top: 6px;
-            border-top: 1px solid #d1d5db;
+            position: fixed;
+            bottom: -18mm;
+            left: -18mm;
+            right: -18mm;
+            height: 12mm;
+            padding: 0 18mm;
             font-size: 8pt;
             color: #666;
         }
         .footer table { width: 100%; height: 100%; border-collapse: collapse; }
         .footer td { padding: 0; vertical-align: middle; }
-
-        .section { margin-bottom: 20px; }
-        .empty-note { font-size: 8.5pt; color: #9ca3af; font-style: italic; padding: 8px 0; }
-
-        .page-break { page-break-before: always; }
+        .footer-left { text-align: left; font-weight: bold; }
+        .footer-center { text-align: center; color: #888; }
+        .footer-right { text-align: right; }
     </style>
 </head>
 <body>
@@ -260,8 +275,17 @@ $typeLabels = [
 <img src="data:image/jpeg;base64,<?= $bgBase64 ?>" class="bg-img" alt="">
 <?php endif; ?>
 
-<div class="page">
-    <!-- Header -->
+<div class="footer">
+    <table>
+        <tr>
+            <td class="footer-left">1 / <?= $totalPages ?></td>
+            <td class="footer-center"><?= htmlspecialchars($footerMeta) ?></td>
+            <td class="footer-right"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
+        </tr>
+    </table>
+</div>
+
+<div class="page-content">
     <div class="report-header">
         <table>
             <tr>
@@ -269,22 +293,21 @@ $typeLabels = [
                     <?php if ($logoDataUri): ?>
                         <img src="<?= htmlspecialchars($logoDataUri) ?>" class="header-logo" alt="Tapojärvi">
                     <?php else: ?>
-                        <span style="color:#f0b429; font-weight:bold; font-size:13pt;">Tapojärvi</span>
+                        <span style="color:#009650; font-weight:bold; font-size:13pt;">Tapojärvi</span>
                     <?php endif; ?>
                 </td>
                 <td class="header-title-cell">
                     <div class="header-report-title"><?= htmlspecialchars($reportTitle) ?></div>
-                    <div class="header-subtitle">Dashboard-raportti</div>
+                    <!-- Omitted subtitle: previous text was a hardcoded Finnish duplicate of the localized report title. -->
                 </td>
                 <td class="header-meta-cell">
                     <div><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?></div>
-                    <div class="meta-date"><?= htmlspecialchars($generatedAt) ?></div>
+                    <div><?= htmlspecialchars($generatedAt) ?></div>
                 </td>
             </tr>
         </table>
     </div>
 
-    <!-- Period banner -->
     <div class="period-banner">
         <strong><?= htmlspecialchars(sf_term('dashboard_report_period_label', $uiLang)) ?>:</strong>
         <?= htmlspecialchars($periodLabel) ?>
@@ -295,40 +318,39 @@ $typeLabels = [
         <?php endif; ?>
     </div>
 
-    <!-- ===== STATISTICS ===== -->
-    <?php if ($includeStats): ?>
     <div class="section">
         <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?></div>
-        <table class="stats-table">
-            <tr>
-                <td>
-                    <div class="stat-box stat-box--red">
-                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?></div>
-                        <div class="stat-count"><?= (int)($originalStats['red'] ?? 0) ?></div>
-                    </div>
-                </td>
-                <td>
-                    <div class="stat-box stat-box--yellow">
-                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></div>
-                        <div class="stat-count"><?= (int)($originalStats['yellow'] ?? 0) ?></div>
-                    </div>
-                </td>
-                <td>
-                    <div class="stat-box stat-box--total">
-                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_total', $uiLang)) ?></div>
-                        <div class="stat-count"><?= (int)($originalStats['total'] ?? 0) ?></div>
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <?php if (!$includeStats): ?>
+            <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
+        <?php else: ?>
+            <table class="stats-table">
+                <tr>
+                    <td>
+                        <div class="stat-box stat-box--red">
+                            <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?></div>
+                            <div class="stat-count"><?= (int)($originalStats['red'] ?? 0) ?></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="stat-box stat-box--yellow">
+                            <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></div>
+                            <div class="stat-count"><?= (int)($originalStats['yellow'] ?? 0) ?></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="stat-box stat-box--total">
+                            <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_total', $uiLang)) ?></div>
+                            <div class="stat-count"><?= (int)($originalStats['total'] ?? 0) ?></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 
-    <!-- ===== WORKSITES ===== -->
-    <?php if ($includeWorksites): ?>
     <div class="section">
         <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?></div>
-        <?php if (empty($worksiteStats)): ?>
+        <?php if (!$includeWorksites || empty($worksiteStats)): ?>
             <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
         <?php else: ?>
             <table class="worksite-table">
@@ -359,158 +381,153 @@ $typeLabels = [
             </table>
         <?php endif; ?>
     </div>
-    <?php endif; ?>
-
-    <div class="footer">
-        <table>
-            <tr>
-                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
-                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
-            </tr>
-        </table>
-    </div>
 </div>
 
-<!-- ===== INJURIES ===== -->
-<?php if ($includeInjuries): ?>
 <div class="page-break"></div>
-<div class="page">
-<div class="section">
-    <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang)) ?></div>
-    <?php $hasInjuryData = !empty($bodyPartCounts) && array_sum(array_column($bodyPartCounts, 'count')) > 0; ?>
-    <?php if (!$hasInjuryData): ?>
-        <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
-    <?php else: ?>
-    <table class="injury-layout-table">
+
+<div class="footer">
+    <table>
         <tr>
-            <!-- Body maps -->
-            <td class="injury-svg-cell">
-                <table class="body-map-table">
+            <td class="footer-left">2 / <?= $totalPages ?></td>
+            <td class="footer-center"><?= htmlspecialchars($footerMeta) ?></td>
+            <td class="footer-right"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
+        </tr>
+    </table>
+</div>
+
+<div class="page-content">
+    <div class="section">
+        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang)) ?></div>
+        <?php if (!$includeInjuries): ?>
+            <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
+        <?php else: ?>
+            <?php $hasInjuryData = !empty($bodyPartCounts) && array_sum(array_column($bodyPartCounts, 'count')) > 0; ?>
+            <?php if (!$hasInjuryData): ?>
+                <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
+            <?php else: ?>
+                <table class="injury-layout-table">
                     <tr>
-                        <td>
-                            <?php if ($frontSvgBase64 !== ''): ?>
-                            <div class="body-map-svg"><img src="<?= htmlspecialchars($frontSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?>"></div>
-                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?></div>
-                            <?php endif; ?>
+                        <td class="injury-svg-cell">
+                            <table class="body-map-table">
+                                <tr>
+                                    <td>
+                                        <?php if ($frontSvgBase64 !== ''): ?>
+                                            <div class="body-map-svg"><img src="<?= htmlspecialchars($frontSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?>"></div>
+                                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($backSvgBase64 !== ''): ?>
+                                            <div class="body-map-svg"><img src="<?= htmlspecialchars($backSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?>"></div>
+                                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div class="heatmap-legend">
+                                <div class="legend-bar"></div>
+                                <table class="legend-table"><tr><td>0</td><td><?= $maxBpCount ?></td></tr></table>
+                            </div>
                         </td>
-                        <td>
-                            <?php if ($backSvgBase64 !== ''): ?>
-                            <div class="body-map-svg"><img src="<?= htmlspecialchars($backSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?>"></div>
-                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?></div>
+                        <td class="injury-chart-cell">
+                            <p style="font-size:8.5pt; font-weight:bold; color:#374151; margin-bottom:10px;">
+                                <?= htmlspecialchars(sf_term('dashboard_injury_chart_title', $uiLang)) ?>
+                            </p>
+                            <?php if (empty($sortedCategories)): ?>
+                                <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
+                            <?php else: ?>
+                                <table class="cat-table">
+                                    <?php foreach ($sortedCategories as $cat):
+                                        $catPct = $maxCategoryCount > 0 ? round(($cat['count'] / $maxCategoryCount) * 100) : 0;
+                                        $catRestPct = max(0, 100 - $catPct);
+                                    ?>
+                                    <tr>
+                                        <td class="cat-name"><?= htmlspecialchars($cat['name']) ?></td>
+                                        <td>
+                                            <table class="bar-track">
+                                                <tr>
+                                                    <td class="bar-fill" style="width:<?= $catPct ?>%; background:#059669;"><?= (int)$cat['count'] ?></td>
+                                                    <td style="width:<?= $catRestPct ?>%;">&nbsp;</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </table>
                             <?php endif; ?>
                         </td>
                     </tr>
                 </table>
-                <!-- Legend -->
-                <div class="heatmap-legend">
-                    <div class="legend-bar"></div>
-                    <table class="legend-table"><tr><td>0</td><td><?= $maxBpCount ?></td></tr></table>
-                </div>
-            </td>
-            <!-- Category bar chart -->
-            <td class="injury-chart-cell">
-                <p style="font-size:8.5pt; font-weight:bold; color:#374151; margin-bottom:10px;">
-                    <?= htmlspecialchars(sf_term('dashboard_injury_chart_title', $uiLang)) ?>
-                </p>
-                <?php if (empty($sortedCategories)): ?>
-                    <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
-                <?php else: ?>
-                    <table class="cat-table">
-                    <?php foreach ($sortedCategories as $cat):
-                        $catPct = $maxCategoryCount > 0 ? round(($cat['count'] / $maxCategoryCount) * 100) : 0;
-                        $catRestPct = max(0, 100 - $catPct);
-                    ?>
-                        <tr>
-                            <td class="cat-name"><?= htmlspecialchars($cat['name']) ?></td>
-                            <td>
-                                <table class="bar-track">
-                                    <tr>
-                                        <td class="bar-fill" style="width:<?= $catPct ?>%; background:#059669;"><?= (int)$cat['count'] ?></td>
-                                        <td style="width:<?= $catRestPct ?>%;">&nbsp;</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </table>
-                <?php endif; ?>
-            </td>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<div class="footer">
+    <table>
+        <tr>
+            <td class="footer-left">3 / <?= $totalPages ?></td>
+            <td class="footer-center"><?= htmlspecialchars($footerMeta) ?></td>
+            <td class="footer-right"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
         </tr>
     </table>
-    <?php endif; ?>
 </div>
-    <div class="footer">
-        <table>
-            <tr>
-                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
-                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
-            </tr>
-        </table>
-    </div>
-</div>
-<?php endif; ?>
 
-<!-- ===== RECENT INJURIES ===== -->
-<?php if ($includeRecent): ?>
-<div class="page-break"></div>
-<div class="page">
-<div class="section">
-    <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?></div>
-    <?php if (empty($recentInjuryFlashes)): ?>
-        <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
-    <?php else: ?>
-    <table class="injuries-table">
-        <thead>
-            <tr>
-                <th style="width:8%;"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?>/<?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></th>
-                <th style="width:42%;"><?= htmlspecialchars(sf_term('dashboard_by_worksite', $uiLang)) ?> / <?= htmlspecialchars(sf_term('dashboard_recent', $uiLang)) ?></th>
-                <th style="width:25%;"><?= htmlspecialchars(sf_term('dashboard_report_site_filter', $uiLang)) ?></th>
-                <th style="width:25%;"><?= htmlspecialchars(sf_term('dashboard_injury_chart_title', $uiLang)) ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($recentInjuryFlashes as $flash):
-                $flashType  = $flash['type'] ?? '';
-                $flashTitle = $flash['title'] ?? '';
-                $flashSite  = $flash['site'] ?? '';
-                $flashDate  = '';
-                if (!empty($flash['updated_at'])) {
-                    try {
-                        $flashDate = (new DateTime($flash['updated_at']))->format('d.m.Y');
-                    } catch (Throwable $e) {}
-                }
-                $bpList = implode(', ', array_slice($flash['body_parts'] ?? [], 0, 3));
-                if (count($flash['body_parts'] ?? []) > 3) $bpList .= '…';
-                $typeLbl = $typeLabels[$flashType] ?? $flashType;
-            ?>
-            <tr>
-                <td>
-                    <span class="type-pill type-pill--<?= htmlspecialchars($flashType) ?>"><?= htmlspecialchars($typeLbl) ?></span>
-                </td>
-                <td>
-                    <strong><?= htmlspecialchars($flashTitle) ?></strong>
-                    <?php if ($flashDate): ?>
-                        <br><span style="font-size:7.5pt; color:#9ca3af;"><?= htmlspecialchars($flashDate) ?></span>
-                    <?php endif; ?>
-                </td>
-                <td><?= htmlspecialchars($flashSite) ?></td>
-                <td style="font-size:7.5pt; color:#6b7280;"><?= htmlspecialchars($bpList) ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php endif; ?>
-</div>
-    <div class="footer">
-        <table>
-            <tr>
-                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
-                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
-            </tr>
-        </table>
+<div class="page-content">
+    <div class="section">
+        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?></div>
+        <?php if (!$includeRecent || empty($recentInjuryFlashes)): ?>
+            <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
+        <?php else: ?>
+            <table class="injuries-table">
+                <thead>
+                <tr>
+                    <th style="width:8%;"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?>/<?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></th>
+                    <th style="width:42%;"><?= htmlspecialchars(sf_term('dashboard_by_worksite', $uiLang)) ?> / <?= htmlspecialchars(sf_term('dashboard_recent', $uiLang)) ?></th>
+                    <th style="width:25%;"><?= htmlspecialchars(sf_term('dashboard_report_site_filter', $uiLang)) ?></th>
+                    <th style="width:25%;"><?= htmlspecialchars(sf_term('dashboard_injury_chart_title', $uiLang)) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($recentInjuryFlashes as $flash):
+                    $flashType  = $flash['type'] ?? '';
+                    $flashTitle = $flash['title'] ?? '';
+                    $flashSite  = $flash['site'] ?? '';
+                    $flashDate  = '';
+                    if (!empty($flash['updated_at'])) {
+                        try {
+                            $flashDate = (new DateTime($flash['updated_at']))->format('d.m.Y');
+                        } catch (Throwable $e) {
+                            error_log('Dashboard PDF date parse failed: ' . $e->getMessage());
+                        }
+                    }
+                    $bpList = implode(', ', array_slice($flash['body_parts'] ?? [], 0, $maxBodyPartsDisplay));
+                    if (count($flash['body_parts'] ?? []) > $maxBodyPartsDisplay) {
+                        $bpList .= '…';
+                    }
+                    $typeLbl = $typeLabels[$flashType] ?? $flashType;
+                    ?>
+                    <tr>
+                        <td>
+                            <span class="type-pill type-pill--<?= htmlspecialchars($flashType) ?>"><?= htmlspecialchars($typeLbl) ?></span>
+                        </td>
+                        <td>
+                            <strong><?= htmlspecialchars($flashTitle) ?></strong>
+                            <?php if ($flashDate): ?>
+                                <br><span style="font-size:7.5pt; color:#9ca3af;"><?= htmlspecialchars($flashDate) ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= htmlspecialchars($flashSite) ?></td>
+                        <td style="font-size:7.5pt; color:#6b7280;"><?= htmlspecialchars($bpList) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
     </div>
 </div>
-<?php endif; ?>
 
 </body>
 </html>
