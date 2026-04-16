@@ -257,7 +257,6 @@ $base = rtrim($config['base_url'], '/');
 
 <?php elseif ($page === 'dashboard'): ?>
     <script src="<?= sf_asset_url('assets/js/dashboard.js', $base) ?>"></script>
-    <script src="<?= sf_asset_url('assets/js/dashboard-report.js', $base) ?>"></script>
 
 <?php elseif ($page === 'form'): ?>
     <!-- Preview-kortin skaalaus -->

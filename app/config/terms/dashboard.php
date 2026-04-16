@@ -320,7 +320,21 @@ return [
     'it' => 'Crea report',
     'el' => 'Δημιουργία αναφοράς',
 ],
+'dashboard_report_btn' => [
+    'fi' => 'Luo raportti',
+    'sv' => 'Skapa rapport',
+    'en' => 'Create report',
+    'it' => 'Crea report',
+    'el' => 'Δημιουργία αναφοράς',
+],
 'dashboard_report_modal_title' => [
+    'fi' => 'Luo dashboard-raportti',
+    'sv' => 'Skapa dashboard-rapport',
+    'en' => 'Create dashboard report',
+    'it' => 'Crea report dashboard',
+    'el' => 'Δημιουργία αναφοράς πίνακα',
+],
+'dashboard_report_title' => [
     'fi' => 'Luo dashboard-raportti',
     'sv' => 'Skapa dashboard-rapport',
     'en' => 'Create dashboard report',
@@ -363,6 +377,13 @@ return [
     'el' => 'Όλα τα εργοτάξια',
 ],
 'dashboard_report_content' => [
+    'fi' => 'Raportin sisältö',
+    'sv' => 'Rapportinnehåll',
+    'en' => 'Report content',
+    'it' => 'Contenuto del report',
+    'el' => 'Περιεχόμενο αναφοράς',
+],
+'dashboard_report_content_label' => [
     'fi' => 'Raportin sisältö',
     'sv' => 'Rapportinnehåll',
     'en' => 'Report content',
