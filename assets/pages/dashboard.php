@@ -283,8 +283,12 @@ try {
 ?>
 
 <div class="sf-page-container">
-    <div class="sf-page-header">
+    <div class="sf-page-header sf-page-header--with-action">
         <h1 class="sf-page-title"><?= htmlspecialchars(sf_term('dashboard_title', $uiLang), ENT_QUOTES, 'UTF-8') ?></h1>
+        <button id="sf-report-btn" class="sf-report-btn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <?= htmlspecialchars(sf_term('dashboard_report_button', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+        </button>
     </div>
 
     <div class="sf-dashboard">
@@ -563,6 +567,89 @@ try {
     </div>
 </div>
 
+<!-- ========== REPORT MODAL ========== -->
+<div class="sf-report-modal" id="sf-report-modal" role="dialog" aria-modal="true" aria-labelledby="sf-report-modal-title" style="display:none;">
+    <div class="sf-report-modal-backdrop" id="sf-report-modal-backdrop"></div>
+    <div class="sf-report-modal-box">
+        <div class="sf-report-modal-header">
+            <h2 class="sf-report-modal-title" id="sf-report-modal-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <?= htmlspecialchars(sf_term('dashboard_report_modal_title', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            </h2>
+            <button class="sf-report-modal-close" id="sf-report-modal-close" aria-label="<?= htmlspecialchars(sf_term('dashboard_injury_modal_close', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+        <div class="sf-report-modal-body">
+
+            <!-- Period selection -->
+            <div class="sf-report-modal-section">
+                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_period', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
+                <div class="sf-report-quick-btns">
+                    <button class="sf-report-quick-btn" data-period="thismonth" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_thismonth', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
+                    <button class="sf-report-quick-btn" data-period="3months" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_3months', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
+                    <button class="sf-report-quick-btn" data-period="6months" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_6months', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
+                    <button class="sf-report-quick-btn" data-period="thisyear" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_thisyear', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
+                    <button class="sf-report-quick-btn sf-active" data-period="all" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_all', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
+                </div>
+                <div class="sf-report-date-row">
+                    <div class="sf-report-date-group">
+                        <label for="sf-report-start-date" class="sf-report-label"><?= htmlspecialchars(sf_term('dashboard_report_start_date', $uiLang), ENT_QUOTES, 'UTF-8') ?></label>
+                        <input type="date" id="sf-report-start-date" class="sf-report-date-input" />
+                    </div>
+                    <div class="sf-report-date-group">
+                        <label for="sf-report-end-date" class="sf-report-label"><?= htmlspecialchars(sf_term('dashboard_report_end_date', $uiLang), ENT_QUOTES, 'UTF-8') ?></label>
+                        <input type="date" id="sf-report-end-date" class="sf-report-date-input" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Site filter -->
+            <div class="sf-report-modal-section">
+                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_site_filter', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
+                <select id="sf-report-site" class="sf-report-select">
+                    <option value=""><?= htmlspecialchars(sf_term('dashboard_report_all_sites', $uiLang), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php foreach ($worksiteStats as $ws): ?>
+                        <option value="<?= htmlspecialchars($ws['site'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($ws['site'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Content selection -->
+            <div class="sf-report-modal-section">
+                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_content', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
+                <div class="sf-report-checkboxes">
+                    <label class="sf-report-checkbox-label">
+                        <input type="checkbox" id="sf-report-include-stats" checked>
+                        <span><?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                    <label class="sf-report-checkbox-label">
+                        <input type="checkbox" id="sf-report-include-worksites" checked>
+                        <span><?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                    <label class="sf-report-checkbox-label">
+                        <input type="checkbox" id="sf-report-include-injuries" checked>
+                        <span><?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                    <label class="sf-report-checkbox-label">
+                        <input type="checkbox" id="sf-report-include-recent" checked>
+                        <span><?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="sf-report-modal-footer">
+            <button id="sf-report-cancel-btn" class="sf-report-cancel-btn" type="button">
+                <?= htmlspecialchars(sf_term('dashboard_report_cancel', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button id="sf-report-generate-btn" class="sf-report-generate-btn" type="button">
+                <span class="sf-report-btn-spinner" style="display:none;" aria-hidden="true"></span>
+                <span class="sf-report-btn-text"><?= htmlspecialchars(sf_term('dashboard_report_generate', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ========== INJURY MODAL ========== -->
 <div class="sf-injury-modal" id="sf-injury-modal" role="dialog" aria-modal="true" aria-labelledby="sf-injury-modal-title" style="display:none;">
     <div class="sf-injury-modal-backdrop" id="sf-injury-modal-backdrop"></div>
@@ -623,4 +710,12 @@ window.SF_INJURY_I18N = {
     daysAgo:       <?= json_encode(sf_term('time_ago_days', $uiLang),                   JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
     showAllCount:  <?= json_encode(sf_term('dashboard_injury_show_all_count', $uiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
 };
+window.SF_REPORT_I18N = {
+    generating:    <?= json_encode(sf_term('dashboard_report_generating', $uiLang),    JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    generate:      <?= json_encode(sf_term('dashboard_report_generate', $uiLang),      JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    error:         <?= json_encode(sf_term('dashboard_report_error', $uiLang),         JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+    selectContent: <?= json_encode(sf_term('dashboard_report_select_content', $uiLang),JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>,
+};
+window.SF_CSRF_TOKEN = <?= json_encode(sf_csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+window.SF_REPORT_SITES = <?= json_encode($worksiteStats ? array_column($worksiteStats, 'site') : [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
 </script>
