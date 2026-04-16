@@ -37,6 +37,26 @@ $typeLabels = [
     'yellow' => sf_term('dashboard_stat_yellow', $uiLang),
     'green'  => sf_term('dashboard_stat_green',  $uiLang),
 ];
+
+$statsHeaderIconSvg = <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <path fill="currentColor" d="M75.57,92.97c-8.12,4.84-17.72,7.45-27.96,6.98C21.82,98.74.96,77.64.03,51.84-.86,27.05,16.32,6.1,39.42,1.12c2.36-.51,4.58,1.32,4.58,3.73v10.7c0,1.67-1.08,3.19-2.69,3.64-13.25,3.74-23.04,15.84-23.3,30.21-.32,17.64,14.11,32.45,31.75,32.58,5.34.04,10.39-1.23,14.84-3.52,1.65-.85,3.66-.51,4.97.81l6.9,6.91c2,2,1.54,5.33-.89,6.78Z"/>
+    <path fill="currentColor" d="M98.52,62.11c-1.4,5.63-3.75,10.88-6.88,15.57-1.39,2.08-4.34,2.36-6.11.59l-7.3-7.3c-1.26-1.26-1.55-3.23-.64-4.77,1.15-1.95,2.1-4.04,2.82-6.22.54-1.62,2.01-2.75,3.71-2.75h10.53c2.56,0,4.48,2.39,3.87,4.87Z"/>
+    <path fill="currentColor" d="M96.21,45.24h-11.99c-1.46,0-2.71-1.02-3.04-2.45-2.66-11.48-11.52-20.63-22.85-23.68-1.37-.37-2.33-1.59-2.33-3.01V4.01c0-1.98,1.82-3.44,3.76-3.06,20.22,4,36.06,20.19,39.53,40.6.33,1.92-1.12,3.68-3.07,3.68Z"/>
+</svg>
+SVG;
+
+$worksiteHeaderIconSvg = <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <path fill="currentColor" d="M50,17.59c-12.62,0-22.85,10.23-22.85,22.85,0,.2,0,.39,0,.59.26,14.86,10.56,23.62,22.84,35.9,6.22-6.22,11.93-11.54,16.09-17.21,4.05-5.52,6.62-11.36,6.75-18.69,0-.2,0-.39,0-.59,0-12.62-10.23-22.85-22.85-22.85M50,51.09c-5.88,0-10.65-4.77-10.65-10.65s4.76-10.65,10.65-10.65,10.65,4.77,10.65,10.65-4.77,10.65-10.65,10.65M69.66,74.62c0,6.02-10.13,9.27-19.66,9.27s-19.66-3.25-19.66-9.27c0-3.55,3.53-6.14,8.37-7.66.9.97,1.84,1.94,2.81,2.93-4.79,1.17-7.59,3.19-7.59,4.73,0,2.31,6.26,5.68,16.07,5.68s16.07-3.37,16.07-5.68c0-1.55-2.8-3.57-7.59-4.73.96-.98,1.9-1.96,2.8-2.93,4.85,1.52,8.37,4.11,8.37,7.66M50,0C22.38,0,0,22.39,0,50s22.38,50,50,50,50-22.38,50-50S77.61,0,50,0ZM50,93.51c-24.03,0-43.51-19.48-43.51-43.51S25.97,6.49,50,6.49s43.51,19.48,43.51,43.51-19.49,43.51-43.51,43.51Z"/>
+</svg>
+SVG;
+
+$injuryHeaderIconSvg = <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <path fill="currentColor" d="M53.79,34.01l-15.84-12.94c3.59-1.94,7.69-3.04,12.05-3.04,8.09,0,15.29,3.79,19.95,9.69-2.96,1.08-7.88,2.98-16.16,6.29ZM83.06,13.69c-18.26-18.25-47.86-18.25-66.12,0C-1.31,31.94-1.31,61.54,16.94,79.8c.69.68,1.39,1.34,2.1,1.96.76.68,1.53,1.32,2.33,1.94l-1.48,8.69c-.68,3.98,2.39,7.61,6.43,7.61h16.57l-.37-2.56-2.26-15.85-1.97-13.8c.96-.51,1.95-.96,2.99-1.34,1.13-.41,2.08-1.29,2.37-2.47.4-1.63-.39-3.25-1.82-3.97-4.57-2.25-7.9-6.16-9.41-10.82-.21-.64-.39-1.3-.52-1.98-2.22.9-4.4,1.79-6.51,2.65,1.28,4.97,4.04,9.42,7.94,12.79-4.04,2.46-7.44,5.78-10.01,9.66h0s0,.02,0,.02c-.71,1.07-1.36,2.17-1.94,3.31-.04-.04-.09-.08-.14-.13-15.88-15.89-15.88-41.64,0-57.53,15.9-15.89,41.64-15.89,57.54,0,15.88,15.89,15.88,41.64,0,57.53-.05.05-.1.09-.14.13-2.67-5.32-6.8-9.85-11.96-12.99,5.51-4.76,8.75-11.68,8.75-19.19,0-2.08-.24-4.12-.74-6.06-.54-2.22-1.37-4.33-2.45-6.29-1.58.58-3.84,1.45-6.58,2.53.72,1.13,1.31,2.34,1.76,3.61.7,1.95,1.08,4.03,1.08,6.21,0,1.99-.32,3.92-.91,5.73-1.51,4.66-4.84,8.57-9.41,10.82-1.43.72-2.22,2.34-1.82,3.97.29,1.18,1.24,2.06,2.37,2.47,6.62,2.44,11.75,7.52,14.4,13.77.3.71.57,1.42.8,2.15.62,1.93,2.99,2.66,4.59,1.43.84-.65,1.65-1.33,2.45-2.04.71-.62,1.41-1.28,2.1-1.96,18.25-18.26,18.25-47.86,0-66.11ZM48.78,36.02l-14.91-12.18c-1.78,1.45-3.36,3.15-4.68,5.04l12.34,10.08c2.62-1.07,5.03-2.04,7.25-2.94ZM25.32,37.4c-.5,1.94-.75,3.98-.75,6.06,0,.8.04,1.59.12,2.37,4.32-1.77,8.25-3.38,11.85-4.84l-9.73-7.95c-.62,1.39-1.12,2.85-1.49,4.36ZM55.56,81.59h-11.42l2.26,15.85h9.16c4.38,0,7.93-3.54,7.93-7.92,0-2.19-.89-4.17-2.32-5.61-1.44-1.43-3.42-2.32-5.61-2.32Z"/>
+</svg>
+SVG;
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($uiLang) ?>">
@@ -145,6 +165,12 @@ $typeLabels = [
             vertical-align: middle;
             margin-right: 8px;
             margin-bottom: 2px;
+            color: #ffffff;
+        }
+        .section-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         .stats-table { width: 100%; border-collapse: collapse; }
@@ -322,8 +348,10 @@ $typeLabels = [
     </div>
 
     <div class="section">
-                <div class="section-header">
-            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <div class="section-header">
+            <span class="section-icon" aria-hidden="true">
+                <?= $statsHeaderIconSvg ?>
+            </span>
             <?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?>
         </div>
         <?php if (!$includeStats): ?>
@@ -355,8 +383,10 @@ $typeLabels = [
     </div>
 
     <div class="section">
-                <div class="section-header">
-            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+        <div class="section-header">
+            <span class="section-icon" aria-hidden="true">
+                <?= $worksiteHeaderIconSvg ?>
+            </span>
             <?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?>
         </div>
         <?php if (!$includeWorksites || empty($worksiteStats)): ?>
@@ -406,7 +436,12 @@ $typeLabels = [
 
 <div class="page-content">
     <div class="section">
-        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang)) ?></div>
+        <div class="section-header">
+            <span class="section-icon" aria-hidden="true">
+                <?= $injuryHeaderIconSvg ?>
+            </span>
+            <?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang)) ?>
+        </div>
         <?php if (!$includeInjuries): ?>
             <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
         <?php else: ?>
@@ -486,8 +521,10 @@ $typeLabels = [
 
 <div class="page-content">
     <div class="section">
-                <div class="section-header">
-            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="section-header">
+            <span class="section-icon" aria-hidden="true">
+                <?= $injuryHeaderIconSvg ?>
+            </span>
             <?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?>
         </div>
         <?php if (!$includeRecent || empty($recentInjuryFlashes)): ?>
