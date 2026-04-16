@@ -64,7 +64,7 @@ $typeLabels = [
         }
         <?php endif; ?>
 
-        @page { size: A4; margin: 25mm 18mm 18mm 18mm; }
+        @page { size: A4; margin: 35mm 25mm 25mm 25mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -72,6 +72,7 @@ $typeLabels = [
             font-size: 10pt;
             line-height: 1.3;
             color: #1a1a1a;
+            padding: 30px 20px;
         }
 
         .bg-img { position: fixed; top: -25mm; left: -18mm; width: 210mm; height: 297mm; z-index: -1000; }
@@ -188,7 +189,7 @@ $typeLabels = [
         }
         .bar-fill {
             border-radius: 4px;
-            padding: 2px 8px;
+            padding: 12px 12px 12px 12px;
             color: #fff;
             font-weight: bold;
             font-size: 7.5pt;
