@@ -292,18 +292,20 @@
 }
 
 /* Pending supervisor review - light blue to match list page */
-.status-pill-supervisor {
-    background: #e0f2fe;
-    color: #0369a1;
+.status-pill-supervisor,
+.status-pill.sf-status--pending-supervisor {
+    background: var(--status-pending-supervisor-bg, #e0f2fe);
+    color: var(--status-pending-supervisor-text, #0369a1);
     border: 1px solid #7dd3fc;
     padding: 4px 12px;
     border-radius: 16px;
 }
 
 /* Pending review - keep yellow */
-.status-pill-pending {
-    background: #fee000;
-    color: #111827;
+.status-pill-pending,
+.status-pill.sf-status--pending {
+    background: var(--status-pending-bg, #fee000);
+    color: var(--status-pending-text, #111827);
     border: 1px solid #fbbf24;
     padding: 4px 12px;
     border-radius: 16px;

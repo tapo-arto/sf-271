@@ -381,25 +381,29 @@ form.filters {
     white-space: nowrap;
 }
 
-.status-draft {
+.status-draft,
+.sf-status--draft {
     background: var(--status-draft-bg, #f3f4f6);
     color: var(--status-draft-text, #111827);
 }
 
-.status-pending {
+.status-pending,
+.sf-status--pending {
     background: var(--status-pending-bg, #fee000);
     color: var(--status-pending-text, #111827);
 }
 
-.status-pending-supervisor {
-    background: #e0f2fe;
-    color: #0369a1;
+.status-pending-supervisor,
+.sf-status--pending-supervisor {
+    background: var(--status-pending-supervisor-bg, #e0f2fe);
+    color: var(--status-pending-supervisor-text, #0369a1);
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
-.status-pending-supervisor::before {
+.status-pending-supervisor::before,
+.sf-status--pending-supervisor::before {
     content: '';
     display: inline-block;
     flex-shrink: 0;
@@ -407,34 +411,39 @@ form.filters {
     height: 12px;
     border-radius: 50%;
     border: 2px solid rgba(3, 105, 161, 0.3);
-    border-top-color: #0369a1;
+    border-top-color: var(--status-pending-supervisor-text, #0369a1);
     animation: sf-badge-spin 0.8s linear infinite;
     vertical-align: middle;
 }
 
-.status-request-info {
+.status-request-info,
+.sf-status--request-info {
     background: var(--status-request-bg, #fb923c);
     color: var(--status-request-text, #111827);
 }
 
-.status-to-comms {
+.status-to-comms,
+.sf-status--comms {
     background: var(--status-comms-bg, #3b82f6);
     color: var(--status-comms-text, #ffffff);
 }
 
-.status-published {
+.status-published,
+.sf-status--published {
     background: var(--status-published-bg, #16a34a);
     color: var(--status-published-text, #ffffff);
 }
 
-.status-reviewed {
-    background: #dbeafe;
-    color: #1e3a8a;
+.status-reviewed,
+.sf-status--reviewed {
+    background: var(--status-reviewed-bg, #dbeafe);
+    color: var(--status-reviewed-text, #1e3a8a);
 }
 
-.status-other {
-    background: #e0f2fe;
-    color: #0369a1;
+.status-other,
+.sf-status--other {
+    background: var(--status-other-bg, #e0f2fe);
+    color: var(--status-other-text, #0369a1);
 }
 
 /* Title and site */
@@ -3281,25 +3290,25 @@ jne.
 }
 
 /* Status colors */
-.sf-compact-status.status-pending .sf-compact-status-spinner,
-.sf-compact-status.status-to-comms .sf-compact-status-spinner {
+.sf-compact-status.sf-status--pending .sf-compact-status-spinner,
+.sf-compact-status.sf-status--comms .sf-compact-status-spinner {
     color: #3b82f6;
     /* Blue */
 }
 
-.sf-compact-status.status-request-info .sf-compact-status-spinner,
-.sf-compact-status.status-reviewed .sf-compact-status-spinner {
+.sf-compact-status.sf-status--request-info .sf-compact-status-spinner,
+.sf-compact-status.sf-status--reviewed .sf-compact-status-spinner {
     color: #eab308;
     /* Yellow */
 }
 
-.sf-compact-status.status-published .sf-compact-status-check {
+.sf-compact-status.sf-status--published .sf-compact-status-check {
     width: 20px;
     height: 20px;
     filter: brightness(0) invert(1);
 }
 
-.sf-compact-status.status-draft .sf-compact-status-spinner {
+.sf-compact-status.sf-status--draft .sf-compact-status-spinner {
     color: #9ca3af;
     /* Gray */
 }
@@ -5373,33 +5382,33 @@ jne.
         display: none !important;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-pending {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--pending {
         --sf-compact-status-color: #3b82f6;
         animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-request-info,
-    .sf-list-container.view-compact .sf-compact-status.status-reviewed {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--request-info,
+    .sf-list-container.view-compact .sf-compact-status.sf-status--reviewed {
         --sf-compact-status-color: #f59e0b;
         animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-to-comms {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--comms {
         --sf-compact-status-color: #d946ef;
         animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-published {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--published {
         --sf-compact-status-color: #16a34a;
         animation: none;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-draft {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--draft {
         --sf-compact-status-color: var(--sf-compact-status-color-default);
         animation: none;
     }
 
-    .sf-list-container.view-compact .sf-compact-status.status-other {
+    .sf-list-container.view-compact .sf-compact-status.sf-status--other {
         --sf-compact-status-color: #64748b;
         animation: none;
     }
@@ -5541,37 +5550,37 @@ jne.
     display: none !important;
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-draft {
+.sf-list-container.view-compact .sf-compact-status.sf-status--draft {
     --sf-compact-status-color: var(--status-draft-bg, #e5e7eb);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-pending {
+.sf-list-container.view-compact .sf-compact-status.sf-status--pending {
     --sf-compact-status-color: var(--status-pending-bg, #fee000);
     --sf-compact-status-outline: rgba(146, 64, 14, 0.5);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-pending-supervisor {
-    --sf-compact-status-color: #0369a1;
+.sf-list-container.view-compact .sf-compact-status.sf-status--pending-supervisor {
+    --sf-compact-status-color: var(--status-pending-supervisor-text, #0369a1);
     --sf-compact-status-outline: rgba(3, 105, 161, 0.45);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-request-info {
+.sf-list-container.view-compact .sf-compact-status.sf-status--request-info {
     --sf-compact-status-color: var(--status-request-bg, #fb923c);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-reviewed {
+.sf-list-container.view-compact .sf-compact-status.sf-status--reviewed {
     --sf-compact-status-color: var(--status-reviewed-bg, #dbeafe);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-to-comms {
+.sf-list-container.view-compact .sf-compact-status.sf-status--comms {
     --sf-compact-status-color: var(--status-comms-bg, #3b82f6);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-published {
+.sf-list-container.view-compact .sf-compact-status.sf-status--published {
     --sf-compact-status-color: var(--status-published-bg, #16a34a);
 }
 
-.sf-list-container.view-compact .sf-compact-status.status-other {
+.sf-list-container.view-compact .sf-compact-status.sf-status--other {
     --sf-compact-status-color: var(--status-other-bg, #64748b);
 }
 

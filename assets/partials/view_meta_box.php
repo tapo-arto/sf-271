@@ -11,16 +11,8 @@ if (!function_exists('sf_term')) {
     require_once __DIR__ . '/../../includes/statuses.php'; // Oletettu sijainti
 }
 
-$stateClassMap = [
-    'draft'             => 'status-pill-draft',
-    'pending_supervisor' => 'status-pill-supervisor', 
-    'pending_review'     => 'status-pill-pending',
-    'request_info'       => 'status-pill-request',
-    'reviewed'           => 'status-pill-reviewed',
-    'to_comms'           => 'status-pill-comms',
-    'published'          => 'status-pill-published',
-];
-$metaStatusClass = $stateClassMap[$flash['state']] ?? '';
+$statusDef       = function_exists('sf_status_get') ? sf_status_get((string)($flash['state'] ?? '')) : null;
+$metaStatusClass = trim((string)($statusDef['badge_class'] ?? 'sf-status sf-status--other'));
 $statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash['state'], $currentUiLang) ?? '') : '';
 
 ?>
