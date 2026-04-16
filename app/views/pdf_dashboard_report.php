@@ -14,11 +14,6 @@
 $fontDir          = $appRoot . '/assets/fonts';
 $fontRegularPath  = $fontDir . '/OpenSans-Regular.ttf';
 $fontBoldPath     = $fontDir . '/OpenSans-Bold.ttf';
-$logoPath         = $appRoot . '/assets/img/tapojarvi_logo.png';
-$logoDataUri      = '';
-if (file_exists($logoPath)) {
-    $logoDataUri = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-}
 $bgImagePath = $appRoot . '/assets/img/templates/SF_report_bg.jpg';
 $bgBase64 = file_exists($bgImagePath) ? base64_encode(file_get_contents($bgImagePath)) : '';
 
@@ -64,7 +59,7 @@ $typeLabels = [
         }
         <?php endif; ?>
 
-        @page { size: A4; margin: 35mm 25mm 25mm 25mm; }
+        @page { size: A4; margin: 25mm 18mm 18mm 18mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -72,14 +67,21 @@ $typeLabels = [
             font-size: 10pt;
             line-height: 1.3;
             color: #1a1a1a;
-            padding: 30px 20px;
+            padding: 0;
+            margin: 0;
+            background-image: url("data:image/jpeg;base64,<?php echo $bgBase64; ?>");
+            background-position: top left;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
         }
-
-        .bg-img { position: fixed; top: -25mm; left: -18mm; width: 210mm; height: 297mm; z-index: -1000; }
+        
         .page-break { page-break-before: always; }
 
         .page-content {
+            padding-top: 25mm;
             padding-bottom: 12mm;
+            padding-left: 8mm;
+            padding-right: 8mm;
         }
 
         .report-header {
@@ -92,7 +94,7 @@ $typeLabels = [
         .report-header td { vertical-align: middle; }
         .header-logo-cell { width: 110px; }
         .header-logo { max-width: 98px; max-height: 34px; }
-        .header-title-cell { padding-left: 8px; }
+        .header-title-cell { padding-left: 0px; }
         .header-report-title {
             font-size: 17pt;
             font-weight: bold;
@@ -134,6 +136,15 @@ $typeLabels = [
             border-radius: 5px;
             margin-bottom: 12px;
             letter-spacing: 0.5px;
+            /* Flexbox tuki ei ole täydellinen dompdf:ssä, käytetään vertical-alignia */
+        }
+        .section-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin-right: 8px;
+            margin-bottom: 2px;
         }
 
         .stats-table { width: 100%; border-collapse: collapse; }
@@ -189,7 +200,8 @@ $typeLabels = [
         }
         .bar-fill {
             border-radius: 4px;
-            padding: 12px 12px 12px 12px;
+            padding: 2px 8px; /* Palautetaan ylä- ja alapadding normaaliksi */
+            text-indent: 8px; /* Tämä siirtää lukua oikealle! Kokeile esim. 8px tai 12px */
             color: #fff;
             font-weight: bold;
             font-size: 7.5pt;
@@ -272,10 +284,6 @@ $typeLabels = [
 </head>
 <body>
 
-<?php if (!empty($bgBase64)): ?>
-<img src="data:image/jpeg;base64,<?= $bgBase64 ?>" class="bg-img" alt="">
-<?php endif; ?>
-
 <div class="footer">
     <table>
         <tr>
@@ -290,13 +298,7 @@ $typeLabels = [
     <div class="report-header">
         <table>
             <tr>
-                <td class="header-logo-cell">
-                    <?php if ($logoDataUri): ?>
-                        <img src="<?= htmlspecialchars($logoDataUri) ?>" class="header-logo" alt="Tapojärvi">
-                    <?php else: ?>
-                        <span style="color:#009650; font-weight:bold; font-size:13pt;">Tapojärvi</span>
-                    <?php endif; ?>
-                </td>
+
                 <td class="header-title-cell">
                     <div class="header-report-title"><?= htmlspecialchars($reportTitle) ?></div>
                     <!-- Omitted subtitle: previous text was a hardcoded Finnish duplicate of the localized report title. -->
@@ -320,7 +322,10 @@ $typeLabels = [
     </div>
 
     <div class="section">
-        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?></div>
+                <div class="section-header">
+            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?>
+        </div>
         <?php if (!$includeStats): ?>
             <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
         <?php else: ?>
@@ -350,7 +355,10 @@ $typeLabels = [
     </div>
 
     <div class="section">
-        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?></div>
+                <div class="section-header">
+            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?>
+        </div>
         <?php if (!$includeWorksites || empty($worksiteStats)): ?>
             <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
         <?php else: ?>
@@ -478,7 +486,10 @@ $typeLabels = [
 
 <div class="page-content">
     <div class="section">
-        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?></div>
+                <div class="section-header">
+            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?>
+        </div>
         <?php if (!$includeRecent || empty($recentInjuryFlashes)): ?>
             <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_injury_empty', $uiLang)) ?></p>
         <?php else: ?>
