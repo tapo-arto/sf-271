@@ -391,6 +391,27 @@ form.filters {
     color: var(--status-pending-text, #111827);
 }
 
+.status-pending-supervisor {
+    background: #e0f2fe;
+    color: #0369a1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-pending-supervisor::before {
+    content: '';
+    display: inline-block;
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(3, 105, 161, 0.3);
+    border-top-color: #0369a1;
+    animation: sf-badge-spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
 .status-request-info {
     background: var(--status-request-bg, #fb923c);
     color: var(--status-request-text, #111827);
@@ -5527,6 +5548,11 @@ jne.
 .sf-list-container.view-compact .sf-compact-status.status-pending {
     --sf-compact-status-color: var(--status-pending-bg, #fee000);
     --sf-compact-status-outline: rgba(146, 64, 14, 0.5);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-pending-supervisor {
+    --sf-compact-status-color: #0369a1;
+    --sf-compact-status-outline: rgba(3, 105, 161, 0.45);
 }
 
 .sf-list-container.view-compact .sf-compact-status.status-request-info {
