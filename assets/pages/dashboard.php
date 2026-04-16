@@ -719,4 +719,4 @@ window.SF_REPORT_I18N = {
 window.SF_CSRF_TOKEN = <?= json_encode(sf_csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 window.SF_REPORT_SITES = <?= json_encode($worksiteStats ? array_column($worksiteStats, 'site') : [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
 </script>
-<script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/dashboard-report.js"></script>
+<script src="<?= sf_asset_url('assets/js/dashboard-report.js', $baseUrl) ?>"></script>
