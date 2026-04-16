@@ -319,19 +319,63 @@ if ($reportUserName === '') {
 $appRoot    = dirname(__DIR__, 2);
 $bpDir      = $appRoot . '/assets/img/body-map/';
 
-function dashboardReportLoadSvg(string $path): string
+function dashboardReportLoadSvg(string $path, string $requiredViewBox = ''): string
 {
     if (!file_exists($path) || !is_readable($path)) {
         return '';
     }
     $raw = file_get_contents($path);
-    if ($raw === false || $raw === '') return '';
-    $raw = preg_replace('/<\?xml[^?]*\?>\s*/', '', $raw);
-    return $raw;
+    if ($raw === false || $raw === '') {
+        return '';
+    }
+
+    $dom = new DOMDocument();
+    $previousUseInternalErrors = libxml_use_internal_errors(true);
+    $loaded = $dom->loadXML($raw, LIBXML_NONET | LIBXML_NOBLANKS);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previousUseInternalErrors);
+    if (!$loaded) {
+        return '';
+    }
+
+    $xpath = new DOMXPath($dom);
+    foreach (['metadata', 'title', 'desc', 'text', 'script', 'style'] as $tagName) {
+        $nodes = $xpath->query('//*[local-name()="' . $tagName . '"]');
+        if (!$nodes) {
+            continue;
+        }
+        for ($i = $nodes->length - 1; $i >= 0; $i--) {
+            $node = $nodes->item($i);
+            if ($node && $node->parentNode) {
+                $node->parentNode->removeChild($node);
+            }
+        }
+    }
+
+    $svgNodes = $xpath->query('/*[local-name()="svg"]');
+    if (!$svgNodes || $svgNodes->length === 0) {
+        return '';
+    }
+    $svgRoot = $svgNodes->item(0);
+    if (!$svgRoot instanceof DOMElement) {
+        return '';
+    }
+
+    if (
+        $requiredViewBox !== '' &&
+        // Validate standard SVG viewBox format: "min-x min-y width height"
+        preg_match('/^\s*-?\d+(?:\.\d+)?(?:\s+-?\d+(?:\.\d+)?){3}\s*$/', $requiredViewBox)
+    ) {
+        $svgRoot->setAttribute('viewBox', trim($requiredViewBox));
+        $svgRoot->setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+
+    $svgXml = $dom->saveXML($svgRoot);
+    return $svgXml !== false ? $svgXml : '';
 }
 
-$frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg');
-$backSvgRaw  = dashboardReportLoadSvg($bpDir . 'back.svg');
+$frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg', '0 0 261.58 620.34');
+$backSvgRaw  = dashboardReportLoadSvg($bpDir . 'back.svg', '0 0 261.58 597.52');
 
 // ---- Configure Dompdf ----
 $options = new Options();

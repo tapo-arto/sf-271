@@ -19,6 +19,8 @@ $logoDataUri      = '';
 if (file_exists($logoPath)) {
     $logoDataUri = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
 }
+$bgImagePath = $appRoot . '/assets/img/templates/SF_report_bg.jpg';
+$bgBase64 = file_exists($bgImagePath) ? base64_encode(file_get_contents($bgImagePath)) : '';
 
 $generatedAt = (new DateTime())->format('d.m.Y H:i');
 $reportTitle = sf_term('dashboard_report_title_pdf', $uiLang);
@@ -118,51 +120,50 @@ $typeLabels = [
         }
         <?php endif; ?>
 
-        @page { size: A4; margin: 20mm 16mm 20mm 16mm; }
+        @page { size: A4; margin: 25mm 18mm 18mm 18mm; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Open Sans', 'DejaVu Sans', sans-serif;
-            font-size: 9.5pt;
+            font-size: 9pt;
             line-height: 1.4;
             color: #1a1a1a;
         }
 
+        .bg-img { position: fixed; top: -25mm; left: -18mm; width: 210mm; height: 297mm; z-index: -1000; }
+
         /* ---- Header ---- */
         .report-header {
-            background: #1a1a1a;
+            background: #000;
             color: #fff;
-            padding: 14px 18px;
-            margin-bottom: 18px;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
         }
         .report-header table { width: 100%; border-collapse: collapse; }
         .report-header td { vertical-align: middle; }
-        .header-logo-cell { width: 130px; }
-        .header-logo { max-width: 120px; max-height: 40px; }
-        .header-title-cell { padding-left: 16px; }
+        .header-logo-cell { width: 110px; }
+        .header-logo { max-width: 98px; max-height: 32px; }
+        .header-title-cell { padding-left: 10px; }
         .header-report-title {
-            font-size: 18pt;
+            font-size: 15pt;
             font-weight: bold;
-            color: #f0b429;
+            color: #facc15;
             letter-spacing: 0.5px;
             line-height: 1;
         }
-        .header-subtitle {
-            font-size: 8.5pt;
-            color: #d1d5db;
-            margin-top: 4px;
-        }
-        .header-meta-cell { text-align: right; font-size: 8pt; color: #9ca3af; }
-        .header-meta-cell .meta-date { color: #d1d5db; font-weight: bold; }
+        .header-subtitle { font-size: 8pt; color: #d1d5db; margin-top: 3px; }
+        .header-meta-cell { text-align: right; font-size: 7.5pt; color: #9ca3af; }
+        .header-meta-cell .meta-date { color: #f3f4f6; font-weight: bold; }
 
         /* ---- Period banner ---- */
         .period-banner {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #dbeafe;
             border-radius: 6px;
-            padding: 8px 14px;
-            margin-bottom: 16px;
+            padding: 7px 12px;
+            margin-bottom: 14px;
             font-size: 8.5pt;
             color: #1e40af;
         }
@@ -170,14 +171,14 @@ $typeLabels = [
 
         /* ---- Section headers ---- */
         .section-header {
-            background: #1d4ed8;
-            color: #fff;
-            padding: 7px 14px;
-            border-radius: 5px;
-            font-size: 10pt;
+            font-size: 11pt;
             font-weight: bold;
+            padding: 8px 12px;
+            background: #000;
+            color: #ffffff;
+            border-radius: 5px;
             margin-bottom: 12px;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
         }
 
         /* ---- Statistics boxes ---- */
@@ -188,26 +189,28 @@ $typeLabels = [
 
         .stat-box {
             border-radius: 8px;
-            padding: 14px 16px;
+            padding: 10px 10px;
             text-align: center;
+            border-width: 2px;
+            border-style: solid;
         }
-        .stat-box--red    { background: #fef2f2; border: 1.5px solid #fecaca; }
-        .stat-box--yellow { background: #fffbeb; border: 1.5px solid #fde68a; }
-        .stat-box--total  { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+        .stat-box--red    { background: #fff1f2; border-color: #dc2626; }
+        .stat-box--yellow { background: #fffbeb; border-color: #f59e0b; }
+        .stat-box--total  { background: #eff6ff; border-color: #2563eb; }
 
         .stat-label {
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
         .stat-box--red    .stat-label { color: #b91c1c; }
         .stat-box--yellow .stat-label { color: #92400e; }
         .stat-box--total  .stat-label { color: #1e40af; }
 
         .stat-count {
-            font-size: 28pt;
+            font-size: 23pt;
             font-weight: bold;
             line-height: 1;
         }
@@ -216,68 +219,50 @@ $typeLabels = [
         .stat-box--total  .stat-count { color: #2563eb; }
 
         /* ---- Worksite bars ---- */
-        .worksite-row { margin-bottom: 7px; }
+        .worksite-table { width: 100%; border-collapse: collapse; }
+        .worksite-table td { padding: 3px 0; vertical-align: middle; }
         .worksite-name {
             font-size: 8.5pt;
             color: #374151;
-            margin-bottom: 3px;
             font-weight: 600;
+            width: 34%;
+            padding-right: 8px;
         }
-        .worksite-bar-wrap { background: #f3f4f6; border-radius: 4px; height: 18px; position: relative; width: 100%; }
-        .worksite-bar {
-            background: linear-gradient(90deg, #2563eb, #3b82f6);
+        .bar-track {
+            width: 100%;
+            border-collapse: collapse;
+            background: #e5e7eb;
             border-radius: 4px;
-            height: 18px;
-            display: block;
         }
-        .worksite-count {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 18px;
-            line-height: 18px;
-            font-size: 7.5pt;
+        .bar-fill {
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: #fff;
             font-weight: bold;
-            color: #374151;
-            padding-right: 6px;
+            font-size: 7.5pt;
         }
 
         /* ---- Category bar chart ---- */
-        .cat-row { margin-bottom: 8px; }
-        .cat-name { font-size: 8.5pt; color: #374151; margin-bottom: 3px; font-weight: 600; }
-        .cat-bar-wrap { background: #f3f4f6; border-radius: 4px; height: 18px; position: relative; }
-        .cat-bar { background: linear-gradient(90deg, #059669, #10b981); border-radius: 4px; height: 18px; }
-        .cat-count {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 18px;
-            line-height: 18px;
-            font-size: 7.5pt;
-            font-weight: bold;
-            color: #374151;
-            padding-right: 6px;
-        }
+        .cat-table { width: 100%; border-collapse: collapse; }
+        .cat-table td { padding: 3px 0; vertical-align: middle; }
+        .cat-name { font-size: 8.5pt; color: #374151; font-weight: 600; width: 46%; padding-right: 6px; }
 
         /* ---- Injury section two-column layout ---- */
         .injury-layout-table { width: 100%; border-collapse: collapse; }
-        .injury-svg-cell { width: 45%; vertical-align: top; padding-right: 16px; }
-        .injury-chart-cell { width: 55%; vertical-align: top; }
+        .injury-svg-cell { width: 48%; vertical-align: top; padding-right: 10px; }
+        .injury-chart-cell { width: 52%; vertical-align: top; }
 
         /* ---- SVG body map ---- */
-        .body-map-figures { display: block; text-align: center; }
-        .body-map-svg { width: 42%; display: inline-block; vertical-align: top; }
+        .body-map-table { width: 100%; border-collapse: collapse; }
+        .body-map-table td { width: 50%; vertical-align: top; text-align: center; padding: 0 4px; }
+        .body-map-svg svg { width: 100%; height: auto; display: block; }
         .body-map-label { font-size: 7.5pt; color: #6b7280; text-align: center; margin-top: 4px; }
 
         /* ---- Legend ---- */
         .heatmap-legend { margin-top: 10px; font-size: 7.5pt; color: #6b7280; }
-        .legend-bar {
-            height: 8px;
-            border-radius: 4px;
-            margin-bottom: 3px;
-            background: linear-gradient(90deg, #e5e7eb, #fef3c7, #f59e0b, #dc2626);
-        }
-        .legend-labels { display: flex; justify-content: space-between; }
+        .legend-bar { height: 8px; border-radius: 4px; margin-bottom: 3px; background: #f59e0b; }
+        .legend-table { width: 100%; border-collapse: collapse; }
+        .legend-table td:last-child { text-align: right; }
 
         /* ---- Recent injuries table ---- */
         .injuries-table { width: 100%; border-collapse: collapse; }
@@ -299,36 +284,35 @@ $typeLabels = [
             border-bottom: 1px solid #f3f4f6;
             vertical-align: top;
         }
-        .injuries-table tr:nth-child(even) td { background: #fafafa; }
+        .injuries-table tr:nth-child(even) td { background: rgba(255, 255, 255, 0.65); }
 
-        .type-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            vertical-align: middle;
-            margin-right: 4px;
+        .type-pill {
+            display: inline-table;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 7pt;
+            font-weight: bold;
+            color: #fff;
         }
-        .type-dot--red    { background: #ef4444; }
-        .type-dot--yellow { background: #f59e0b; }
-        .type-dot--green  { background: #10b981; }
+        .type-pill--red    { background: #dc2626; }
+        .type-pill--yellow { background: #d97706; }
+        .type-pill--green  { background: #059669; }
 
         /* ---- Footer ---- */
-        .report-footer {
+        .footer {
             position: fixed;
-            bottom: -16mm;
-            left: -14mm;
-            right: -14mm;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
-            padding: 5px 16mm;
-            font-size: 7.5pt;
-            color: #9ca3af;
+            bottom: -18mm;
+            left: -18mm;
+            right: -18mm;
+            height: 12mm;
+            padding: 0 18mm;
+            font-size: 8pt;
+            color: #666;
         }
-        .report-footer table { width: 100%; border-collapse: collapse; }
-        .report-footer td { padding: 0; }
+        .footer table { width: 100%; height: 100%; border-collapse: collapse; }
+        .footer td { padding: 0; vertical-align: middle; }
 
-        .section { margin-bottom: 22px; }
+        .section { margin-bottom: 18px; }
         .empty-note { font-size: 8.5pt; color: #9ca3af; font-style: italic; padding: 8px 0; }
 
         .page-break { page-break-before: always; }
@@ -336,8 +320,12 @@ $typeLabels = [
 </head>
 <body>
 
+<?php if (!empty($bgBase64)): ?>
+<img src="data:image/jpeg;base64,<?= $bgBase64 ?>" class="bg-img" alt="">
+<?php endif; ?>
+
 <!-- Fixed footer on every page -->
-<div class="report-footer">
+<div class="footer">
     <table>
         <tr>
             <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
@@ -359,7 +347,7 @@ $typeLabels = [
             </td>
             <td class="header-title-cell">
                 <div class="header-report-title"><?= htmlspecialchars($reportTitle) ?></div>
-                <div class="header-subtitle">SafetyFlash</div>
+                <div class="header-subtitle">Dashboard-raportti</div>
             </td>
             <td class="header-meta-cell">
                 <div><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?></div>
@@ -416,19 +404,32 @@ $typeLabels = [
     <?php if (empty($worksiteStats)): ?>
         <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
     <?php else: ?>
-        <?php foreach ($worksiteStats as $ws):
-            $wsName  = htmlspecialchars($ws['site'] ?? '');
-            $wsCount = (int)($ws['count'] ?? 0);
-            $barPct  = $maxWorksiteCount > 0 ? round(($wsCount / $maxWorksiteCount) * 100) : 0;
-        ?>
-        <div class="worksite-row">
-            <div class="worksite-name"><?= $wsName ?></div>
-            <div class="worksite-bar-wrap">
-                <div class="worksite-bar" style="width:<?= $barPct ?>%;"></div>
-                <span class="worksite-count"><?= $wsCount ?></span>
-            </div>
-        </div>
-        <?php endforeach; ?>
+        <table class="worksite-table">
+            <?php foreach ($worksiteStats as $idx => $ws):
+                $wsName  = htmlspecialchars($ws['site'] ?? '');
+                $wsCount = (int)($ws['count'] ?? 0);
+                $barPct  = $maxWorksiteCount > 0 ? round(($wsCount / $maxWorksiteCount) * 100) : 0;
+                $restPct = max(0, 100 - $barPct);
+                $barColor = '#6b7280';
+                if ($idx < 3) {
+                    $barColor = '#2563eb';
+                } elseif ($idx < 6) {
+                    $barColor = '#7c3aed';
+                }
+            ?>
+            <tr>
+                <td class="worksite-name"><?= $wsName ?></td>
+                <td>
+                    <table class="bar-track">
+                        <tr>
+                            <td class="bar-fill" style="width:<?= $barPct ?>%; background:<?= $barColor ?>;"><?= $wsCount ?></td>
+                            <td style="width:<?= $restPct ?>%;">&nbsp;</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
     <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -445,31 +446,26 @@ $typeLabels = [
         <tr>
             <!-- Body maps -->
             <td class="injury-svg-cell">
-                <div class="body-map-figures">
-                    <?php if ($coloredFrontSvg !== ''): ?>
-                    <div class="body-map-svg">
-                        <svg viewBox="0 0 261.58 620.34" xmlns="http://www.w3.org/2000/svg" width="100%">
-                            <?= $coloredFrontSvg ?>
-                        </svg>
-                        <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?></div>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($coloredBackSvg !== ''): ?>
-                    <div class="body-map-svg" style="margin-left:4%;">
-                        <svg viewBox="0 0 261.58 597.52" xmlns="http://www.w3.org/2000/svg" width="100%">
-                            <?= $coloredBackSvg ?>
-                        </svg>
-                        <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?></div>
-                    </div>
-                    <?php endif; ?>
-                </div>
+                <table class="body-map-table">
+                    <tr>
+                        <td>
+                            <?php if ($coloredFrontSvg !== ''): ?>
+                            <div class="body-map-svg"><?= $coloredFrontSvg ?></div>
+                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($coloredBackSvg !== ''): ?>
+                            <div class="body-map-svg"><?= $coloredBackSvg ?></div>
+                            <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?></div>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
                 <!-- Legend -->
                 <div class="heatmap-legend">
                     <div class="legend-bar"></div>
-                    <div class="legend-labels">
-                        <span>0</span>
-                        <span><?= $maxBpCount ?></span>
-                    </div>
+                    <table class="legend-table"><tr><td>0</td><td><?= $maxBpCount ?></td></tr></table>
                 </div>
             </td>
             <!-- Category bar chart -->
@@ -480,17 +476,24 @@ $typeLabels = [
                 <?php if (empty($sortedCategories)): ?>
                     <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
                 <?php else: ?>
+                    <table class="cat-table">
                     <?php foreach ($sortedCategories as $cat):
                         $catPct = $maxCategoryCount > 0 ? round(($cat['count'] / $maxCategoryCount) * 100) : 0;
+                        $catRestPct = max(0, 100 - $catPct);
                     ?>
-                    <div class="cat-row">
-                        <div class="cat-name"><?= htmlspecialchars($cat['name']) ?></div>
-                        <div class="cat-bar-wrap">
-                            <div class="cat-bar" style="width:<?= $catPct ?>%;"></div>
-                            <span class="cat-count"><?= (int)$cat['count'] ?></span>
-                        </div>
-                    </div>
+                        <tr>
+                            <td class="cat-name"><?= htmlspecialchars($cat['name']) ?></td>
+                            <td>
+                                <table class="bar-track">
+                                    <tr>
+                                        <td class="bar-fill" style="width:<?= $catPct ?>%; background:#059669;"><?= (int)$cat['count'] ?></td>
+                                        <td style="width:<?= $catRestPct ?>%;">&nbsp;</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
+                    </table>
                 <?php endif; ?>
             </td>
         </tr>
@@ -532,8 +535,7 @@ $typeLabels = [
             ?>
             <tr>
                 <td>
-                    <span class="type-dot type-dot--<?= htmlspecialchars($flashType) ?>"></span>
-                    <?= htmlspecialchars($typeLbl) ?>
+                    <span class="type-pill type-pill--<?= htmlspecialchars($flashType) ?>"><?= htmlspecialchars($typeLbl) ?></span>
                 </td>
                 <td>
                     <strong><?= htmlspecialchars($flashTitle) ?></strong>
