@@ -1059,7 +1059,7 @@ if (!empty($rows)) {
     $stateText = sf_status_label($r['state'], $currentUiLang);
     $stateClassMap = [
         'draft'          => 'status-draft',
-        'pending_supervisor' => 'status-pending',
+        'pending_supervisor' => 'status-pending-supervisor',
         'pending_review' => 'status-pending',
         'request_info'   => 'status-request-info',
         'reviewed'       => 'status-reviewed',
