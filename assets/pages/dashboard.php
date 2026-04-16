@@ -471,12 +471,15 @@ try {
                             $itemState = $item['state'] ?? '';
                             $itemTime = $item['updated_at'] ?? '';
                             $stateLabel = sf_status_label($itemState, $uiLang);
+                            $stateDef = function_exists('sf_status_get') ? sf_status_get((string)$itemState) : null;
+                            $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status--other'));
                         ?>
                             <a href="<?= htmlspecialchars($baseUrl) ?>/index.php?page=view&id=<?= $itemId ?>" class="sf-recent-compact-item">
                                 <span class="sf-type-dot sf-type-dot--<?= htmlspecialchars($itemType) ?>"></span>
                                 <div class="sf-recent-compact-content">
                                     <div class="sf-recent-compact-title"><?= htmlspecialchars($itemTitle, ENT_QUOTES, 'UTF-8') ?></div>
                                     <div class="sf-recent-compact-meta">
+                                        <span class="sf-dashboard-status-dot <?= htmlspecialchars($stateClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                                         <span><?= htmlspecialchars($stateLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php if (!empty($itemSite)): ?>
                                             <span>·</span>

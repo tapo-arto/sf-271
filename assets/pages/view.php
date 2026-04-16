@@ -147,19 +147,6 @@ if ($currentUser) {
     $canManageReviewers = ($userRoleId === 1 || $userRoleId === 3 || $userId === $flashCreatorId);
 }
 
-// Mäppää state -> CSS-luokka view-sivun pillille
-$stateClassMap = [
-    'draft'          => 'status-pill-draft',
-    'pending_supervisor' => 'status-pill-supervisor',
-    'pending_review' => 'status-pill-pending',
-    'request_info'   => 'status-pill-request',
-    'reviewed'       => 'status-pill-reviewed',
-    'to_comms'       => 'status-pill-comms',
-    'published'      => 'status-pill-published',
-];
-$metaStatusClass = $stateClassMap[$flash['state']] ?? '';
-$statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash['state'], $currentUiLang) ?? '') : '';
-
 // Lokia varten ryhmän juuri
 $logFlashId = !empty($flash['translation_group_id'])
     ? (int)$flash['translation_group_id']

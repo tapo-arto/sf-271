@@ -1121,6 +1121,50 @@
     color: #6b7280;
 }
 
+.sf-dashboard-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block !important;
+    flex-shrink: 0;
+    gap: 0 !important;
+    background: var(--status-other-bg, #e0f2fe);
+}
+
+.sf-dashboard-status-dot::before,
+.sf-dashboard-status-dot::after {
+    content: none !important;
+    display: none !important;
+}
+
+.sf-dashboard-status-dot.sf-status--draft {
+    background: var(--status-draft-bg, #e5e7eb);
+}
+
+.sf-dashboard-status-dot.sf-status--pending-supervisor {
+    background: var(--status-pending-supervisor-text, #0369a1);
+}
+
+.sf-dashboard-status-dot.sf-status--pending {
+    background: var(--status-pending-bg, #fee000);
+}
+
+.sf-dashboard-status-dot.sf-status--request-info {
+    background: var(--status-request-bg, #fb923c);
+}
+
+.sf-dashboard-status-dot.sf-status--reviewed {
+    background: var(--status-reviewed-text, #1e3a8a);
+}
+
+.sf-dashboard-status-dot.sf-status--comms {
+    background: var(--status-comms-bg, #3b82f6);
+}
+
+.sf-dashboard-status-dot.sf-status--published {
+    background: var(--status-published-bg, #16a34a);
+}
+
 .sf-recent-compact-time {
     color: #9ca3af;
 }

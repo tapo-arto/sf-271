@@ -1057,16 +1057,8 @@ if (!empty($rows)) {
     $typeLabel = $typeKey ? sf_term($typeKey, $currentUiLang) : 'Safetyflash';
 
     $stateText = sf_status_label($r['state'], $currentUiLang);
-    $stateClassMap = [
-        'draft'          => 'status-draft',
-        'pending_supervisor' => 'status-pending-supervisor',
-        'pending_review' => 'status-pending',
-        'request_info'   => 'status-request-info',
-        'reviewed'       => 'status-reviewed',
-        'to_comms'       => 'status-to-comms',
-        'published'      => 'status-published',
-    ];
-    $stateClass = $stateClassMap[$r['state']] ?? 'status-other';
+    $stateDef = function_exists('sf_status_get') ? sf_status_get((string)($r['state'] ?? '')) : null;
+    $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status--other'));
 
     // Check preview status for generating indicator
     $previewStatus = $r['preview_status'] ?? 'completed';

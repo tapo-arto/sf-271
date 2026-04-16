@@ -471,9 +471,17 @@ svg {
     --status-pending-bg: #fee000;
     --status-pending-text: #111827;
 
+    /* Työmaavastaavan tarkistus – vaaleansininen */
+    --status-pending-supervisor-bg: #e0f2fe;
+    --status-pending-supervisor-text: #0369a1;
+
     /* Lisätietopyyntö – oranssi */
     --status-request-bg: #fb923c;
     --status-request-text: #111827;
+
+    /* Tarkastettu */
+    --status-reviewed-bg: #dbeafe;
+    --status-reviewed-text: #1e3a8a;
 
     /* Toimitettu viestintään – sininen */
     --status-comms-bg: #3b82f6;
@@ -482,6 +490,19 @@ svg {
     /* Julkaistu – vihreä */
     --status-published-bg: #16a34a;
     --status-published-text: #ffffff;
+
+    --status-investigation-bg: var(--status-comms-bg);
+    --status-investigation-text: var(--status-comms-text);
+    --status-final-approver-bg: var(--status-comms-bg);
+    --status-final-approver-text: var(--status-comms-text);
+    --status-rejected-bg: #fee2e2;
+    --status-rejected-text: #991b1b;
+    --status-archived-bg: #6b7280;
+    --status-archived-text: #ffffff;
+    --status-closed-bg: #6b7280;
+    --status-closed-text: #ffffff;
+    --status-other-bg: #e0f2fe;
+    --status-other-text: #0369a1;
 }
 
 /* Yhteinen pillipohja */
@@ -500,27 +521,32 @@ svg {
 }
 
 /* Metaboxin pillit */
-.status-pill-draft {
+.status-pill-draft,
+.sf-status--draft {
     background: var(--status-draft-bg);
     color: var(--status-draft-text);
 }
 
-.status-pill-pending {
+.status-pill-pending,
+.sf-status--pending {
     background: var(--status-pending-bg);
     color: var(--status-pending-text);
 }
 
-.status-pill-request {
+.status-pill-request,
+.sf-status--request-info {
     background: var(--status-request-bg);
     color: var(--status-request-text);
 }
 
-.status-pill-comms {
+.status-pill-comms,
+.sf-status--comms {
     background: var(--status-comms-bg);
     color: var(--status-comms-text);
 }
 
-.status-pill-published {
+.status-pill-published,
+.sf-status--published {
     background: var(--status-published-bg);
     color: var(--status-published-text);
 }
@@ -662,39 +688,77 @@ svg {
 }
 
 /* Status-luokat listasivulle */
-.status-draft {
+.status-draft,
+.sf-status--draft {
     background: var(--status-draft-bg, #e5e7eb);
     color: var(--status-draft-text, #111827);
 }
 
-.status-pending {
+.status-pending,
+.sf-status--pending {
     background: var(--status-pending-bg, #fee000);
     color: var(--status-pending-text, #111827);
 }
 
-.status-request-info {
+.status-pending-supervisor,
+.sf-status--pending-supervisor {
+    background: var(--status-pending-supervisor-bg, #e0f2fe);
+    color: var(--status-pending-supervisor-text, #0369a1);
+}
+
+.status-request-info,
+.sf-status--request-info {
     background: var(--status-request-bg, #fb923c);
     color: var(--status-request-text, #111827);
 }
 
-.status-reviewed {
-    background: #dbeafe;
-    color: #1e3a8a;
+.status-reviewed,
+.sf-status--reviewed {
+    background: var(--status-reviewed-bg, #dbeafe);
+    color: var(--status-reviewed-text, #1e3a8a);
 }
 
-.status-to-comms {
+.status-to-comms,
+.sf-status--comms {
     background: var(--status-comms-bg, #3b82f6);
     color: var(--status-comms-text, #ffffff);
 }
 
-.status-published {
+.status-published,
+.sf-status--published {
     background: var(--status-published-bg, #16a34a);
     color: var(--status-published-text, #ffffff);
 }
 
-.status-other {
-    background: #e0f2fe;
-    color: #0369a1;
+.sf-status--investigation {
+    background: var(--status-investigation-bg, #3b82f6);
+    color: var(--status-investigation-text, #ffffff);
+}
+
+.sf-status--final-approver {
+    background: var(--status-final-approver-bg, #3b82f6);
+    color: var(--status-final-approver-text, #ffffff);
+}
+
+.sf-status--rejected {
+    background: var(--status-rejected-bg, #fee2e2);
+    color: var(--status-rejected-text, #991b1b);
+}
+
+.sf-status--archived {
+    background: var(--status-archived-bg, #6b7280);
+    color: var(--status-archived-text, #ffffff);
+}
+
+.sf-status--closed {
+    background: var(--status-closed-bg, var(--status-archived-bg, #6b7280));
+    color: var(--status-closed-text, var(--status-archived-text, #ffffff));
+}
+
+.status-other,
+.sf-status--other {
+    background: var(--status-other-bg, #e0f2fe);
+    color: var(--status-other-text, #0369a1);
 }
 
 /* ===== VAAKAKÄYTÖN ESTO (MOBIILI) ===== */
@@ -1643,6 +1707,8 @@ span.sf-btn-icon {
 .status-pill-supervisor,
 .status-pill-pending,
 .status-pending,
+.sf-status--pending-supervisor,
+.sf-status--pending,
 .status-other {
     display: inline-flex;
     align-items: center;
@@ -1652,6 +1718,8 @@ span.sf-btn-icon {
 .status-pill-supervisor::before,
 .status-pill-pending::before,
 .status-pending::before,
+.sf-status--pending-supervisor::before,
+.sf-status--pending::before,
 .status-other::before {
     content: '';
     display: inline-block;
@@ -1664,20 +1732,23 @@ span.sf-btn-icon {
 }
 
 /* View-sivu: hyväksyttävänä / supervisor */
-.status-pill-supervisor::before {
+.status-pill-supervisor::before,
+.sf-status--pending-supervisor::before {
     border: 2px solid rgba(3, 105, 161, 0.3);
     border-top-color: #0369a1;
 }
 
 /* View-sivu + lista: hyväksyttävänä */
 .status-pill-pending::before,
-.status-pending::before {
+.status-pending::before,
+.sf-status--pending::before {
     border: 2px solid rgba(17, 24, 39, 0.22);
     border-top-color: #111827;
 }
 
 /* Fallback-tilat */
-.status-other::before {
+.status-other::before,
+.sf-status--other::before {
     border: 2px solid rgba(3, 105, 161, 0.3);
     border-top-color: #0369a1;
 }
