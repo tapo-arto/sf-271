@@ -329,28 +329,49 @@ function dashboardReportLoadSvg(string $path, string $requiredViewBox = ''): str
         return '';
     }
 
-    $raw = preg_replace('/<\?xml[^?]*\?>\s*/', '', $raw);
-    $raw = preg_replace('/<metadata\b[^>]*>.*?<\/metadata>/is', '', $raw);
-    $raw = preg_replace('/<title\b[^>]*>.*?<\/title>/is', '', $raw);
-    $raw = preg_replace('/<desc\b[^>]*>.*?<\/desc>/is', '', $raw);
-    $raw = preg_replace('/<text\b[^>]*>.*?<\/text>/is', '', $raw);
-    $raw = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $raw);
-    $raw = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $raw);
-
-    if ($requiredViewBox !== '') {
-        $raw = preg_replace_callback(
-            '/<svg\b([^>]*)>/i',
-            static function (array $m) use ($requiredViewBox): string {
-                $attrs = $m[1];
-                $attrs = preg_replace('/\sviewBox="[^"]*"/i', '', $attrs);
-                return '<svg' . $attrs . ' viewBox="' . $requiredViewBox . '" preserveAspectRatio="xMidYMid meet">';
-            },
-            $raw,
-            1
-        );
+    $dom = new DOMDocument();
+    $previousUseInternalErrors = libxml_use_internal_errors(true);
+    $loaded = $dom->loadXML($raw, LIBXML_NONET | LIBXML_NOBLANKS);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previousUseInternalErrors);
+    if (!$loaded) {
+        return '';
     }
 
-    return $raw;
+    $xpath = new DOMXPath($dom);
+    foreach (['metadata', 'title', 'desc', 'text', 'script', 'style'] as $tagName) {
+        $nodes = $xpath->query('//*[local-name()="' . $tagName . '"]');
+        if (!$nodes) {
+            continue;
+        }
+        for ($i = $nodes->length - 1; $i >= 0; $i--) {
+            $node = $nodes->item($i);
+            if ($node && $node->parentNode) {
+                $node->parentNode->removeChild($node);
+            }
+        }
+    }
+
+    $svgNodes = $xpath->query('/*[local-name()="svg"]');
+    if (!$svgNodes || $svgNodes->length === 0) {
+        return '';
+    }
+    $svgRoot = $svgNodes->item(0);
+    if (!$svgRoot instanceof DOMElement) {
+        return '';
+    }
+
+    if (
+        $requiredViewBox !== '' &&
+        // Validate standard SVG viewBox format: "min-x min-y width height"
+        preg_match('/^\s*-?\d+(?:\.\d+)?(?:\s+-?\d+(?:\.\d+)?){3}\s*$/', $requiredViewBox)
+    ) {
+        $svgRoot->setAttribute('viewBox', trim($requiredViewBox));
+        $svgRoot->setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+
+    $svgXml = $dom->saveXML($svgRoot);
+    return $svgXml !== false ? $svgXml : '';
 }
 
 $frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg', '0 0 261.58 620.34');
