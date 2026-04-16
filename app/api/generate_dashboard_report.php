@@ -377,6 +377,96 @@ function dashboardReportLoadSvg(string $path, string $requiredViewBox = ''): str
 $frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg', '0 0 261.58 620.34');
 $backSvgRaw  = dashboardReportLoadSvg($bpDir . 'back.svg', '0 0 261.58 597.52');
 
+function dashboardReportHeatmapColor(float $intensity): string
+{
+    if ($intensity <= 0) {
+        return '#e5e7eb';
+    }
+    if ($intensity < 0.5) {
+        $t = $intensity * 2.0;
+        $r = (int)round(254 + (245 - 254) * $t);
+        $g = (int)round(243 + (158 - 243) * $t);
+        $b = (int)round(199 + (11 - 199) * $t);
+    } else {
+        $t = ($intensity - 0.5) * 2.0;
+        $r = (int)round(245 + (220 - 245) * $t);
+        $g = (int)round(158 + (38 - 158) * $t);
+        $b = (int)round(11 + (38 - 11) * $t);
+    }
+
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
+}
+
+function dashboardReportColorSvg(string $svgRaw, array $bpCountMap, int $maxCount): string
+{
+    if ($svgRaw === '') {
+        return '';
+    }
+    if ($maxCount <= 0) {
+        return $svgRaw;
+    }
+
+    return preg_replace_callback(
+        '/(<(?:path|ellipse|circle|rect)[^>]*\s)id="(bp-[^"]+)"([^>]*\/?>)/',
+        static function (array $m) use ($bpCountMap, $maxCount): string {
+            $svgId     = $m[2];
+            $count     = $bpCountMap[$svgId] ?? 0;
+            $intensity = $count / $maxCount;
+            $color     = dashboardReportHeatmapColor((float)$intensity);
+
+            $before = preg_replace('/\s+fill="[^"]*"/', '', $m[1]);
+            $after  = preg_replace('/\s+fill="[^"]*"/', '', $m[3]);
+            $before = preg_replace('/\s+stroke="[^"]*"/', '', $before);
+            $after  = preg_replace('/\s+stroke="[^"]*"/', '', $after);
+
+            return $before . 'id="' . $svgId . '" fill="' . $color . '" stroke="#9ca3af" stroke-width="0.5"' . $after;
+        },
+        $svgRaw
+    );
+}
+
+function dashboardReportSvgDataUri(string $svgContent, string $viewBox): string
+{
+    if ($svgContent === '') {
+        return '';
+    }
+
+    $safeSvgContent = $svgContent;
+    foreach ([
+        '/<\s*\/?\s*(script|foreignObject)\b[^>]*>/i',
+        '/\son[a-z]+\s*=\s*"[^"]*"/i',
+        '/\s(?:xlink:)?href\s*=\s*"javascript:[^"]*"/i',
+    ] as $sanitizePattern) {
+        $replaced = preg_replace($sanitizePattern, '', $safeSvgContent);
+        if (is_string($replaced)) {
+            $safeSvgContent = $replaced;
+        }
+    }
+
+    $fullSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' . htmlspecialchars($viewBox, ENT_QUOTES, 'UTF-8') . '" preserveAspectRatio="xMidYMid meet">' . $safeSvgContent . '</svg>';
+    return 'data:image/svg+xml;base64,' . base64_encode($fullSvg);
+}
+
+$bpCountMap = [];
+$maxBpCount = 0;
+foreach ($bodyPartCounts as $bp) {
+    $svgId = $bp['svg_id'] ?? '';
+    if ($svgId === '') {
+        continue;
+    }
+    $count = (int)($bp['count'] ?? 0);
+    $bpCountMap[$svgId] = $count;
+    if ($count > $maxBpCount) {
+        $maxBpCount = $count;
+    }
+}
+
+$coloredFrontSvg = dashboardReportColorSvg($frontSvgRaw, $bpCountMap, $maxBpCount);
+$coloredBackSvg  = dashboardReportColorSvg($backSvgRaw, $bpCountMap, $maxBpCount);
+
+$frontSvgBase64 = dashboardReportSvgDataUri($coloredFrontSvg, '0 0 261.58 620.34');
+$backSvgBase64  = dashboardReportSvgDataUri($coloredBackSvg, '0 0 261.58 597.52');
+
 // ---- Configure Dompdf ----
 $options = new Options();
 $options->set('chroot', $appRoot);
