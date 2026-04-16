@@ -5518,7 +5518,8 @@ jne.
 }
 
 .sf-list-container.view-compact .sf-compact-status {
-    --sf-compact-status-color: var(--sf-compact-status-color-default);
+    --sf-compact-status-bg: var(--sf-compact-status-color-default);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
     --sf-compact-status-outline: rgba(15, 23, 42, 0.18);
     display: inline-flex !important;
     align-items: center !important;
@@ -5530,7 +5531,7 @@ jne.
     margin: 0 !important;
     flex-shrink: 0 !important;
     position: relative !important;
-    background: var(--sf-compact-status-color) !important;
+    background: var(--sf-compact-status-bg) !important;
     box-shadow: 0 0 0 1px var(--sf-compact-status-outline) !important;
 }
 
@@ -5538,9 +5539,9 @@ jne.
     content: '';
     position: absolute;
     inset: -3px;
-    border: 2px solid var(--sf-compact-status-color);
+    border: 2px solid var(--sf-compact-status-ring);
     border-radius: 50%;
-    opacity: 0.65;
+    opacity: 0.75;
     animation: sf-compact-status-pulse-ring 1.7s ease-out infinite;
 }
 
@@ -5551,37 +5552,45 @@ jne.
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--draft {
-    --sf-compact-status-color: var(--status-draft-bg, #e5e7eb);
+    --sf-compact-status-bg: var(--status-draft-bg, #e5e7eb);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--pending {
-    --sf-compact-status-color: var(--status-pending-bg, #fee000);
+    --sf-compact-status-bg: var(--status-pending-bg, #fee000);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
     --sf-compact-status-outline: rgba(146, 64, 14, 0.5);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--pending-supervisor {
-    --sf-compact-status-color: var(--status-pending-supervisor-text, #0369a1);
+    --sf-compact-status-bg: var(--status-pending-supervisor-bg, #e0f2fe);
+    --sf-compact-status-ring: var(--status-pending-supervisor-text, #0369a1);
     --sf-compact-status-outline: rgba(3, 105, 161, 0.45);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--request-info {
-    --sf-compact-status-color: var(--status-request-bg, #fb923c);
+    --sf-compact-status-bg: var(--status-request-bg, #fb923c);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--reviewed {
-    --sf-compact-status-color: var(--status-reviewed-bg, #dbeafe);
+    --sf-compact-status-bg: var(--status-reviewed-bg, #dbeafe);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--comms {
-    --sf-compact-status-color: var(--status-comms-bg, #3b82f6);
+    --sf-compact-status-bg: var(--status-comms-bg, #3b82f6);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--published {
-    --sf-compact-status-color: var(--status-published-bg, #16a34a);
+    --sf-compact-status-bg: var(--status-published-bg, #16a34a);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 .sf-list-container.view-compact .sf-compact-status.sf-status--other {
-    --sf-compact-status-color: var(--status-other-bg, #64748b);
+    --sf-compact-status-bg: var(--status-other-bg, #64748b);
+    --sf-compact-status-ring: var(--sf-compact-status-bg);
 }
 
 @keyframes sf-compact-status-pulse-ring {
