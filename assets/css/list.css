@@ -3193,6 +3193,7 @@ jne.
     .sf-list-container.view-list .card-title {
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
     }
@@ -4470,6 +4471,7 @@ jne.
     .sf-list-container.view-list .card-title {
         font-size: 15px;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         display: -webkit-box !important;
         -webkit-box-orient: vertical;
         white-space: normal !important;
@@ -4482,8 +4484,8 @@ jne.
     .sf-list-container.view-list .card-actions {
         position: static !important;
         display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
         align-items: center !important;
         width: auto !important;
         padding: 0 !important;
