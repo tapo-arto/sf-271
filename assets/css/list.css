@@ -5467,3 +5467,108 @@ jne.
         animation: none !important;
     }
 }
+
+/* ==========================================================
+   COMPACT VIEW STATUS INDICATORS (MOBILE + DESKTOP)
+   ========================================================== */
+.sf-list-container.view-compact {
+    --sf-compact-status-color-default: var(--status-draft-bg, #e5e7eb);
+}
+
+.sf-list-container.view-compact .card-top .status {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.sf-list-container.view-compact .sf-compact-status {
+    --sf-compact-status-color: var(--sf-compact-status-color-default);
+    --sf-compact-status-outline: rgba(15, 23, 42, 0.18);
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    background: var(--sf-compact-status-color) !important;
+    box-shadow: 0 0 0 1px var(--sf-compact-status-outline) !important;
+}
+
+.sf-list-container.view-compact .sf-compact-status::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid var(--sf-compact-status-color);
+    border-radius: 50%;
+    opacity: 0.65;
+    animation: sf-compact-status-pulse-ring 1.7s ease-out infinite;
+}
+
+.sf-list-container.view-compact .sf-compact-status .sf-compact-status-check,
+.sf-list-container.view-compact .sf-compact-status .sf-compact-status-spinner,
+.sf-list-container.view-compact .sf-compact-status svg {
+    display: none !important;
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-draft {
+    --sf-compact-status-color: var(--status-draft-bg, #e5e7eb);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-pending {
+    --sf-compact-status-color: var(--status-pending-bg, #fee000);
+    --sf-compact-status-outline: rgba(146, 64, 14, 0.5);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-request-info {
+    --sf-compact-status-color: var(--status-request-bg, #fb923c);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-reviewed {
+    --sf-compact-status-color: var(--status-reviewed-bg, #dbeafe);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-to-comms {
+    --sf-compact-status-color: var(--status-comms-bg, #3b82f6);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-published {
+    --sf-compact-status-color: var(--status-published-bg, #16a34a);
+}
+
+.sf-list-container.view-compact .sf-compact-status.status-other {
+    --sf-compact-status-color: var(--status-other-bg, #64748b);
+}
+
+@keyframes sf-compact-status-pulse-ring {
+    0% {
+        transform: scale(0.7);
+        opacity: 0.6;
+    }
+
+    70% {
+        transform: scale(1.35);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1.35);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sf-list-container.view-compact .sf-compact-status::after {
+        animation: none !important;
+        opacity: 0 !important;
+    }
+}
