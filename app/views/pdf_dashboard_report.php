@@ -8,7 +8,7 @@
 // $uiLang, $originalStats, $worksiteStats, $maxWorksiteCount,
 // $bodyPartCounts, $categoryTotals, $recentInjuryFlashes,
 // $periodLabel, $reportUserName, $site,
-// $frontSvgRaw, $backSvgRaw, $appRoot,
+// $frontSvgBase64, $backSvgBase64, $maxBpCount, $appRoot,
 // $includeStats, $includeWorksites, $includeInjuries, $includeRecent
 
 $fontDir          = $appRoot . '/assets/fonts';
@@ -24,68 +24,6 @@ $bgBase64 = file_exists($bgImagePath) ? base64_encode(file_get_contents($bgImage
 
 $generatedAt = (new DateTime())->format('d.m.Y H:i');
 $reportTitle = sf_term('dashboard_report_title_pdf', $uiLang);
-
-// Build injury count map for heatmap coloring: svg_id => count
-$bpCountMap = [];
-$maxBpCount = 0;
-foreach ($bodyPartCounts as $bp) {
-    $bpCountMap[$bp['svg_id']] = (int)$bp['count'];
-    if ((int)$bp['count'] > $maxBpCount) {
-        $maxBpCount = (int)$bp['count'];
-    }
-}
-
-/**
- * Get heatmap fill color for a given intensity (0–1).
- * Low = soft amber, high = deep red.
- */
-function pdfHeatmapColor(float $intensity): string
-{
-    if ($intensity <= 0) return '#e5e7eb'; // no data – light grey
-    // Lerp from #fef3c7 (amber-100) through #f59e0b (amber-400) to #dc2626 (red-600)
-    if ($intensity < 0.5) {
-        $t = $intensity * 2.0;
-        $r = (int)round(254 + (245 - 254) * $t);
-        $g = (int)round(243 + (158 - 243) * $t);
-        $b = (int)round(199 + (11  - 199) * $t);
-    } else {
-        $t = ($intensity - 0.5) * 2.0;
-        $r = (int)round(245 + (220 - 245) * $t);
-        $g = (int)round(158 + (38  - 158) * $t);
-        $b = (int)round(11  + (38  - 11 ) * $t);
-    }
-    return sprintf('#%02x%02x%02x', $r, $g, $b);
-}
-
-/**
- * Inject fill colors into raw SVG markup based on body-part injury counts.
- */
-function pdfColorSvg(string $svgRaw, array $bpCountMap, int $maxCount): string
-{
-    if ($svgRaw === '' || $maxCount <= 0) {
-        return $svgRaw;
-    }
-    // Replace each `id="bp-..."` path fill by adding or replacing fill attribute
-    return preg_replace_callback(
-        '/(<(?:path|ellipse|circle|rect)[^>]*\s)id="(bp-[^"]+)"([^>]*\/?>)/',
-        static function (array $m) use ($bpCountMap, $maxCount): string {
-            $svgId     = $m[2];
-            $count     = $bpCountMap[$svgId] ?? 0;
-            $intensity = $maxCount > 0 ? $count / $maxCount : 0;
-            $color     = pdfHeatmapColor((float)$intensity);
-            // Remove any existing fill/stroke attributes
-            $before = preg_replace('/\s+fill="[^"]*"/', '', $m[1]);
-            $after  = preg_replace('/\s+fill="[^"]*"/', '', $m[3]);
-            $before = preg_replace('/\s+stroke="[^"]*"/', '', $before);
-            $after  = preg_replace('/\s+stroke="[^"]*"/', '', $after);
-            return $before . 'id="' . $svgId . '" fill="' . $color . '" stroke="#9ca3af" stroke-width="0.5"' . $after;
-        },
-        $svgRaw
-    );
-}
-
-$coloredFrontSvg = pdfColorSvg($frontSvgRaw, $bpCountMap, $maxBpCount);
-$coloredBackSvg  = pdfColorSvg($backSvgRaw,  $bpCountMap, $maxBpCount);
 
 // Sort categories for display
 arsort($categoryTotals);
@@ -120,7 +58,7 @@ $typeLabels = [
         }
         <?php endif; ?>
 
-        @page { size: A4; margin: 25mm 18mm 18mm 18mm; }
+        @page { size: A4; margin: 25mm 18mm 20mm 18mm; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -132,6 +70,7 @@ $typeLabels = [
         }
 
         .bg-img { position: fixed; top: -25mm; left: -18mm; width: 210mm; height: 297mm; z-index: -1000; }
+        .page { min-height: 0; }
 
         /* ---- Header ---- */
         .report-header {
@@ -253,9 +192,10 @@ $typeLabels = [
         .injury-chart-cell { width: 52%; vertical-align: top; }
 
         /* ---- SVG body map ---- */
-        .body-map-table { width: 100%; border-collapse: collapse; }
+        .body-map-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .body-map-table td { width: 50%; vertical-align: top; text-align: center; padding: 0 4px; }
-        .body-map-svg svg { width: 100%; height: auto; display: block; }
+        .body-map-svg { width: 120px; margin: 0 auto; }
+        .body-map-svg img { width: 120px; height: auto; display: block; margin: 0 auto; }
         .body-map-label { font-size: 7.5pt; color: #6b7280; text-align: center; margin-top: 4px; }
 
         /* ---- Legend ---- */
@@ -300,19 +240,16 @@ $typeLabels = [
 
         /* ---- Footer ---- */
         .footer {
-            position: fixed;
-            bottom: -18mm;
-            left: -18mm;
-            right: -18mm;
-            height: 12mm;
-            padding: 0 18mm;
+            margin-top: 14px;
+            padding-top: 6px;
+            border-top: 1px solid #d1d5db;
             font-size: 8pt;
             color: #666;
         }
         .footer table { width: 100%; height: 100%; border-collapse: collapse; }
         .footer td { padding: 0; vertical-align: middle; }
 
-        .section { margin-bottom: 18px; }
+        .section { margin-bottom: 20px; }
         .empty-note { font-size: 8.5pt; color: #9ca3af; font-style: italic; padding: 8px 0; }
 
         .page-break { page-break-before: always; }
@@ -324,118 +261,121 @@ $typeLabels = [
 <img src="data:image/jpeg;base64,<?= $bgBase64 ?>" class="bg-img" alt="">
 <?php endif; ?>
 
-<!-- Fixed footer on every page -->
-<div class="footer">
-    <table>
-        <tr>
-            <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
-            <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
-        </tr>
-    </table>
-</div>
-
-<!-- Header -->
-<div class="report-header">
-    <table>
-        <tr>
-            <td class="header-logo-cell">
-                <?php if ($logoDataUri): ?>
-                    <img src="<?= htmlspecialchars($logoDataUri) ?>" class="header-logo" alt="Tapojärvi">
-                <?php else: ?>
-                    <span style="color:#f0b429; font-weight:bold; font-size:13pt;">Tapojärvi</span>
-                <?php endif; ?>
-            </td>
-            <td class="header-title-cell">
-                <div class="header-report-title"><?= htmlspecialchars($reportTitle) ?></div>
-                <div class="header-subtitle">Dashboard-raportti</div>
-            </td>
-            <td class="header-meta-cell">
-                <div><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?></div>
-                <div class="meta-date"><?= htmlspecialchars($generatedAt) ?></div>
-            </td>
-        </tr>
-    </table>
-</div>
-
-<!-- Period banner -->
-<div class="period-banner">
-    <strong><?= htmlspecialchars(sf_term('dashboard_report_period_label', $uiLang)) ?>:</strong>
-    <?= htmlspecialchars($periodLabel) ?>
-    <?php if ($site !== ''): ?>
-        &nbsp;·&nbsp;
-        <strong><?= htmlspecialchars(sf_term('dashboard_report_site_filter', $uiLang)) ?>:</strong>
-        <?= htmlspecialchars($site) ?>
-    <?php endif; ?>
-</div>
-
-<!-- ===== STATISTICS ===== -->
-<?php if ($includeStats): ?>
-<div class="section">
-    <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?></div>
-    <table class="stats-table">
-        <tr>
-            <td>
-                <div class="stat-box stat-box--red">
-                    <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?></div>
-                    <div class="stat-count"><?= (int)($originalStats['red'] ?? 0) ?></div>
-                </div>
-            </td>
-            <td>
-                <div class="stat-box stat-box--yellow">
-                    <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></div>
-                    <div class="stat-count"><?= (int)($originalStats['yellow'] ?? 0) ?></div>
-                </div>
-            </td>
-            <td>
-                <div class="stat-box stat-box--total">
-                    <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_total', $uiLang)) ?></div>
-                    <div class="stat-count"><?= (int)($originalStats['total'] ?? 0) ?></div>
-                </div>
-            </td>
-        </tr>
-    </table>
-</div>
-<?php endif; ?>
-
-<!-- ===== WORKSITES ===== -->
-<?php if ($includeWorksites): ?>
-<div class="section">
-    <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?></div>
-    <?php if (empty($worksiteStats)): ?>
-        <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
-    <?php else: ?>
-        <table class="worksite-table">
-            <?php foreach ($worksiteStats as $idx => $ws):
-                $wsName  = htmlspecialchars($ws['site'] ?? '');
-                $wsCount = (int)($ws['count'] ?? 0);
-                $barPct  = $maxWorksiteCount > 0 ? round(($wsCount / $maxWorksiteCount) * 100) : 0;
-                $restPct = max(0, 100 - $barPct);
-                $barColor = '#6b7280';
-                if ($idx < 3) {
-                    $barColor = '#2563eb';
-                } elseif ($idx < 6) {
-                    $barColor = '#7c3aed';
-                }
-            ?>
+<div class="page">
+    <!-- Header -->
+    <div class="report-header">
+        <table>
             <tr>
-                <td class="worksite-name"><?= $wsName ?></td>
-                <td>
-                    <table class="bar-track">
-                        <tr>
-                            <td class="bar-fill" style="width:<?= $barPct ?>%; background:<?= $barColor ?>;"><?= $wsCount ?></td>
-                            <td style="width:<?= $restPct ?>%;">&nbsp;</td>
-                        </tr>
-                    </table>
+                <td class="header-logo-cell">
+                    <?php if ($logoDataUri): ?>
+                        <img src="<?= htmlspecialchars($logoDataUri) ?>" class="header-logo" alt="Tapojärvi">
+                    <?php else: ?>
+                        <span style="color:#f0b429; font-weight:bold; font-size:13pt;">Tapojärvi</span>
+                    <?php endif; ?>
+                </td>
+                <td class="header-title-cell">
+                    <div class="header-report-title"><?= htmlspecialchars($reportTitle) ?></div>
+                    <div class="header-subtitle">Dashboard-raportti</div>
+                </td>
+                <td class="header-meta-cell">
+                    <div><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?></div>
+                    <div class="meta-date"><?= htmlspecialchars($generatedAt) ?></div>
                 </td>
             </tr>
-            <?php endforeach; ?>
         </table>
+    </div>
+
+    <!-- Period banner -->
+    <div class="period-banner">
+        <strong><?= htmlspecialchars(sf_term('dashboard_report_period_label', $uiLang)) ?>:</strong>
+        <?= htmlspecialchars($periodLabel) ?>
+        <?php if ($site !== ''): ?>
+            &nbsp;·&nbsp;
+            <strong><?= htmlspecialchars(sf_term('dashboard_report_site_filter', $uiLang)) ?>:</strong>
+            <?= htmlspecialchars($site) ?>
+        <?php endif; ?>
+    </div>
+
+    <!-- ===== STATISTICS ===== -->
+    <?php if ($includeStats): ?>
+    <div class="section">
+        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_stats', $uiLang)) ?></div>
+        <table class="stats-table">
+            <tr>
+                <td>
+                    <div class="stat-box stat-box--red">
+                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_red', $uiLang)) ?></div>
+                        <div class="stat-count"><?= (int)($originalStats['red'] ?? 0) ?></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="stat-box stat-box--yellow">
+                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_yellow', $uiLang)) ?></div>
+                        <div class="stat-count"><?= (int)($originalStats['yellow'] ?? 0) ?></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="stat-box stat-box--total">
+                        <div class="stat-label"><?= htmlspecialchars(sf_term('dashboard_stat_total', $uiLang)) ?></div>
+                        <div class="stat-count"><?= (int)($originalStats['total'] ?? 0) ?></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
     <?php endif; ?>
+
+    <!-- ===== WORKSITES ===== -->
+    <?php if ($includeWorksites): ?>
+    <div class="section">
+        <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_worksites', $uiLang)) ?></div>
+        <?php if (empty($worksiteStats)): ?>
+            <p class="empty-note"><?= htmlspecialchars(sf_term('dashboard_no_data', $uiLang)) ?></p>
+        <?php else: ?>
+            <table class="worksite-table">
+                <?php foreach ($worksiteStats as $idx => $ws):
+                    $wsName  = htmlspecialchars($ws['site'] ?? '');
+                    $wsCount = (int)($ws['count'] ?? 0);
+                    $barPct  = $maxWorksiteCount > 0 ? round(($wsCount / $maxWorksiteCount) * 100) : 0;
+                    $restPct = max(0, 100 - $barPct);
+                    $barColor = '#6b7280';
+                    if ($idx < 3) {
+                        $barColor = '#2563eb';
+                    } elseif ($idx < 6) {
+                        $barColor = '#7c3aed';
+                    }
+                ?>
+                <tr>
+                    <td class="worksite-name"><?= $wsName ?></td>
+                    <td>
+                        <table class="bar-track">
+                            <tr>
+                                <td class="bar-fill" style="width:<?= $barPct ?>%; background:<?= $barColor ?>;"><?= $wsCount ?></td>
+                                <td style="width:<?= $restPct ?>%;">&nbsp;</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="footer">
+        <table>
+            <tr>
+                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
+                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
+            </tr>
+        </table>
+    </div>
 </div>
-<?php endif; ?>
 
 <!-- ===== INJURIES ===== -->
 <?php if ($includeInjuries): ?>
+<div class="page-break"></div>
+<div class="page">
 <div class="section">
     <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_injuries', $uiLang)) ?></div>
     <?php $hasInjuryData = !empty($bodyPartCounts) && array_sum(array_column($bodyPartCounts, 'count')) > 0; ?>
@@ -449,14 +389,14 @@ $typeLabels = [
                 <table class="body-map-table">
                     <tr>
                         <td>
-                            <?php if ($coloredFrontSvg !== ''): ?>
-                            <div class="body-map-svg"><?= $coloredFrontSvg ?></div>
+                            <?php if ($frontSvgBase64 !== ''): ?>
+                            <div class="body-map-svg"><img src="<?= htmlspecialchars($frontSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?>"></div>
                             <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_front_label', $uiLang)) ?></div>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($coloredBackSvg !== ''): ?>
-                            <div class="body-map-svg"><?= $coloredBackSvg ?></div>
+                            <?php if ($backSvgBase64 !== ''): ?>
+                            <div class="body-map-svg"><img src="<?= htmlspecialchars($backSvgBase64) ?>" alt="<?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?>"></div>
                             <div class="body-map-label"><?= htmlspecialchars(sf_term('body_map_back_label', $uiLang)) ?></div>
                             <?php endif; ?>
                         </td>
@@ -500,10 +440,21 @@ $typeLabels = [
     </table>
     <?php endif; ?>
 </div>
+    <div class="footer">
+        <table>
+            <tr>
+                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
+                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
+            </tr>
+        </table>
+    </div>
+</div>
 <?php endif; ?>
 
 <!-- ===== RECENT INJURIES ===== -->
 <?php if ($includeRecent): ?>
+<div class="page-break"></div>
+<div class="page">
 <div class="section">
     <div class="section-header"><?= htmlspecialchars(sf_term('dashboard_report_include_recent', $uiLang)) ?></div>
     <?php if (empty($recentInjuryFlashes)): ?>
@@ -550,6 +501,15 @@ $typeLabels = [
         </tbody>
     </table>
     <?php endif; ?>
+</div>
+    <div class="footer">
+        <table>
+            <tr>
+                <td><?= htmlspecialchars(sf_term('dashboard_report_generated_at', $uiLang)) ?>: <?= htmlspecialchars($generatedAt) ?></td>
+                <td style="text-align:right;"><?= htmlspecialchars(sf_term('dashboard_report_generated_by', $uiLang)) ?>: <?= htmlspecialchars($reportUserName) ?></td>
+            </tr>
+        </table>
+    </div>
 </div>
 <?php endif; ?>
 
