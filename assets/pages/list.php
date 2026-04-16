@@ -1058,7 +1058,7 @@ if (!empty($rows)) {
 
     $stateText = sf_status_label($r['state'], $currentUiLang);
     $stateDef = function_exists('sf_status_get') ? sf_status_get((string)($r['state'] ?? '')) : null;
-    $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status sf-status--other'));
+    $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status--other'));
 
     // Check preview status for generating indicator
     $previewStatus = $r['preview_status'] ?? 'completed';

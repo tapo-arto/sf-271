@@ -491,6 +491,16 @@ svg {
     --status-published-bg: #16a34a;
     --status-published-text: #ffffff;
 
+    --status-investigation-bg: var(--status-comms-bg);
+    --status-investigation-text: var(--status-comms-text);
+    --status-final-approver-bg: var(--status-comms-bg);
+    --status-final-approver-text: var(--status-comms-text);
+    --status-rejected-bg: #fee2e2;
+    --status-rejected-text: #991b1b;
+    --status-archived-bg: #6b7280;
+    --status-archived-text: #ffffff;
+    --status-closed-bg: #6b7280;
+    --status-closed-text: #ffffff;
     --status-other-bg: #e0f2fe;
     --status-other-text: #0369a1;
 }
@@ -720,21 +730,29 @@ svg {
     color: var(--status-published-text, #ffffff);
 }
 
-.sf-status--investigation,
+.sf-status--investigation {
+    background: var(--status-investigation-bg, #3b82f6);
+    color: var(--status-investigation-text, #ffffff);
+}
+
 .sf-status--final-approver {
-    background: var(--status-comms-bg, #3b82f6);
-    color: var(--status-comms-text, #ffffff);
+    background: var(--status-final-approver-bg, #3b82f6);
+    color: var(--status-final-approver-text, #ffffff);
 }
 
 .sf-status--rejected {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--status-rejected-bg, #fee2e2);
+    color: var(--status-rejected-text, #991b1b);
 }
 
-.sf-status--archived,
+.sf-status--archived {
+    background: var(--status-archived-bg, #6b7280);
+    color: var(--status-archived-text, #ffffff);
+}
+
 .sf-status--closed {
-    background: #6b7280;
-    color: #ffffff;
+    background: var(--status-closed-bg, var(--status-archived-bg, #6b7280));
+    color: var(--status-closed-text, var(--status-archived-text, #ffffff));
 }
 
 .status-other,

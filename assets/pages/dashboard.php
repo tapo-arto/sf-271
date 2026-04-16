@@ -471,8 +471,8 @@ try {
                             $itemState = $item['state'] ?? '';
                             $itemTime = $item['updated_at'] ?? '';
                             $stateLabel = sf_status_label($itemState, $uiLang);
-                            $stateDef = sf_status_get((string)$itemState);
-                            $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status sf-status--other'));
+                            $stateDef = function_exists('sf_status_get') ? sf_status_get((string)$itemState) : null;
+                            $stateClass = trim((string)($stateDef['badge_class'] ?? 'sf-status--other'));
                         ?>
                             <a href="<?= htmlspecialchars($baseUrl) ?>/index.php?page=view&id=<?= $itemId ?>" class="sf-recent-compact-item">
                                 <span class="sf-type-dot sf-type-dot--<?= htmlspecialchars($itemType) ?>"></span>

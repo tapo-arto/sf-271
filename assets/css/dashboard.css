@@ -1154,7 +1154,7 @@
 }
 
 .sf-dashboard-status-dot.sf-status--reviewed {
-    background: var(--status-reviewed-bg, #dbeafe);
+    background: var(--status-reviewed-text, #1e3a8a);
 }
 
 .sf-dashboard-status-dot.sf-status--comms {

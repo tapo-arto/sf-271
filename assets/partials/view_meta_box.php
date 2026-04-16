@@ -12,7 +12,7 @@ if (!function_exists('sf_term')) {
 }
 
 $statusDef       = function_exists('sf_status_get') ? sf_status_get((string)($flash['state'] ?? '')) : null;
-$metaStatusClass = trim((string)($statusDef['badge_class'] ?? 'sf-status sf-status--other'));
+$metaStatusClass = trim((string)($statusDef['badge_class'] ?? 'sf-status--other'));
 $statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash['state'], $currentUiLang) ?? '') : '';
 
 ?>
