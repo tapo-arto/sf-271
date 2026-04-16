@@ -319,19 +319,42 @@ if ($reportUserName === '') {
 $appRoot    = dirname(__DIR__, 2);
 $bpDir      = $appRoot . '/assets/img/body-map/';
 
-function dashboardReportLoadSvg(string $path): string
+function dashboardReportLoadSvg(string $path, string $requiredViewBox = ''): string
 {
     if (!file_exists($path) || !is_readable($path)) {
         return '';
     }
     $raw = file_get_contents($path);
-    if ($raw === false || $raw === '') return '';
+    if ($raw === false || $raw === '') {
+        return '';
+    }
+
     $raw = preg_replace('/<\?xml[^?]*\?>\s*/', '', $raw);
+    $raw = preg_replace('/<metadata\b[^>]*>.*?<\/metadata>/is', '', $raw);
+    $raw = preg_replace('/<title\b[^>]*>.*?<\/title>/is', '', $raw);
+    $raw = preg_replace('/<desc\b[^>]*>.*?<\/desc>/is', '', $raw);
+    $raw = preg_replace('/<text\b[^>]*>.*?<\/text>/is', '', $raw);
+    $raw = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $raw);
+    $raw = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $raw);
+
+    if ($requiredViewBox !== '') {
+        $raw = preg_replace_callback(
+            '/<svg\b([^>]*)>/i',
+            static function (array $m) use ($requiredViewBox): string {
+                $attrs = $m[1];
+                $attrs = preg_replace('/\sviewBox="[^"]*"/i', '', $attrs);
+                return '<svg' . $attrs . ' viewBox="' . $requiredViewBox . '" preserveAspectRatio="xMidYMid meet">';
+            },
+            $raw,
+            1
+        );
+    }
+
     return $raw;
 }
 
-$frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg');
-$backSvgRaw  = dashboardReportLoadSvg($bpDir . 'back.svg');
+$frontSvgRaw = dashboardReportLoadSvg($bpDir . 'front.svg', '0 0 261.58 620.34');
+$backSvgRaw  = dashboardReportLoadSvg($bpDir . 'back.svg', '0 0 261.58 597.52');
 
 // ---- Configure Dompdf ----
 $options = new Options();
