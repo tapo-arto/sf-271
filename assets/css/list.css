@@ -3109,242 +3109,128 @@ jne.
 }
 
 /* ==========================================================================
-   MOBILE - Force list view, hide toggle
+   MOBILE - View-specific card layouts
    ========================================================================== */
 
 @media (max-width: 768px) {
 
-    /* Add padding to card list to prevent view toggle overlap */
     .card-list {
-        /* Space for view toggle (70px from bottom + 46px height + 4px safe margin) + extra for footer */
         padding-bottom: calc(140px + env(safe-area-inset-bottom));
     }
 
-    /* Force ALL views to use the same card layout on mobile */
-    /* No grid layout - just vertical stacking */
-
-    .sf-list-container.view-grid .card-list,
-    .sf-list-container.view-list .card-list,
-    .sf-list-container.view-compact .card-list {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 16px !important;
-        grid-template-columns: none !important;
-        /* Remove grid */
-    }
-
-    /* Cards: vertical layout with full-width image on top */
     .sf-list-container.view-grid .card,
     .sf-list-container.view-list .card,
     .sf-list-container.view-compact .card {
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100% !important;
-        padding: 0 !important;
-        border-radius: 16px !important;
-        overflow: hidden !important;
+        border-radius: 14px !important;
         background: #fff !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     }
 
-    /* Thumbnail: full width, show complete image */
-    .sf-list-container.view-grid .card-thumb,
-    .sf-list-container.view-list .card-thumb,
-    .sf-list-container.view-compact .card-thumb {
+    /* Grid view: vertical card, full-width image on top */
+    .sf-list-container.view-grid .card-list {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .sf-list-container.view-grid .card {
         display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .sf-list-container.view-grid .card-thumb-wrapper,
+    .sf-list-container.view-grid .card-thumb {
         width: 100% !important;
-        height: auto !important;
+    }
+
+    .sf-list-container.view-grid .card-thumb {
+        display: flex !important;
         min-height: 180px !important;
-        max-height: 300px !important;
         align-items: center !important;
         justify-content: center !important;
-        border-radius: 16px 16px 0 0 !important;
         padding: 12px !important;
-        order: -1 !important;
+        background: #f8fafc !important;
     }
 
-    /* Image: contain to show FULL image, not cropped */
-    .sf-list-container.view-grid .card-thumb img,
-    .sf-list-container.view-list .card-thumb img,
-    .sf-list-container.view-compact .card-thumb img {
-        width: auto !important;
-        height: auto !important;
-        max-width: 100% !important;
-        max-height: 280px !important;
-        object-fit: contain !important;
-        border-radius: 8px !important;
-    }
-
-    /* Content area below image */
     .sf-list-container.view-grid .card-mid,
-    .sf-list-container.view-list .card-mid,
-    .sf-list-container.view-compact .card-mid {
+    .sf-list-container.view-grid .card-actions {
         padding: 16px !important;
-        width: 100% !important;
     }
 
-    /* Actions bar at bottom */
-    .sf-list-container.view-grid .card-actions,
-    .sf-list-container.view-list .card-actions,
-    .sf-list-container.view-compact .card-actions {
+    /* List view: horizontal row with thumbnail on the left */
+    .sf-list-container.view-list .card {
         display: flex !important;
         flex-direction: row !important;
-        justify-content: space-between !important;
-        padding: 12px 16px !important;
-        border-top: 1px solid #f1f5f9 !important;
-        background: #fafbfc !important;
-        border-radius: 0 0 16px 16px !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 12px !important;
+        overflow: hidden !important;
     }
 
-    /* Show title and site on all views */
-    .card-title,
-    .card-site {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+    .sf-list-container.view-list .card-thumb-wrapper,
+    .sf-list-container.view-list .card-thumb {
+        flex: 0 0 96px !important;
+        width: 96px !important;
+        height: 96px !important;
     }
 
-    /* Checkbox positioning - top right of card */
-    .card-checkbox,
-    .card-checkbox-main,
-    .card-checkbox-thumb {
-        position: absolute !important;
-        top: 12px !important;
-        right: 12px !important;
-        left: auto !important;
-        bottom: auto !important;
-        z-index: 25 !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 6px !important;
-        padding: 4px !important;
-    }
-
-    /* Copy button - bottom right of thumbnail */
-    .card-thumb .sf-copy-btn,
-    .card-thumb .sf-copy-btn-compact {
-        position: absolute !important;
-        bottom: 12px !important;
-        right: 12px !important;
-        z-index: 20 !important;
-    }
-
-    /* Comment badge - top left of card */
-    .comment-badge {
-        position: absolute !important;
-        top: 8px !important;
-        left: 8px !important;
-        right: auto !important;
-        z-index: 25 !important;
-    }
-
-    /* ===== COMPACT VIEW - MOBILE ULTRA TIGHT ===== */
-    .sf-list-container.view-compact .card-list {
+    .sf-list-container.view-list .card-thumb {
         display: flex !important;
-        flex-direction: column !important;
-        gap: 8px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 10px !important;
+        background: #f8fafc !important;
+        padding: 6px !important;
     }
 
+    .sf-list-container.view-list .card-mid {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    .sf-list-container.view-list .card-title {
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    /* Compact view: dense horizontal row with minimal actions */
     .sf-list-container.view-compact .card {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        padding: 12px 14px !important;
-        gap: 12px !important;
-        min-height: 60px !important;
-        border-radius: 12px !important;
-        border-left-width: 4px !important;
-        background: #fff !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        min-height: 48px !important;
+        padding: 10px 12px !important;
+        gap: 10px !important;
     }
 
-    /* Hide unnecessary elements */
-    .sf-list-container.view-compact .card-thumb,
     .sf-list-container.view-compact .card-thumb-wrapper,
-    .sf-list-container.view-compact .badge,
-    .sf-list-container.view-compact .status,
-    .sf-list-container.view-compact .card-lang-actions,
-    .sf-list-container.view-compact .card-meta,
-    .sf-list-container.view-compact .comment-badge,
-    .sf-list-container.view-compact .card-top,
-    .sf-list-container.view-compact .open-btn {
-        display: none !important;
-    }
-
-    /* Type indicator visible as dot */
-    .sf-list-container.view-compact .type-indicator {
-        display: none !important;
-        /* Use border-left instead */
-    }
-
-    /* Content area - flex grow */
-    .sf-list-container.view-compact .card-mid {
-        flex: 1 !important;
-        min-width: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 2px !important;
-        padding: 0 !important;
-    }
-
-    /* Title - single line */
-    .sf-list-container.view-compact .card-title {
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        white-space: normal !important;
-        overflow-wrap: break-word !important;
-        word-break: break-word !important;
-        margin: 0 !important;
-        color: #0f172a !important;
-    }
-
-    /* Hide original card-site for mobile compact */
-    .sf-list-container.view-compact .card-site {
-        display: none !important;
-    }
-
-    /* Show compact meta with inline site + date */
-    .sf-list-container.view-compact .card-compact-meta {
-        display: block !important;
-        font-size: 12px !important;
-        color: #64748b !important;
-        white-space: normal !important;
-        overflow-wrap: break-word !important;
-    }
-
-    .sf-list-container.view-compact .card-compact-meta .meta-separator {
-        color: #94a3b8 !important;
-    }
-
-    /* Show compact status icon and chevron */
-    .sf-list-container.view-compact .sf-compact-status,
-    .sf-list-container.view-compact .sf-compact-chevron {
-        display: flex !important;
-    }
-
-    /* Actions area - status icon + chevron */
+    .sf-list-container.view-compact .card-thumb,
     .sf-list-container.view-compact .card-actions {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 8px !important;
-        padding: 0 !important;
-        border: none !important;
-        background: transparent !important;
-        min-width: auto !important;
-        flex-shrink: 0 !important;
+        display: none !important;
     }
 
-    /* Checkbox - at start */
-    .sf-list-container.view-compact .card-checkbox-main {
-        position: static !important;
-        order: -2 !important;
+    .sf-list-container.view-compact .card-mid {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
         padding: 0 !important;
-        background: transparent !important;
-        flex-shrink: 0 !important;
     }
 
-    .sf-list-container.view-compact .card-checkbox-main input {
-        width: 18px !important;
-        height: 18px !important;
+    /* Images must always be fully visible in views that show thumbnails */
+    .sf-list-container.view-grid .card-thumb img,
+    .sf-list-container.view-list .card-thumb img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+    }
+
+    /* Thumb-friendly targets */
+    .sf-list-container.view-grid .card-actions .open-btn,
+    .sf-list-container.view-list .card-actions .open-btn {
+        min-height: 40px !important;
     }
 }
 
@@ -4525,22 +4411,45 @@ jne.
 
     /* ===== MOBIILI: LISTA-NÄKYMÄ (oletus) ===== */
     .sf-list-container.view-list .card {
-        flex-direction: column;
-        padding: 14px;
-        gap: 12px;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        padding: 12px !important;
+        gap: 12px !important;
         position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     }
 
     .sf-list-container.view-list .card-thumb-wrapper {
-        display: none !important;
+        display: block !important;
+        flex: 0 0 96px !important;
+        width: 96px !important;
+        order: 0 !important;
     }
 
     .sf-list-container.view-list .card-thumb {
-        display: none !important;
+        display: flex !important;
+        flex: 0 0 96px !important;
+        width: 96px !important;
+        height: 96px !important;
+        min-height: 96px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #f8fafc !important;
+        border-radius: 10px !important;
+        padding: 6px !important;
+    }
+
+    .sf-list-container.view-list .card-thumb img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
     }
 
     .sf-list-container.view-list .card-mid {
-        width: 100%;
+        width: auto !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
         padding-right: 0 !important;
     }
 
@@ -4573,13 +4482,14 @@ jne.
     .sf-list-container.view-list .card-actions {
         position: static !important;
         display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
+        flex-direction: column !important;
+        justify-content: center !important;
         align-items: center !important;
-        width: 100% !important;
-        padding: 12px !important;
-        margin-top: 8px !important;
-        border-top: 1px solid #f1f5f9 !important;
+        width: auto !important;
+        padding: 0 !important;
+        margin-top: 0 !important;
+        border-top: none !important;
+        background: transparent !important;
         gap: 8px !important;
     }
 
@@ -4621,8 +4531,8 @@ jne.
 
     /* ===== MOBILE GRID VIEW - SAME AS DESKTOP ===== */
     .sf-list-container.view-grid .card-list {
-        display: flex !important;
-        flex-direction: column !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
         gap: 16px !important;
     }
 
@@ -4637,6 +4547,7 @@ jne.
         background: #fff !important;
         border: 1px solid #e5e7eb !important;
         border-left: 5px solid transparent !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     }
 
     /* Type color on left border */
@@ -4864,6 +4775,7 @@ jne.
 
     /* Remove any borders/lines that overlap pills */
     .sf-list-container.view-compact .card-actions {
+        display: none !important;
         border: none !important;
         box-shadow: none !important;
     }
