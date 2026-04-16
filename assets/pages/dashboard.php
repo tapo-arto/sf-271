@@ -287,7 +287,7 @@ try {
         <h1 class="sf-page-title"><?= htmlspecialchars(sf_term('dashboard_title', $uiLang), ENT_QUOTES, 'UTF-8') ?></h1>
         <button id="sf-report-btn" class="sf-report-btn" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <?= htmlspecialchars(sf_term('dashboard_report_button', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars(sf_term('dashboard_report_btn', $uiLang), ENT_QUOTES, 'UTF-8') ?>
         </button>
     </div>
 
@@ -574,7 +574,7 @@ try {
         <div class="sf-report-modal-header">
             <h2 class="sf-report-modal-title" id="sf-report-modal-title">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <?= htmlspecialchars(sf_term('dashboard_report_modal_title', $uiLang), ENT_QUOTES, 'UTF-8') ?>
+                <?= htmlspecialchars(sf_term('dashboard_report_title', $uiLang), ENT_QUOTES, 'UTF-8') ?>
             </h2>
             <button class="sf-report-modal-close" id="sf-report-modal-close" aria-label="<?= htmlspecialchars(sf_term('dashboard_injury_modal_close', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
                 <span aria-hidden="true">✕</span>
@@ -584,7 +584,7 @@ try {
 
             <!-- Period selection -->
             <div class="sf-report-modal-section">
-                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_period', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
+                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_period_label', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
                 <div class="sf-report-quick-btns">
                     <button class="sf-report-quick-btn" data-period="thismonth" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_thismonth', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
                     <button class="sf-report-quick-btn" data-period="3months" type="button"><?= htmlspecialchars(sf_term('dashboard_time_filter_3months', $uiLang), ENT_QUOTES, 'UTF-8') ?></button>
@@ -617,7 +617,7 @@ try {
 
             <!-- Content selection -->
             <div class="sf-report-modal-section">
-                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_content', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
+                <h3 class="sf-report-modal-section-title"><?= htmlspecialchars(sf_term('dashboard_report_content_label', $uiLang), ENT_QUOTES, 'UTF-8') ?></h3>
                 <div class="sf-report-checkboxes">
                     <label class="sf-report-checkbox-label">
                         <input type="checkbox" id="sf-report-include-stats" checked>
@@ -719,3 +719,4 @@ window.SF_REPORT_I18N = {
 window.SF_CSRF_TOKEN = <?= json_encode(sf_csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 window.SF_REPORT_SITES = <?= json_encode($worksiteStats ? array_column($worksiteStats, 'site') : [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
 </script>
+<script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/dashboard-report.js"></script>
