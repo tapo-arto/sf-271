@@ -5532,7 +5532,7 @@ jne.
 }
 
 .sf-list-container.view-compact .sf-compact-status.status-reviewed {
-    --sf-compact-status-color: #dbeafe;
+    --sf-compact-status-color: var(--status-reviewed-bg, #dbeafe);
 }
 
 .sf-list-container.view-compact .sf-compact-status.status-to-comms {
@@ -5544,7 +5544,7 @@ jne.
 }
 
 .sf-list-container.view-compact .sf-compact-status.status-other {
-    --sf-compact-status-color: #64748b;
+    --sf-compact-status-color: var(--status-other-bg, #64748b);
 }
 
 @keyframes sf-compact-status-pulse-ring {
