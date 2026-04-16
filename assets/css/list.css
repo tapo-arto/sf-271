@@ -5302,7 +5302,15 @@ jne.
 
     /* Compact view: use tiny color status indicators instead of long status text */
     .sf-list-container.view-compact .card-top .status {
-        display: none !important;
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
     }
 
     .sf-list-container.view-compact .card-actions {
@@ -5323,6 +5331,10 @@ jne.
         display: none !important;
     }
 
+    .sf-list-container.view-compact {
+        --sf-compact-status-color-default: #94a3b8;
+    }
+
     .sf-list-container.view-compact .sf-compact-status {
         display: inline-flex !important;
         align-items: center !important;
@@ -5331,8 +5343,8 @@ jne.
         height: 12px !important;
         border-radius: 50% !important;
         padding: 0 !important;
-        background: var(--sf-compact-status-color, #94a3b8) !important;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9) !important;
+        background: var(--sf-compact-status-color, var(--sf-compact-status-color-default)) !important;
+        box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.5) !important;
     }
 
     .sf-list-container.view-compact .sf-compact-status .sf-compact-status-check,
@@ -5342,18 +5354,18 @@ jne.
 
     .sf-list-container.view-compact .sf-compact-status.status-pending {
         --sf-compact-status-color: #3b82f6;
-        animation: sf-compact-pulse 1.3s ease-in-out infinite;
+        animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
     .sf-list-container.view-compact .sf-compact-status.status-request-info,
     .sf-list-container.view-compact .sf-compact-status.status-reviewed {
         --sf-compact-status-color: #f59e0b;
-        animation: sf-compact-pulse 1.3s ease-in-out infinite;
+        animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
     .sf-list-container.view-compact .sf-compact-status.status-to-comms {
         --sf-compact-status-color: #d946ef;
-        animation: sf-compact-pulse 1.3s ease-in-out infinite;
+        animation: sf-compact-pulse 2s ease-in-out infinite;
     }
 
     .sf-list-container.view-compact .sf-compact-status.status-published {
@@ -5362,7 +5374,7 @@ jne.
     }
 
     .sf-list-container.view-compact .sf-compact-status.status-draft {
-        --sf-compact-status-color: #94a3b8;
+        --sf-compact-status-color: var(--sf-compact-status-color-default);
         animation: none;
     }
 
@@ -5424,12 +5436,9 @@ jne.
         box-sizing: border-box !important;
     }
 
-    .sf-list-container.view-grid .card-thumb-wrapper .card-thumb,
-    .sf-list-container.view-grid .card-thumb {
+    .sf-list-container.view-grid .card-thumb-wrapper .card-thumb {
         border-radius: 10px !important;
         overflow: hidden !important;
-        min-height: 170px !important;
-        padding: 10px !important;
     }
 
     .sf-list-container.view-grid .card-thumb img {
@@ -5438,7 +5447,6 @@ jne.
         max-width: 100% !important;
         max-height: 100% !important;
         object-fit: contain !important;
-        border-radius: 8px !important;
     }
 }
 
@@ -5451,5 +5459,11 @@ jne.
     50% {
         transform: scale(0.85);
         opacity: 0.75;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sf-list-container.view-compact .sf-compact-status {
+        animation: none !important;
     }
 }
