@@ -34,6 +34,27 @@ if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $cs
 }
 
 $action = $_POST['action'] ?? 'upload';
+$target = (string)($_POST['target'] ?? 'display_fallback');
+
+$targetMap = [
+    'display_fallback' => [
+        'setting_key' => 'display_fallback_image',
+        'filename_prefix' => 'fallback_',
+    ],
+    'xibo_summary_background' => [
+        'setting_key' => 'xibo_summary_background_image',
+        'filename_prefix' => 'xibo_summary_bg_',
+    ],
+];
+
+if (!isset($targetMap[$target])) {
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'error' => 'Invalid target']);
+    exit;
+}
+
+$settingKey = $targetMap[$target]['setting_key'];
+$filenamePrefix = $targetMap[$target]['filename_prefix'];
 
 $uploadDir = __DIR__ . '/../../uploads/display/';
 if (!is_dir($uploadDir)) {
@@ -49,8 +70,8 @@ try {
 
     if ($action === 'remove') {
         // Fetch current path from settings
-        $stmt = $pdo->prepare("SELECT setting_value FROM sf_settings WHERE setting_key = 'display_fallback_image' LIMIT 1");
-        $stmt->execute();
+        $stmt = $pdo->prepare("SELECT setting_value FROM sf_settings WHERE setting_key = :key LIMIT 1");
+        $stmt->execute([':key' => $settingKey]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $currentPath = $row['setting_value'] ?? '';
 
@@ -61,8 +82,15 @@ try {
             }
         }
 
-        $stmt = $pdo->prepare("UPDATE sf_settings SET setting_value = '', updated_by = :uid, updated_at = NOW() WHERE setting_key = 'display_fallback_image'");
-        $stmt->execute([':uid' => $userId]);
+        $stmt = $pdo->prepare("
+            INSERT INTO sf_settings (setting_key, setting_value, setting_type, updated_by, updated_at)
+            VALUES (:key, '', 'string', :uid, NOW())
+            ON DUPLICATE KEY UPDATE
+                setting_value = VALUES(setting_value),
+                updated_by = VALUES(updated_by),
+                updated_at = NOW()
+        ");
+        $stmt->execute([':key' => $settingKey, ':uid' => $userId]);
 
         echo json_encode(['ok' => true, 'removed' => true]);
         exit;
@@ -101,7 +129,7 @@ try {
 
     $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
     $ext = $extMap[$mimeType] ?? 'jpg';
-    $filename = 'fallback_' . uniqid('', true) . '.' . $ext;
+    $filename = $filenamePrefix . uniqid('', true) . '.' . $ext;
     $destPath = $uploadDir . $filename;
     $relativePath = 'uploads/display/' . $filename;
 
@@ -111,8 +139,8 @@ try {
     }
 
     // Remove old file if exists
-    $stmt = $pdo->prepare("SELECT setting_value FROM sf_settings WHERE setting_key = 'display_fallback_image' LIMIT 1");
-    $stmt->execute();
+    $stmt = $pdo->prepare("SELECT setting_value FROM sf_settings WHERE setting_key = :key LIMIT 1");
+    $stmt->execute([':key' => $settingKey]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $oldPath = $row['setting_value'] ?? '';
     if ($oldPath) {
@@ -123,8 +151,15 @@ try {
     }
 
     // Save new path
-    $stmt = $pdo->prepare("UPDATE sf_settings SET setting_value = :val, updated_by = :uid, updated_at = NOW() WHERE setting_key = 'display_fallback_image'");
-    $stmt->execute([':val' => $relativePath, ':uid' => $userId]);
+    $stmt = $pdo->prepare("
+        INSERT INTO sf_settings (setting_key, setting_value, setting_type, updated_by, updated_at)
+        VALUES (:key, :val, 'string', :uid, NOW())
+        ON DUPLICATE KEY UPDATE
+            setting_value = VALUES(setting_value),
+            updated_by = VALUES(updated_by),
+            updated_at = NOW()
+    ");
+    $stmt->execute([':key' => $settingKey, ':val' => $relativePath, ':uid' => $userId]);
 
     $baseUrl = rtrim($config['base_url'] ?? '', '/');
     echo json_encode([
