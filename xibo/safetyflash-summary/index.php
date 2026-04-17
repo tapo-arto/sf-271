@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
+require_once __DIR__ . '/../../app/includes/auth.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     http_response_code(405);
@@ -18,11 +19,16 @@ if ($configuredApiKeySetting === null) {
     $configuredApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
 }
 
-if ($apiKey === '' || $configuredApiKey === '' || !hash_equals($configuredApiKey, $apiKey)) {
-    http_response_code(401);
-    header('Content-Type: text/plain; charset=utf-8');
-    echo 'Unauthorized';
-    exit;
+$user = sf_current_user();
+$isAuthenticated = $user !== null;
+
+if (!$isAuthenticated) {
+    if ($apiKey === '' || $configuredApiKey === '' || !hash_equals($configuredApiKey, $apiKey)) {
+        http_response_code(401);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Unauthorized';
+        exit;
+    }
 }
 
 $pdo = Database::getInstance();
