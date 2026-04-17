@@ -74,7 +74,7 @@ $flashes = array_map(static function (array $row): array {
 $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
 $baseUrl = rtrim((string)($config['base_url'] ?? ''), '/');
 $appBaseUrl = preg_replace('#/xibo/safetyflash-summary$#', '', $baseUrl);
-if (!is_string($appBaseUrl)) {
+if ($appBaseUrl === null) {
     $appBaseUrl = $baseUrl;
 }
 $base = rtrim($appBaseUrl, '/');
