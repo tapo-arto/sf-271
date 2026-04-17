@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 $baseUrl = rtrim($config['base_url'] ?? '', '/');
 $csrfToken = $_SESSION['csrf_token'] ?? '';
-$xiboSummaryApiKey = trim((string)sf_get_setting('xibo_summary_api_key', ''));
-if ($xiboSummaryApiKey === '') {
+$xiboSummaryApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
+$xiboSummaryApiKey = $xiboSummaryApiKeySetting === null ? '' : trim((string)$xiboSummaryApiKeySetting);
+if ($xiboSummaryApiKeySetting === null) {
     $xiboSummaryApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
 }
 
@@ -483,6 +484,24 @@ usort($templateFiles, static function (array $a, array $b): int {
     const xiboBgImg = document.getElementById('sfXiboSummaryBgImg');
     const xiboBgNone = document.getElementById('sfXiboSummaryBgNone');
 
+    function reloadXiboPreview() {
+        const previewFrame = document.getElementById('sfXiboSummaryPreview');
+        if (!previewFrame) {
+            return;
+        }
+        const src = previewFrame.getAttribute('src') || '';
+        if (!src || src === 'about:blank') {
+            return;
+        }
+        try {
+            const url = new URL(src, window.location.origin);
+            url.searchParams.set('_ts', String(Date.now()));
+            previewFrame.src = url.toString();
+        } catch (e) {
+            previewFrame.src = src;
+        }
+    }
+
     const setXiboBgVisible = function(url) {
         if (xiboBgImg) {
             xiboBgImg.src = url;
@@ -530,10 +549,7 @@ usort($templateFiles, static function (array $a, array $b): int {
                 .then((data) => {
                     if (data.ok && data.url) {
                         setXiboBgVisible(data.url);
-                        const previewFrame = document.getElementById('sfXiboSummaryPreview');
-                        if (previewFrame && previewFrame.src) {
-                            previewFrame.src = previewFrame.src;
-                        }
+                        reloadXiboPreview();
                     } else {
                         alert(data.error || '<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
                     }
@@ -562,10 +578,7 @@ usort($templateFiles, static function (array $a, array $b): int {
                 .then((data) => {
                     if (data.ok) {
                         setXiboBgHidden();
-                        const previewFrame = document.getElementById('sfXiboSummaryPreview');
-                        if (previewFrame && previewFrame.src) {
-                            previewFrame.src = previewFrame.src;
-                        }
+                        reloadXiboPreview();
                     } else {
                         alert(data.error || '<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
                     }

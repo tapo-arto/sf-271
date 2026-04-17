@@ -34,7 +34,13 @@ if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $cs
 }
 
 $action = $_POST['action'] ?? 'upload';
-$target = (string)($_POST['target'] ?? 'display_fallback');
+$targetRaw = $_POST['target'] ?? 'display_fallback';
+if (!is_string($targetRaw)) {
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'error' => 'Invalid target']);
+    exit;
+}
+$target = trim($targetRaw);
 
 $targetMap = [
     'display_fallback' => [

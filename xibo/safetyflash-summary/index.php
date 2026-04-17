@@ -12,8 +12,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 }
 
 $apiKey = trim((string)($_GET['api_key'] ?? ''));
-$configuredApiKey = trim((string)sf_get_setting('xibo_summary_api_key', ''));
-if ($configuredApiKey === '') {
+$configuredApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
+$configuredApiKey = $configuredApiKeySetting === null ? '' : trim((string)$configuredApiKeySetting);
+if ($configuredApiKeySetting === null) {
     $configuredApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
 }
 
