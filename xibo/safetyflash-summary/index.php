@@ -70,8 +70,14 @@ $flashes = array_map(static function (array $row): array {
 $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
 $baseUrl = rtrim((string)($config['base_url'] ?? ''), '/');
 $backgroundUrl = '';
-if ($backgroundPath !== '' && $baseUrl !== '') {
-    $backgroundUrl = $baseUrl . '/' . ltrim($backgroundPath, '/');
+if ($backgroundPath !== '') {
+    if (preg_match('#^(?:https?:)?//#i', $backgroundPath) === 1 || strpos($backgroundPath, 'data:') === 0) {
+        $backgroundUrl = $backgroundPath;
+    } elseif ($baseUrl !== '') {
+        $backgroundUrl = $baseUrl . '/' . ltrim($backgroundPath, '/');
+    } else {
+        $backgroundUrl = '/' . ltrim($backgroundPath, '/');
+    }
 }
 
 header('Content-Type: text/html; charset=utf-8');
@@ -80,17 +86,28 @@ header('Content-Type: text/html; charset=utf-8');
 <html lang="fi">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=1920, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafetyFlash koonti</title>
     <style>
         html, body {
             margin: 0;
-            width: 1920px;
-            height: 1080px;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             font-family: "Segoe UI", Roboto, Arial, sans-serif;
             color: #0f172a;
-            background: #ffffff;
+            background: #020617;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sf-stage {
+            width: 1920px;
+            height: 1080px;
+            transform-origin: center center;
+            transform: scale(min(calc(100vw / 1920), calc(100vh / 1080)));
         }
         .sf-summary {
             position: relative;
@@ -168,9 +185,20 @@ header('Content-Type: text/html; charset=utf-8');
             background: #f8fafc;
             box-shadow: 0 8px 26px rgba(15, 23, 42, 0.08);
         }
-        .sf-row .sf-type {
+        .sf-type {
             font-weight: 700;
+        }
+        .sf-type--red {
             color: #b91c1c;
+        }
+        .sf-type--yellow {
+            color: #b45309;
+        }
+        .sf-type--green {
+            color: #15803d;
+        }
+        .sf-type--default {
+            color: #334155;
         }
         .sf-cell {
             font-size: 30px;
@@ -202,24 +230,26 @@ header('Content-Type: text/html; charset=utf-8');
     </style>
 </head>
 <body>
-<div class="sf-summary" id="sfSummaryRoot" style="--sf-bg-image: none;">
-    <div class="sf-summary-inner">
-        <div class="sf-header">
-            <h1 class="sf-title">Aktiiviset SafetyFlashit</h1>
-            <div class="sf-pill">Koontinäkymä</div>
-        </div>
+<div class="sf-stage">
+    <div class="sf-summary" id="sfSummaryRoot" style="--sf-bg-image: none;">
+        <div class="sf-summary-inner">
+            <div class="sf-header">
+                <h1 class="sf-title">Aktiiviset SafetyFlashit</h1>
+                <div class="sf-pill">Koontinäkymä</div>
+            </div>
 
-        <div class="sf-table-head">
-            <div>Otsikko</div>
-            <div>Työmaa</div>
-            <div>Tyyppi</div>
-            <div>Tapahtuma-aika</div>
-        </div>
+            <div class="sf-table-head">
+                <div>Otsikko</div>
+                <div>Työmaa</div>
+                <div>Tyyppi</div>
+                <div>Tapahtuma-aika</div>
+            </div>
 
-        <div class="sf-list" id="sfSummaryList"></div>
+            <div class="sf-list" id="sfSummaryList"></div>
 
-        <div class="sf-footer">
-            <span id="sfPageIndicator">Sivu 1 / 1</span>
+            <div class="sf-footer">
+                <span id="sfPageIndicator">Sivu 1 / 1</span>
+            </div>
         </div>
     </div>
 </div>
@@ -239,7 +269,7 @@ header('Content-Type: text/html; charset=utf-8');
     const indicator = document.getElementById('sfPageIndicator');
 
     if (backgroundUrl) {
-        root.style.setProperty('--sf-bg-image', `url("${backgroundUrl}")`);
+        root.style.setProperty('--sf-bg-image', `url(${JSON.stringify(backgroundUrl)})`);
     }
 
     const escapeHtml = (value) => String(value || '')
@@ -248,6 +278,21 @@ header('Content-Type: text/html; charset=utf-8');
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+
+    const getTypePresentation = (typeValue) => {
+        const rawType = String(typeValue || '').trim();
+        const normalized = rawType.toLowerCase();
+        if (normalized === 'red') {
+            return { label: 'Punainen', className: 'sf-type--red' };
+        }
+        if (normalized === 'yellow') {
+            return { label: 'Keltainen', className: 'sf-type--yellow' };
+        }
+        if (normalized === 'green') {
+            return { label: 'Vihreä', className: 'sf-type--green' };
+        }
+        return { label: rawType || '-', className: 'sf-type--default' };
+    };
 
     const renderPage = () => {
         if (!flashes.length) {
@@ -258,14 +303,17 @@ header('Content-Type: text/html; charset=utf-8');
 
         const start = currentPage * itemsPerPage;
         const pageItems = flashes.slice(start, start + itemsPerPage);
-        list.innerHTML = pageItems.map((flash) => `
+        list.innerHTML = pageItems.map((flash) => {
+            const type = getTypePresentation(flash.type);
+            return `
             <div class="sf-row">
                 <div class="sf-cell">${escapeHtml(flash.title)}</div>
                 <div class="sf-cell">${escapeHtml(flash.site_name)}</div>
-                <div class="sf-cell sf-type">${escapeHtml(flash.type)}</div>
+                <div class="sf-cell sf-type ${type.className}">${escapeHtml(type.label)}</div>
                 <div class="sf-cell">${escapeHtml(flash.event_date)}</div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         indicator.textContent = `Sivu ${currentPage + 1} / ${totalPages}`;
     };
