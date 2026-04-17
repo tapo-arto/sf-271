@@ -73,6 +73,12 @@ $flashes = array_map(static function (array $row): array {
 
 $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
 $baseUrl = rtrim((string)($config['base_url'] ?? ''), '/');
+$appBaseUrl = preg_replace('#/xibo/safetyflash-summary$#', '', $baseUrl);
+if (!is_string($appBaseUrl)) {
+    $appBaseUrl = $baseUrl;
+}
+$base = rtrim($appBaseUrl, '/');
+$config['base_url'] = $base;
 $backgroundUrl = '';
 if ($backgroundPath !== '') {
     $normalizedBackgroundPath = strtolower($backgroundPath);
@@ -80,8 +86,8 @@ if ($backgroundPath !== '') {
     $isDataUri = strpos($normalizedBackgroundPath, 'data:') === 0;
     if ($isAbsoluteHttp || $isDataUri) {
         $backgroundUrl = $backgroundPath;
-    } elseif ($baseUrl !== '') {
-        $backgroundUrl = $baseUrl . '/' . ltrim($backgroundPath, '/');
+    } elseif ($base !== '') {
+        $backgroundUrl = $base . '/' . ltrim($backgroundPath, '/');
     } else {
         $backgroundUrl = '/' . ltrim($backgroundPath, '/');
     }
@@ -96,11 +102,11 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafetyFlash koonti</title>
 <?php if (!$isStandaloneMode): ?>
-    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/nav.css', $baseUrl) ?>">
-    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/global.css', $baseUrl) ?>">
-    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/layout.css', $baseUrl) ?>">
-    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/skeleton.css', $baseUrl) ?>">
-    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/modals.css', $baseUrl) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/nav.css', $base) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/global.css', $base) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/layout.css', $base) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/skeleton.css', $base) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/modals.css', $base) ?>">
 <?php endif; ?>
     <style>
         html,
