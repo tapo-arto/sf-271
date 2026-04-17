@@ -3305,6 +3305,13 @@ function updateDeleteModalContent() {
 <script src="<?= sf_asset_url('assets/js/display-targets-modal.js', $base) ?>"></script>
 <?php endif; ?>
 
+<script>
+window.SF_LIST_I18N = window.SF_LIST_I18N || {};
+window.SF_LIST_I18N.editingIndicator = <?= json_encode(sf_term('editing_indicator', $currentUiLang), JSON_UNESCAPED_UNICODE) ?>;
+window.SF_BASE_URL = window.SF_BASE_URL || <?= json_encode($base) ?>;
+</script>
+<script src="<?= sf_asset_url('assets/js/editing-indicator.js', $base) ?>"></script>
+
 <!-- Sivukohtaiset datat -->
 <script>
 window.SF_LOG_SHOW_MORE   = <?php echo json_encode(sf_term('log_show_more', $currentUiLang)); ?>;

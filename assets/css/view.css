@@ -2933,6 +2933,47 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
     }
 }
 
+/* ========================================
+   EDITING INDICATOR
+   ======================================== */
+
+.sf-editing-indicator {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    background: linear-gradient(90deg, #fef3c7, #fde68a, #fef3c7);
+    background-size: 200% 100%;
+    animation: sf-shimmer 2s infinite linear;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #92400e;
+}
+
+@keyframes sf-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.sf-editing-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(146, 64, 14, 0.3);
+    border-top-color: #92400e;
+    border-radius: 50%;
+    animation: sf-spin 0.8s linear infinite;
+}
+
+.sf-editing-text {
+    font-weight: 500;
+}
+
 /* Sidebar: status pill omaksi laatikoksi */
 .sf-status-row {
     display: flex;
