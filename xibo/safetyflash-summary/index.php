@@ -438,7 +438,7 @@ header('Content-Type: text/html; charset=utf-8');
             flex-direction: column;
             background: transparent;
             border-radius: 0;
-            padding: 26px 30px;
+            padding: 10px 26px 26px 150px;
             box-shadow: none;
         }
         .sf-table-head,
@@ -518,7 +518,7 @@ header('Content-Type: text/html; charset=utf-8');
         .sf-footer {
             margin-top: 16px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             color: #64748b;
             font-size: 24px;
             font-weight: 600;
