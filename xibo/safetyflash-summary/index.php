@@ -48,17 +48,17 @@ $groups = [];
 foreach ($rows as $row) {
     $row['sort_ts'] = strtotime((string)($row['occurred_at'] ?? $row['created_at'] ?? '')) ?: 0;
     $groupId = !empty($row['translation_group_id']) ? (int)$row['translation_group_id'] : (int)$row['id'];
-    $rowLang = strtolower(trim((string)($row['lang'] ?? '')));
-    if ($rowLang === $uiLang) {
+    $rowLanguage = strtolower(trim((string)($row['lang'] ?? '')));
+    if ($rowLanguage === $uiLang) {
         $row['lang_priority'] = 0;
-    } elseif ($rowLang === 'fi') {
+    } elseif ($rowLanguage === 'fi') {
         $row['lang_priority'] = 1;
     } else {
         $row['lang_priority'] = 2;
     }
     if (
         !isset($groups[$groupId])
-        || (int)$row['lang_priority'] < (int)($groups[$groupId]['lang_priority'] ?? PHP_INT_MAX)
+        || $row['lang_priority'] < (int)($groups[$groupId]['lang_priority'] ?? PHP_INT_MAX)
     ) {
         $groups[$groupId] = $row;
     }
