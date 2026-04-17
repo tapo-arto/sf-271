@@ -4,6 +4,18 @@ declare(strict_types=1);
 
 $baseUrl = rtrim($config['base_url'] ?? '', '/');
 $csrfToken = $_SESSION['csrf_token'] ?? '';
+$xiboSummaryApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
+$xiboSummaryApiKey = $xiboSummaryApiKeySetting === null ? '' : trim((string)$xiboSummaryApiKeySetting);
+if ($xiboSummaryApiKeySetting === null) {
+    $xiboSummaryApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
+}
+
+$xiboSummaryBackgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
+$xiboSummaryBackgroundUrl = ($xiboSummaryBackgroundPath !== '' && $baseUrl !== '')
+    ? $baseUrl . '/' . ltrim($xiboSummaryBackgroundPath, '/')
+    : '';
+
+$xiboSummaryUrl = $baseUrl . '/xibo/safetyflash-summary/?api_key=' . rawurlencode($xiboSummaryApiKey);
 
 $templateDir = dirname(__DIR__, 3) . '/assets/img/templates';
 $templateFiles = [];
@@ -251,6 +263,48 @@ usort($templateFiles, static function (array $a, array $b): int {
     border-top: 1px solid #e2e8f0;
     margin-top: 16px;
 }
+
+.sf-xibo-summary-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.sf-xibo-summary-url {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.sf-xibo-summary-url code {
+    display: block;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    word-break: break-all;
+}
+
+.sf-xibo-preview-wrap {
+    width: 960px;
+    height: 540px;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+}
+
+.sf-xibo-preview-frame {
+    width: 1920px;
+    height: 1080px;
+    border: 0;
+    transform: scale(0.5);
+    transform-origin: top left;
+}
 </style>
 
 <div class="sf-settings-section">
@@ -350,6 +404,68 @@ usort($templateFiles, static function (array $a, array $b): int {
     <?php endif; ?>
 </div>
 
+<div class="sf-settings-section">
+    <h3>Xibo SafetyFlash -koontinäkymä</h3>
+    <p class="sf-template-help">
+        Koontinäkymä näyttää kaikki aktiiviset SafetyFlashit yhdellä 1920×1080 -dialla.
+        Valitse halutessasi taustakuva tai käytä oletuksena valkoista taustaa.
+    </p>
+
+    <div id="sfXiboSummaryBgPreview" style="margin-bottom:0.75rem;<?= $xiboSummaryBackgroundUrl !== '' ? '' : 'display:none;' ?>">
+        <p style="font-size:0.85rem;color:#475569;margin-bottom:0.4rem;">Nykyinen taustakuva</p>
+        <img
+            id="sfXiboSummaryBgImg"
+            src="<?= htmlspecialchars($xiboSummaryBackgroundUrl, ENT_QUOTES, 'UTF-8') ?>"
+            alt=""
+            style="max-width:200px;border:1px solid #cbd5e1;border-radius:4px;"
+        >
+    </div>
+    <?php if ($xiboSummaryBackgroundUrl === ''): ?>
+        <p id="sfXiboSummaryBgNone" style="color:#94a3b8;font-size:0.85rem;margin-bottom:0.75rem;">
+            Ei taustakuvaa asetettu (käytetään valkoista taustaa).
+        </p>
+    <?php endif; ?>
+
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+        <label class="sf-btn sf-btn-outline-primary sf-btn-sm" style="cursor:pointer;margin:0;">
+            Valitse taustakuva...
+            <input type="file" id="sfXiboSummaryBgFile" accept="image/jpeg,image/png,image/webp" style="display:none;">
+        </label>
+        <button
+            type="button"
+            id="sfXiboSummaryBgRemove"
+            class="sf-btn sf-btn-sm sf-btn-outline-danger"
+            style="<?= $xiboSummaryBackgroundUrl !== '' ? '' : 'display:none;' ?>"
+        >
+            Poista taustakuva
+        </button>
+    </div>
+
+    <div class="sf-xibo-summary-box">
+        <p class="sf-xibo-summary-url">
+            Xibo URL:
+            <code id="sfXiboSummaryUrl"><?= htmlspecialchars($xiboSummaryUrl, ENT_QUOTES, 'UTF-8') ?></code>
+        </p>
+
+        <?php if ($xiboSummaryApiKey === ''): ?>
+            <p class="sf-setting-description">
+                Aseta ympäristömuuttuja <strong>XIBO_SUMMARY_API_KEY</strong> (tai asetus <strong>xibo_summary_api_key</strong>),
+                jotta näkymä voidaan avata API-avaimella.
+            </p>
+        <?php endif; ?>
+
+        <p class="sf-setting-description" style="margin:10px 0 8px;">Esikatselu (50% / 960×540)</p>
+        <div class="sf-xibo-preview-wrap">
+            <iframe
+                id="sfXiboSummaryPreview"
+                class="sf-xibo-preview-frame"
+                src="<?= htmlspecialchars($xiboSummaryApiKey !== '' ? $xiboSummaryUrl : 'about:blank', ENT_QUOTES, 'UTF-8') ?>"
+                loading="lazy"
+            ></iframe>
+        </div>
+    </div>
+</div>
+
 <div class="sf-settings-actions">
     <button type="button" id="saveSystemSettings" class="sf-btn sf-btn-primary"><?= htmlspecialchars(sf_term('btn_save', $currentUiLang) ?? 'Tallenna', ENT_QUOTES, 'UTF-8') ?></button>
 </div>
@@ -361,6 +477,117 @@ usort($templateFiles, static function (array $a, array $b): int {
     const baseUrl = window.SF_BASE_URL || '<?= $baseUrl ?>';
     const csrfToken = '<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>';
     const saveBtn = document.getElementById('saveSystemSettings');
+    const xiboBgApiUrl = baseUrl + '/app/api/upload_display_fallback.php';
+    const xiboBgFileInput = document.getElementById('sfXiboSummaryBgFile');
+    const xiboBgRemoveBtn = document.getElementById('sfXiboSummaryBgRemove');
+    const xiboBgPreview = document.getElementById('sfXiboSummaryBgPreview');
+    const xiboBgImg = document.getElementById('sfXiboSummaryBgImg');
+    const xiboBgNone = document.getElementById('sfXiboSummaryBgNone');
+
+    function reloadXiboPreview() {
+        const previewFrame = document.getElementById('sfXiboSummaryPreview');
+        if (!previewFrame) {
+            return;
+        }
+        const src = previewFrame.getAttribute('src') || '';
+        if (!src || src === 'about:blank') {
+            return;
+        }
+        try {
+            const url = new URL(src, window.location.origin);
+            url.searchParams.set('_ts', String(Date.now()));
+            previewFrame.src = url.toString();
+        } catch (e) {
+            previewFrame.src = src;
+        }
+    }
+
+    const setXiboBgVisible = function(url) {
+        if (xiboBgImg) {
+            xiboBgImg.src = url;
+        }
+        if (xiboBgPreview) {
+            xiboBgPreview.style.display = '';
+        }
+        if (xiboBgNone) {
+            xiboBgNone.style.display = 'none';
+        }
+        if (xiboBgRemoveBtn) {
+            xiboBgRemoveBtn.style.display = '';
+        }
+    };
+
+    const setXiboBgHidden = function() {
+        if (xiboBgPreview) {
+            xiboBgPreview.style.display = 'none';
+        }
+        if (xiboBgNone) {
+            xiboBgNone.style.display = '';
+        }
+        if (xiboBgRemoveBtn) {
+            xiboBgRemoveBtn.style.display = 'none';
+        }
+    };
+
+    if (xiboBgFileInput) {
+        xiboBgFileInput.addEventListener('change', function() {
+            if (!xiboBgFileInput.files || !xiboBgFileInput.files.length) {
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('action', 'upload');
+            fd.append('target', 'xibo_summary_background');
+            fd.append('csrf_token', csrfToken);
+            fd.append('image', xiboBgFileInput.files[0]);
+
+            fetch(xiboBgApiUrl, {
+                method: 'POST',
+                body: fd
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.ok && data.url) {
+                        setXiboBgVisible(data.url);
+                        reloadXiboPreview();
+                    } else {
+                        alert(data.error || '<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
+                    }
+                })
+                .catch(() => {
+                    alert('<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
+                })
+                .finally(() => {
+                    xiboBgFileInput.value = '';
+                });
+        });
+    }
+
+    if (xiboBgRemoveBtn) {
+        xiboBgRemoveBtn.addEventListener('click', function() {
+            const fd = new FormData();
+            fd.append('action', 'remove');
+            fd.append('target', 'xibo_summary_background');
+            fd.append('csrf_token', csrfToken);
+
+            fetch(xiboBgApiUrl, {
+                method: 'POST',
+                body: fd
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.ok) {
+                        setXiboBgHidden();
+                        reloadXiboPreview();
+                    } else {
+                        alert(data.error || '<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
+                    }
+                })
+                .catch(() => {
+                    alert('<?= htmlspecialchars(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', ENT_QUOTES, 'UTF-8') ?>');
+                });
+        });
+    }
 
     if (saveBtn) {
         saveBtn.addEventListener('click', async function() {
