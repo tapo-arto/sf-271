@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
 require_once __DIR__ . '/../../app/includes/auth.php';
 
@@ -36,22 +37,52 @@ if (!$isAuthenticated && !$hasValidApiKey) {
 }
 
 $pdo = Database::getInstance();
+$allowedLangs = ['fi', 'sv', 'en', 'it', 'el'];
+$requestedLang = strtolower(trim((string)($_GET['lang'] ?? 'fi')));
+$uiLang = in_array($requestedLang, $allowedLangs, true) ? $requestedLang : 'fi';
 
 $stmt = $pdo->prepare("
     SELECT
+        f.id,
+        f.translation_group_id,
+        f.lang,
         f.title,
         f.site,
         f.type,
-        f.occurred_at
+        f.occurred_at,
+        f.created_at
     FROM sf_flashes f
     WHERE f.state = 'published'
       AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())
       AND f.display_removed_at IS NULL
-    ORDER BY COALESCE(f.occurred_at, f.created_at) DESC
-    LIMIT 300
+    ORDER BY
+        COALESCE(f.translation_group_id, f.id) ASC,
+        CASE
+            WHEN f.lang = :preferred_lang THEN 0
+            WHEN f.lang = 'en' THEN 1
+            WHEN f.id = COALESCE(f.translation_group_id, f.id) THEN 2
+            ELSE 3
+        END ASC,
+        COALESCE(f.occurred_at, f.created_at) DESC,
+        f.id DESC
 ");
-$stmt->execute();
+$stmt->execute([':preferred_lang' => $uiLang]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$groups = [];
+foreach ($rows as $row) {
+    $groupId = !empty($row['translation_group_id']) ? (int)$row['translation_group_id'] : (int)$row['id'];
+    if (!isset($groups[$groupId])) {
+        $groups[$groupId] = $row;
+    }
+}
+
+$selectedRows = array_values($groups);
+usort($selectedRows, static function (array $a, array $b): int {
+    $aTimestamp = strtotime((string)($a['occurred_at'] ?? $a['created_at'] ?? '')) ?: 0;
+    $bTimestamp = strtotime((string)($b['occurred_at'] ?? $b['created_at'] ?? '')) ?: 0;
+    return $bTimestamp <=> $aTimestamp;
+});
 
 $flashes = array_map(static function (array $row): array {
     $eventDateRaw = trim((string)($row['occurred_at'] ?? ''));
@@ -67,9 +98,81 @@ $flashes = array_map(static function (array $row): array {
         'title' => trim((string)($row['title'] ?? '')),
         'site_name' => trim((string)($row['site'] ?? '')),
         'type' => trim((string)($row['type'] ?? '')),
+        'lang' => trim((string)($row['lang'] ?? '')),
         'event_date' => $formattedDate,
     ];
-}, $rows);
+}, $selectedRows);
+
+$viewTexts = [
+    'fi' => [
+        'title' => 'Aktiiviset SafetyFlashit',
+        'summary' => 'Koontinäkymä',
+        'col_title' => 'Otsikko',
+        'col_site' => 'Työmaa',
+        'col_type' => 'Tyyppi',
+        'col_event_date' => 'Tapahtuma-aika',
+        'empty' => 'Ei aktiivisia SafetyFlasheja',
+        'page' => 'Sivu',
+        'of' => '/',
+    ],
+    'sv' => [
+        'title' => 'Aktiva SafetyFlashar',
+        'summary' => 'Sammanfattning',
+        'col_title' => 'Rubrik',
+        'col_site' => 'Arbetsplats',
+        'col_type' => 'Typ',
+        'col_event_date' => 'Händelsetid',
+        'empty' => 'Inga aktiva SafetyFlashar',
+        'page' => 'Sida',
+        'of' => '/',
+    ],
+    'en' => [
+        'title' => 'Active SafetyFlashes',
+        'summary' => 'Summary view',
+        'col_title' => 'Title',
+        'col_site' => 'Site',
+        'col_type' => 'Type',
+        'col_event_date' => 'Event time',
+        'empty' => 'No active SafetyFlashes',
+        'page' => 'Page',
+        'of' => '/',
+    ],
+    'it' => [
+        'title' => 'SafetyFlash attivi',
+        'summary' => 'Vista riepilogo',
+        'col_title' => 'Titolo',
+        'col_site' => 'Sito',
+        'col_type' => 'Tipo',
+        'col_event_date' => 'Ora evento',
+        'empty' => 'Nessun SafetyFlash attivo',
+        'page' => 'Pagina',
+        'of' => '/',
+    ],
+    'el' => [
+        'title' => 'Ενεργά SafetyFlash',
+        'summary' => 'Προβολή σύνοψης',
+        'col_title' => 'Τίτλος',
+        'col_site' => 'Εργοτάξιο',
+        'col_type' => 'Τύπος',
+        'col_event_date' => 'Ώρα συμβάντος',
+        'empty' => 'Δεν υπάρχουν ενεργά SafetyFlash',
+        'page' => 'Σελίδα',
+        'of' => '/',
+    ],
+];
+$viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
+
+$typeLabels = [
+    'red' => sf_term('investigation_report', $uiLang),
+    'yellow' => sf_term('first_release', $uiLang),
+    'green' => [
+        'fi' => 'Vaaratilanne / läheltä piti',
+        'sv' => 'Farlig situation / nära ögat',
+        'en' => 'Near miss / hazard',
+        'it' => 'Quasi incidente / pericolo',
+        'el' => 'Παρ’ ολίγον ατύχημα / κίνδυνος',
+    ][$uiLang] ?? 'Near miss / hazard',
+];
 
 $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
 $baseUrl = rtrim((string)($config['base_url'] ?? ''), '/');
@@ -97,7 +200,7 @@ if ($backgroundPath !== '') {
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!doctype html>
-<html lang="fi">
+<html lang="<?= htmlspecialchars($uiLang, ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -186,7 +289,7 @@ header('Content-Type: text/html; charset=utf-8');
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.86);
+            background: rgba(255, 255, 255, 0.16);
             z-index: 0;
         }
         .sf-summary-inner {
@@ -195,6 +298,10 @@ header('Content-Type: text/html; charset=utf-8');
             height: 100%;
             display: flex;
             flex-direction: column;
+            background: rgba(248, 250, 252, 0.74);
+            border-radius: 24px;
+            padding: 26px 30px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
         }
         .sf-header {
             display: flex;
@@ -226,25 +333,37 @@ header('Content-Type: text/html; charset=utf-8');
             align-items: center;
         }
         .sf-table-head {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: #334155;
-            margin-bottom: 12px;
-            padding: 0 12px;
+            margin-bottom: 14px;
+            padding: 0 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
         .sf-list {
             flex: 1;
             display: grid;
-            gap: 12px;
+            gap: 14px;
             align-content: start;
         }
         .sf-row {
-            min-height: 108px;
-            padding: 16px 18px;
-            border-radius: 18px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            box-shadow: 0 8px 26px rgba(15, 23, 42, 0.08);
+            min-height: 112px;
+            padding: 18px 20px;
+            border-radius: 16px;
+            border: 1px solid #dbe4ee;
+            border-left: 8px solid transparent;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.11);
+        }
+        .sf-row--red {
+            border-left-color: #b91c1c;
+        }
+        .sf-row--yellow {
+            border-left-color: #b45309;
+        }
+        .sf-row--green {
+            border-left-color: #15803d;
         }
         .sf-type {
             font-weight: 700;
@@ -262,7 +381,7 @@ header('Content-Type: text/html; charset=utf-8');
             color: #334155;
         }
         .sf-cell {
-            font-size: 30px;
+            font-size: 28px;
             line-height: 1.25;
             white-space: nowrap;
             overflow: hidden;
@@ -275,7 +394,7 @@ header('Content-Type: text/html; charset=utf-8');
             min-height: 680px;
             border-radius: 20px;
             border: 1px dashed #cbd5e1;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.88);
             font-size: 38px;
             color: #475569;
             font-weight: 600;
@@ -292,7 +411,6 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body class="<?= $isStandaloneMode ? 'sf-xibo-standalone' : '' ?>">
 <?php if (!$isStandaloneMode): ?>
-<?php require_once __DIR__ . '/../../assets/lib/sf_terms.php'; ?>
 <?php require_once __DIR__ . '/../../app/includes/header.php'; ?>
 <div class="sf-container sf-xibo-summary-container" id="sfContainer">
     <div class="sf-xibo-preview-card">
@@ -302,15 +420,15 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="sf-summary" id="sfSummaryRoot">
         <div class="sf-summary-inner">
             <div class="sf-header">
-                <h1 class="sf-title">Aktiiviset SafetyFlashit</h1>
-                <div class="sf-pill">Koontinäkymä</div>
+                <h1 class="sf-title"><?= htmlspecialchars($viewI18n['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+                <div class="sf-pill"><?= htmlspecialchars($viewI18n['summary'], ENT_QUOTES, 'UTF-8') ?></div>
             </div>
 
             <div class="sf-table-head">
-                <div>Otsikko</div>
-                <div>Työmaa</div>
-                <div>Tyyppi</div>
-                <div>Tapahtuma-aika</div>
+                <div><?= htmlspecialchars($viewI18n['col_title'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div><?= htmlspecialchars($viewI18n['col_site'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div><?= htmlspecialchars($viewI18n['col_type'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div><?= htmlspecialchars($viewI18n['col_event_date'], ENT_QUOTES, 'UTF-8') ?></div>
             </div>
 
             <div class="sf-list" id="sfSummaryList"></div>
@@ -334,6 +452,8 @@ header('Content-Type: text/html; charset=utf-8');
 
     const flashes = <?= json_encode($flashes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const backgroundUrl = <?= json_encode($backgroundUrl, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const i18n = <?= json_encode($viewI18n, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
     const itemsPerPage = 7;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
@@ -391,17 +511,17 @@ header('Content-Type: text/html; charset=utf-8');
         const rawType = String(typeValue || '').trim();
         const normalized = rawType.toLowerCase();
         const knownTypes = {
-            red: { label: 'Punainen', className: 'sf-type--red' },
-            yellow: { label: 'Keltainen', className: 'sf-type--yellow' },
-            green: { label: 'Vihreä', className: 'sf-type--green' },
+            red: { label: typeLabels.red || rawType, className: 'sf-type--red', rowClass: 'sf-row--red' },
+            yellow: { label: typeLabels.yellow || rawType, className: 'sf-type--yellow', rowClass: 'sf-row--yellow' },
+            green: { label: typeLabels.green || rawType, className: 'sf-type--green', rowClass: 'sf-row--green' },
         };
-        return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default' };
+        return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default', rowClass: '' };
     };
 
     const renderPage = () => {
         if (!flashes.length) {
-            list.innerHTML = '<div class="sf-empty">Ei aktiivisia SafetyFlasheja</div>';
-            indicator.textContent = 'Sivu 1 / 1';
+            list.innerHTML = `<div class="sf-empty">${escapeHtml(i18n.empty || 'No active SafetyFlashes')}</div>`;
+            indicator.textContent = `${i18n.page || 'Page'} 1 ${i18n.of || '/'} 1`;
             return;
         }
 
@@ -410,7 +530,7 @@ header('Content-Type: text/html; charset=utf-8');
         list.innerHTML = pageItems.map((flash) => {
             const type = getTypePresentation(flash.type);
             return `
-            <div class="sf-row">
+            <div class="sf-row ${type.rowClass}">
                 <div class="sf-cell">${escapeHtml(flash.title)}</div>
                 <div class="sf-cell">${escapeHtml(flash.site_name)}</div>
                 <div class="sf-cell sf-type ${type.className}">${escapeHtml(type.label)}</div>
@@ -419,7 +539,7 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }).join('');
 
-        indicator.textContent = `Sivu ${currentPage + 1} / ${totalPages}`;
+        indicator.textContent = `${i18n.page || 'Page'} ${currentPage + 1} ${i18n.of || '/'} ${totalPages}`;
     };
 
     renderPage();
