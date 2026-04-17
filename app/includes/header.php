@@ -25,12 +25,7 @@ if (!in_array($currentPage, $allowedPages, true)) {
 $user    = sf_current_user();
 $isAdmin = $user && (int)$user['role_id'] === 1;
 
-$xiboSummaryApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
-$xiboSummaryApiKey = $xiboSummaryApiKeySetting === null ? '' : trim((string)$xiboSummaryApiKeySetting);
-if ($xiboSummaryApiKeySetting === null) {
-    $xiboSummaryApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
-}
-$xiboSummaryUrl = $base . '/xibo/safetyflash-summary/?api_key=' . rawurlencode($xiboSummaryApiKey);
+$xiboSummaryUrl = $base . '/xibo/safetyflash-summary/?mode=app';
 
 // --- Updates notification badge ---
 $unreadUpdatesCount = 0;

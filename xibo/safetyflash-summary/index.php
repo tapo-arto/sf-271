@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
 require_once __DIR__ . '/../../app/includes/auth.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     http_response_code(405);
@@ -13,6 +14,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 }
 
 $apiKey = trim((string)($_GET['api_key'] ?? ''));
+$requestedMode = strtolower(trim((string)($_GET['mode'] ?? '')));
 $configuredApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
 $configuredApiKey = $configuredApiKeySetting === null ? '' : trim((string)$configuredApiKeySetting);
 if ($configuredApiKeySetting === null) {
@@ -21,14 +23,16 @@ if ($configuredApiKeySetting === null) {
 
 $user = sf_current_user();
 $isAuthenticated = $user !== null;
+$hasValidApiKey = $apiKey !== '' && $configuredApiKey !== '' && hash_equals($configuredApiKey, $apiKey);
+$forceStandaloneMode = $requestedMode === 'standalone';
+$forceAppMode = $requestedMode === 'app' && $isAuthenticated;
+$isStandaloneMode = $forceStandaloneMode || (!$forceAppMode && $hasValidApiKey);
 
-if (!$isAuthenticated) {
-    if ($apiKey === '' || $configuredApiKey === '' || !hash_equals($configuredApiKey, $apiKey)) {
-        http_response_code(401);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Unauthorized';
-        exit;
-    }
+if (!$isAuthenticated && !$hasValidApiKey) {
+    http_response_code(401);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Unauthorized';
+    exit;
 }
 
 $pdo = Database::getInstance();
@@ -91,27 +95,73 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafetyFlash koonti</title>
+<?php if (!$isStandaloneMode): ?>
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/nav.css', $baseUrl) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/global.css', $baseUrl) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/layout.css', $baseUrl) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/skeleton.css', $baseUrl) ?>">
+    <link rel="stylesheet" href="<?= sf_asset_url('assets/css/modals.css', $baseUrl) ?>">
+<?php endif; ?>
     <style>
-        html, body {
+        html,
+        body {
             margin: 0;
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            color: #0f172a;
+        }
+
+        body.sf-xibo-standalone {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
-            color: #0f172a;
             background: #020617;
-        }
-        body {
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .sf-stage {
             width: 1920px;
             height: 1080px;
+        }
+
+        body.sf-xibo-standalone .sf-stage {
             transform-origin: center center;
             transform: scale(min(calc(100vw / 1920), calc(100vh / 1080)));
         }
+
+        .sf-xibo-summary-container {
+            min-height: calc(100vh - 72px);
+            box-sizing: border-box;
+            padding: 24px;
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        .sf-xibo-preview-card {
+            max-width: 1440px;
+            margin: 0 auto;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+            padding: 16px;
+        }
+        .sf-xibo-preview-frame {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: #0f172a;
+            overflow: hidden;
+            container-type: inline-size;
+        }
+        .sf-xibo-preview-frame .sf-stage {
+            position: absolute;
+            inset: 0 auto auto 0;
+            transform-origin: top left;
+            transform: scale(min(1, calc(100cqw / 1920)));
+        }
+
         .sf-summary {
             position: relative;
             width: 1920px;
@@ -232,7 +282,13 @@ header('Content-Type: text/html; charset=utf-8');
         }
     </style>
 </head>
-<body>
+<body class="<?= $isStandaloneMode ? 'sf-xibo-standalone' : '' ?>">
+<?php if (!$isStandaloneMode): ?>
+<?php require_once __DIR__ . '/../../app/includes/header.php'; ?>
+<div class="sf-container sf-xibo-summary-container" id="sfContainer">
+    <div class="sf-xibo-preview-card">
+        <div class="sf-xibo-preview-frame">
+<?php endif; ?>
 <div class="sf-stage">
     <div class="sf-summary" id="sfSummaryRoot">
         <div class="sf-summary-inner">
@@ -256,6 +312,12 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 </div>
+<?php if (!$isStandaloneMode): ?>
+        </div>
+    </div>
+</div>
+<?php require_once __DIR__ . '/../../app/includes/footer.php'; ?>
+<?php endif; ?>
 
 <script>
 (() => {
