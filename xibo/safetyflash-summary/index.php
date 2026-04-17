@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
-require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
 require_once __DIR__ . '/../../app/includes/auth.php';
 
@@ -71,6 +70,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $groups = [];
 foreach ($rows as $row) {
+    $row['sort_ts'] = strtotime((string)($row['occurred_at'] ?? $row['created_at'] ?? '')) ?: 0;
     $groupId = !empty($row['translation_group_id']) ? (int)$row['translation_group_id'] : (int)$row['id'];
     if (!isset($groups[$groupId])) {
         $groups[$groupId] = $row;
@@ -79,9 +79,7 @@ foreach ($rows as $row) {
 
 $selectedRows = array_values($groups);
 usort($selectedRows, static function (array $a, array $b): int {
-    $aTimestamp = strtotime((string)($a['occurred_at'] ?? $a['created_at'] ?? '')) ?: 0;
-    $bTimestamp = strtotime((string)($b['occurred_at'] ?? $b['created_at'] ?? '')) ?: 0;
-    return $bTimestamp <=> $aTimestamp;
+    return ((int)($b['sort_ts'] ?? 0)) <=> ((int)($a['sort_ts'] ?? 0));
 });
 
 $flashes = array_map(static function (array $row): array {
@@ -163,11 +161,23 @@ $viewTexts = [
 $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
 
 $typeLabels = [
-    'red' => sf_term('investigation_report', $uiLang),
-    'yellow' => sf_term('first_release', $uiLang),
+    'red' => [
+        'fi' => 'Tutkintatiedote',
+        'sv' => 'Utredningsrapport',
+        'en' => 'Investigation report',
+        'it' => 'Rapporto di indagine',
+        'el' => 'Έκθεση έρευνας',
+    ][$uiLang] ?? 'Investigation report',
+    'yellow' => [
+        'fi' => 'Ensitiedote',
+        'sv' => 'Första underrättelse',
+        'en' => 'Initial report',
+        'it' => 'Rapporto iniziale',
+        'el' => 'Αρχική αναφορά',
+    ][$uiLang] ?? 'Initial report',
     'green' => [
         'fi' => 'Vaaratilanne / läheltä piti',
-        'sv' => 'Farlig situation / nära ögat',
+        'sv' => 'Farlig situation / nära på',
         'en' => 'Near miss / hazard',
         'it' => 'Quasi incidente / pericolo',
         'el' => 'Παρ’ ολίγον ατύχημα / κίνδυνος',
