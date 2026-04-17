@@ -80,7 +80,7 @@ try {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'Ei käyttöoikeutta',
+            'error'   => sf_term('error_no_edit_permission', $currentUiLang),
         ]);
         exit;
     }

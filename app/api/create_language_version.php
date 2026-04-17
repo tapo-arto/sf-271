@@ -51,6 +51,7 @@ try {
         echo json_encode(['success' => false, 'error' => 'Kirjautuminen vaaditaan']);
         exit;
     }
+    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
     sf_app_log("[create_language_version] User authenticated: ID=" . $currentUser['id']);
 
@@ -114,7 +115,7 @@ try {
     if (!$isOwner && !$isAdmin && !$isSafety) {
         sf_app_log("[create_language_version] ERROR: Permission denied for user " . $currentUser['id']);
         http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Ei käyttöoikeutta']);
+        echo json_encode(['success' => false, 'error' => sf_term('error_no_edit_permission', $currentUiLang)]);
         exit;
     }
 
@@ -264,7 +265,6 @@ try {
 
     // Kirjaa tapahtuma myös safetyflash_logs-tauluun
     require_once __DIR__ . '/../includes/log.php';
-    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
     $logDesc = sf_term('log_translation_created', $currentUiLang) . ":  {$targetLang}";
     sf_log_event($newId, 'CREATED', $logDesc);
 
