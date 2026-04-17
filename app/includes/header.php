@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/session_activity.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/settings.php';
 
 // Varmista sessio ennen $_SESSION käyttöä
 if (session_status() === PHP_SESSION_NONE) {
@@ -23,6 +24,13 @@ if (!in_array($currentPage, $allowedPages, true)) {
 // nykyinen käyttäjä & rooli
 $user    = sf_current_user();
 $isAdmin = $user && (int)$user['role_id'] === 1;
+
+$xiboSummaryApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
+$xiboSummaryApiKey = $xiboSummaryApiKeySetting === null ? '' : trim((string)$xiboSummaryApiKeySetting);
+if ($xiboSummaryApiKeySetting === null) {
+    $xiboSummaryApiKey = trim((string)(getenv('XIBO_SUMMARY_API_KEY') ?: ''));
+}
+$xiboSummaryUrl = $base . '/xibo/safetyflash-summary/?api_key=' . rawurlencode($xiboSummaryApiKey);
 
 // --- Updates notification badge ---
 $unreadUpdatesCount = 0;
@@ -303,6 +311,16 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
          class="sf-nav-link-icon"
          aria-hidden="true">
     <span><?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+</a>
+
+<a href="<?= htmlspecialchars($xiboSummaryUrl, ENT_QUOTES, 'UTF-8') ?>"
+   class="sf-nav-link"
+   data-tooltip="Xibo Koonti">
+    <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/screen.svg"
+         alt=""
+         class="sf-nav-link-icon"
+         aria-hidden="true">
+    <span>Xibo Koonti</span>
 </a>
 
 <?php endif; ?>
