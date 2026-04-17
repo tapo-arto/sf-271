@@ -40,8 +40,8 @@ $allowedLangs = ['fi', 'sv', 'en', 'it', 'el'];
 $requestedLang = strtolower(trim((string)($_GET['lang'] ?? 'fi')));
 $uiLang = in_array($requestedLang, $allowedLangs, true) ? $requestedLang : 'fi';
 
-$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        CASE\n            WHEN f.lang = :preferred_lang THEN 0\n            WHEN f.lang = 'en' THEN 1\n            WHEN f.id = COALESCE(f.translation_group_id, f.id) THEN 2\n            ELSE 3\n        END ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
-$stmt->execute([':preferred_lang' => $uiLang]);
+$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
+$stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $groups = [];
@@ -49,22 +49,54 @@ foreach ($rows as $row) {
     $row['sort_ts'] = strtotime((string)($row['occurred_at'] ?? $row['created_at'] ?? '')) ?: 0;
     $groupId = !empty($row['translation_group_id']) ? (int)$row['translation_group_id'] : (int)$row['id'];
     $rowLanguage = strtolower(trim((string)($row['lang'] ?? '')));
-    if ($rowLanguage === $uiLang) {
-        $row['lang_priority'] = 0;
-    } elseif ($rowLanguage === 'fi') {
-        $row['lang_priority'] = 1;
-    } else {
-        $row['lang_priority'] = 2;
+    $row['lang'] = $rowLanguage;
+    if (!isset($groups[$groupId])) {
+        $groups[$groupId] = [
+            'rows' => [],
+            'base_lang' => '',
+            'group_sort_ts' => 0,
+        ];
     }
-    if (
-        !isset($groups[$groupId])
-        || $row['lang_priority'] < (int)($groups[$groupId]['lang_priority'] ?? PHP_INT_MAX)
-    ) {
-        $groups[$groupId] = $row;
+
+    $groups[$groupId]['rows'][] = $row;
+    $groups[$groupId]['group_sort_ts'] = max((int)$groups[$groupId]['group_sort_ts'], (int)$row['sort_ts']);
+
+    $isBaseRow = empty($row['translation_group_id']) || (int)$row['id'] === (int)$row['translation_group_id'];
+    if ($isBaseRow && $rowLanguage !== '') {
+        $groups[$groupId]['base_lang'] = $rowLanguage;
     }
 }
 
-$selectedRows = array_values($groups);
+$selectedRows = [];
+foreach ($groups as $group) {
+    $rowsInGroup = $group['rows'];
+    if (!$rowsInGroup) {
+        continue;
+    }
+
+    $rowsByLang = [];
+    foreach ($rowsInGroup as $groupRow) {
+        $groupRowLang = (string)($groupRow['lang'] ?? '');
+        if ($groupRowLang !== '' && !isset($rowsByLang[$groupRowLang])) {
+            $rowsByLang[$groupRowLang] = $groupRow;
+        }
+    }
+
+    $baseLang = (string)($group['base_lang'] ?? '');
+    $selected = null;
+    if (isset($rowsByLang[$uiLang])) {
+        $selected = $rowsByLang[$uiLang];
+    } elseif ($baseLang !== '' && isset($rowsByLang[$baseLang])) {
+        $selected = $rowsByLang[$baseLang];
+    } elseif (isset($rowsByLang['fi'])) {
+        $selected = $rowsByLang['fi'];
+    } else {
+        $selected = $rowsInGroup[0];
+    }
+
+    $selected['sort_ts'] = max((int)($selected['sort_ts'] ?? 0), (int)($group['group_sort_ts'] ?? 0));
+    $selectedRows[] = $selected;
+}
 usort($selectedRows, static function (array $a, array $b): int {
     return ((int)($b['sort_ts'] ?? 0)) <=> ((int)($a['sort_ts'] ?? 0));
 });
@@ -156,9 +188,9 @@ $typeLabels = [
         'el' => 'Πρώτη ανακοίνωση',
     ][$uiLang] ?? 'First release',
     'yellow' => [
-        'fi' => 'Vaaratilanne / läheltä piti',
-        'sv' => 'Farlig situation / nära på',
-        'en' => 'Dangerous situation / near miss',
+        'fi' => 'Vaaratilanne',
+        'sv' => 'Farlig situation',
+        'en' => 'Dangerous situation',
         'it' => 'Situazione pericolosa',
         'el' => 'Επικίνδυνη κατάσταση',
     ][$uiLang] ?? 'Dangerous situation',
@@ -195,14 +227,23 @@ if ($backgroundPath !== '') {
 }
 $activeFlashCount = count($flashes);
 $rotationSeconds = 15;
-$standaloneParams = [
-    'mode' => 'standalone',
-    'lang' => $uiLang,
-];
-if ($configuredApiKey !== '') {
-    $standaloneParams['api_key'] = $configuredApiKey;
+$previewAppUrls = [];
+$previewStandaloneUrls = [];
+foreach ($allowedLangs as $langCode) {
+    $previewAppUrls[$langCode] = ($base !== '' ? rtrim($base, '/') : '') . '/xibo/safetyflash-summary/?' . http_build_query([
+        'mode' => 'app',
+        'lang' => $langCode,
+    ], '', '&', PHP_QUERY_RFC3986);
+
+    $langStandaloneParams = [
+        'mode' => 'standalone',
+        'lang' => $langCode,
+    ];
+    if ($configuredApiKey !== '') {
+        $langStandaloneParams['api_key'] = $configuredApiKey;
+    }
+    $previewStandaloneUrls[$langCode] = ($base !== '' ? rtrim($base, '/') : '') . '/xibo/safetyflash-summary/?' . http_build_query($langStandaloneParams, '', '&', PHP_QUERY_RFC3986);
 }
-$standaloneUrl = ($base !== '' ? rtrim($base, '/') : '') . '/xibo/safetyflash-summary/?' . http_build_query($standaloneParams, '', '&', PHP_QUERY_RFC3986);
 
 header('Content-Type: text/html; charset=utf-8');
 ?>
@@ -337,13 +378,28 @@ header('Content-Type: text/html; charset=utf-8');
         .sf-xibo-meta-value a:hover {
             text-decoration: underline;
         }
+        .sf-lang-link--active {
+            font-weight: 800;
+            color: #0f172a !important;
+            text-decoration: underline;
+        }
+        .sf-standalone-lang-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 4px;
+        }
+        .sf-standalone-lang-list li {
+            margin: 0;
+        }
 
         .sf-summary {
             position: relative;
             width: 1920px;
             height: 1080px;
             box-sizing: border-box;
-            padding: 56px 64px;
+            padding: 140px 64px 40px 64px;
             background-color: #ffffff;
             background-image: none;
             background-size: cover;
@@ -496,7 +552,23 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
                 <div class="sf-xibo-meta-item">
                     <span class="sf-xibo-meta-label">Xibo standalone-URL</span>
-                    <p class="sf-xibo-meta-value"><a href="<?= htmlspecialchars($standaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($standaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></p>
+                    <p class="sf-xibo-meta-value">Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (FI/SV/EN/IT/EL).</p>
+                    <ul class="sf-standalone-lang-list">
+<?php foreach ($previewStandaloneUrls as $langCode => $langStandaloneUrl): ?>
+                        <li><strong><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></strong>: <a href="<?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></li>
+<?php endforeach; ?>
+                    </ul>
+                </div>
+                <div class="sf-xibo-meta-item">
+                    <span class="sf-xibo-meta-label">Kieliversiot</span>
+                    <p class="sf-xibo-meta-value">
+<?php $isFirstLang = true; ?>
+<?php foreach ($previewAppUrls as $langCode => $langAppUrl): ?>
+<?php if (!$isFirstLang): ?> | <?php endif; ?>
+<?php $isFirstLang = false; ?>
+                        <a href="<?= htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $langCode === $uiLang ? 'sf-lang-link--active' : '' ?>"><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></a>
+<?php endforeach; ?>
+                    </p>
                 </div>
             </div>
         </div>
