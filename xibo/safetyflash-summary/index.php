@@ -136,7 +136,7 @@ $viewTexts = [
 ];
 $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
 
-typeLabels = [
+$typeLabels = [
     'red' => [
         'fi' => 'Tutkintatiedote',
         'sv' => 'Utredningsrapport',
@@ -182,6 +182,16 @@ if ($backgroundPath !== '') {
         $backgroundUrl = '/' . ltrim($backgroundPath, '/');
     }
 }
+$activeFlashCount = count($flashes);
+$rotationSeconds = 15;
+$standaloneParams = [
+    'mode' => 'standalone',
+    'lang' => $uiLang,
+];
+if ($configuredApiKey !== '') {
+    $standaloneParams['api_key'] = $configuredApiKey;
+}
+$standaloneUrl = ($base !== '' ? rtrim($base, '/') : '') . '/xibo/safetyflash-summary/?' . http_build_query($standaloneParams, '', '&', PHP_QUERY_RFC3986);
 
 header('Content-Type: text/html; charset=utf-8');
 ?>
@@ -230,16 +240,36 @@ header('Content-Type: text/html; charset=utf-8');
             min-height: calc(100vh - 72px);
             box-sizing: border-box;
             padding: 24px;
-            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         }
-        .sf-xibo-preview-card {
+        .sf-xibo-summary-shell {
             max-width: 1440px;
             margin: 0 auto;
-            border-radius: 16px;
-            border: 1px solid #cbd5e1;
+        }
+        .sf-xibo-page-header {
+            margin-bottom: 16px;
+            gap: 0;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .sf-xibo-page-description {
+            margin: 8px 0 0;
+            color: #475569;
+            font-size: 1rem;
+            max-width: 72ch;
+        }
+        .sf-xibo-preview-card {
+            border-radius: 18px;
+            border: 1px solid #dbe4ee;
             background: #ffffff;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-            padding: 16px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+            padding: 18px;
+        }
+        .sf-xibo-preview-label {
+            margin: 0 0 12px;
+            color: #1e293b;
+            font-size: 1.05rem;
+            font-weight: 700;
         }
         .sf-xibo-preview-frame {
             position: relative;
@@ -247,7 +277,7 @@ header('Content-Type: text/html; charset=utf-8');
             aspect-ratio: 16 / 9;
             border-radius: 12px;
             border: 1px solid #cbd5e1;
-            background: #0f172a;
+            background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             overflow: hidden;
             container-type: inline-size;
         }
@@ -257,6 +287,44 @@ header('Content-Type: text/html; charset=utf-8');
             transform-origin: top left;
             transform: scale(1);
             transform: scale(min(1, calc(100cqw / 1920)));
+        }
+
+        .sf-xibo-preview-info {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+        .sf-xibo-meta-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 10px 12px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+        .sf-xibo-meta-label {
+            display: block;
+            color: #64748b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .sf-xibo-meta-value {
+            margin: 0;
+            color: #0f172a;
+            font-size: 0.95rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .sf-xibo-meta-value a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .sf-xibo-meta-value a:hover {
+            text-decoration: underline;
         }
 
         .sf-summary {
@@ -275,8 +343,11 @@ header('Content-Type: text/html; charset=utf-8');
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.16);
+            background: transparent;
             z-index: 0;
+        }
+        .sf-summary.sf-summary--with-background::before {
+            background: rgba(15, 23, 42, 0.08);
         }
         .sf-summary-inner {
             position: relative;
@@ -400,8 +471,14 @@ header('Content-Type: text/html; charset=utf-8');
 <?php require_once __DIR__ . '/../../assets/lib/sf_terms.php'; ?>
 <?php require_once __DIR__ . '/../../app/includes/header.php'; ?>
 <div class="sf-container sf-xibo-summary-container" id="sfContainer">
-    <div class="sf-xibo-preview-card">
-        <div class="sf-xibo-preview-frame">
+    <div class="sf-xibo-summary-shell">
+        <div class="sf-page-header sf-xibo-page-header">
+            <h1 class="sf-page-title">SafetyFlash-koonti</h1>
+            <p class="sf-xibo-page-description">Tässä näkymässä voit esikatsella Xibo-näytölle jaettavaa SafetyFlash-koontia. Näet listan ulkoasun, sivutuksen ja taustakuvan ennen varsinaista julkaisua.</p>
+        </div>
+        <div class="sf-xibo-preview-card">
+            <p class="sf-xibo-preview-label">Xibo-näytön esikatselu</p>
+            <div class="sf-xibo-preview-frame">
 <?php endif; ?>
 <div class="sf-stage">
     <div class="sf-summary" id="sfSummaryRoot">
@@ -427,6 +504,21 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 </div>
 <?php if (!$isStandaloneMode): ?>
+            </div>
+            <div class="sf-xibo-preview-info">
+                <div class="sf-xibo-meta-item">
+                    <span class="sf-xibo-meta-label">Aktiivisia SafetyFlasheja</span>
+                    <p class="sf-xibo-meta-value"><?= (int)$activeFlashCount ?></p>
+                </div>
+                <div class="sf-xibo-meta-item">
+                    <span class="sf-xibo-meta-label">Autokierto</span>
+                    <p class="sf-xibo-meta-value"><?= (int)$rotationSeconds ?> sekuntia / sivu</p>
+                </div>
+                <div class="sf-xibo-meta-item">
+                    <span class="sf-xibo-meta-label">Xibo standalone-URL</span>
+                    <p class="sf-xibo-meta-value"><a href="<?= htmlspecialchars($standaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($standaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -456,6 +548,7 @@ header('Content-Type: text/html; charset=utf-8');
             const resolvedBackgroundUrl = new URL(backgroundUrl, window.location.origin);
             if (resolvedBackgroundUrl.protocol === 'http:' || resolvedBackgroundUrl.protocol === 'https:' || resolvedBackgroundUrl.protocol === 'data:') {
                 root.style.backgroundImage = `url("${resolvedBackgroundUrl.href.replace(/"/g, '%22')}")`;
+                root.classList.add('sf-summary--with-background');
             }
         } catch (error) {}
     }
