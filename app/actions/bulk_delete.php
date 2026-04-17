@@ -16,6 +16,7 @@ define('SF_SKIP_AUTO_CSRF', true);
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/audit_log.php';
+require_once __DIR__ . '/../includes/preview_thumbnail.php';
 
 // Tarkista ylläpitäjäoikeudet
 $user = sf_current_user();
@@ -160,6 +161,8 @@ foreach ($allIdsToDelete as $flashToDelete) {
             $flashToDelete['image_3']            ? $uploadsImages   . $flashToDelete['image_3']            : null,
             $flashToDelete['preview_filename']   ? $uploadsPreviews . $flashToDelete['preview_filename']   : null,
             $flashToDelete['preview_filename_2'] ? $uploadsPreviews . $flashToDelete['preview_filename_2'] : null,
+            $flashToDelete['preview_filename']   ? $uploadsPreviews . sf_preview_thumbnail_filename((string)$flashToDelete['preview_filename']) : null,
+            $flashToDelete['preview_filename_2'] ? $uploadsPreviews . sf_preview_thumbnail_filename((string)$flashToDelete['preview_filename_2']) : null,
         ];
 
         foreach ($imagesToDelete as $imagePath) {

@@ -15,6 +15,7 @@ set_time_limit(300);
 require_once __DIR__ . '/../../config.php';
 // Database class is loaded via config.php (assets/lib/Database.php)
 require_once __DIR__ . '/../includes/log_app.php';
+require_once __DIR__ . '/../includes/preview_thumbnail.php';
 
 // =========================================================================
 // KAIKKI KUVANKÄSITTELYFUNKTIOT ALKUPERÄISESTÄ SAVE_FLASH.PHP:STÄ TÄSSÄ
@@ -517,6 +518,7 @@ try {
             } elseif (!file_put_contents($previewsDir . $filename, $imageData)) {
                 sf_app_log("[Worker] Failed to write preview file: {$filename}", LOG_LEVEL_ERROR);
             } else {
+                sf_generate_preview_thumbnail($previewsDir . $filename);
                 $update_fields['preview_filename'] = $filename;
                 sf_app_log("[Worker] Generated preview_filename: {$filename}", LOG_LEVEL_DEBUG);
             }
@@ -543,6 +545,7 @@ try {
                 } elseif (!file_put_contents($previewsDir . $filename2, $card2ImageData)) {
                     sf_app_log("[Worker] Failed to write preview file: {$filename2}", LOG_LEVEL_ERROR);
                 } else {
+                    sf_generate_preview_thumbnail($previewsDir . $filename2);
                     $update_fields['preview_filename_2'] = $filename2;
                     sf_app_log("[Worker] Generated preview_filename_2: {$filename2}", LOG_LEVEL_DEBUG);
                 }
