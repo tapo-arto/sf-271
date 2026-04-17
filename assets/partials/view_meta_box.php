@@ -32,6 +32,10 @@ $statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash[
             <?php endif; ?>
         </div>
     </div>
+    <div class="sf-editing-indicator" data-flash-id="<?= (int)$flash['id'] ?>">
+        <div class="sf-editing-spinner"></div>
+        <span class="sf-editing-text"></span>
+    </div>
 
     <?php if (($flash['state'] ?? '') === 'pending_supervisor'): ?>
     <!-- TARKISTAJA / REVIEWER SECTION -->
