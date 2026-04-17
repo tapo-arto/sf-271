@@ -111,7 +111,7 @@ if ($sf_base_path === '') {
 
     if ($reqPath !== '') {
         // Strip known internal folders so base becomes project root
-        foreach (['/app/', '/assets/', '/uploads/', '/temp/', '/logs/'] as $needle) {
+        foreach (['/app/', '/assets/', '/uploads/', '/temp/', '/logs/', '/xibo/'] as $needle) {
             $pos = strpos($reqPath, $needle);
             if ($pos !== false) {
                 $reqPath = substr($reqPath, 0, $pos);
@@ -135,7 +135,7 @@ if ($sf_base_path === '') {
     $scriptName = str_replace('\\', '/', $scriptName);
 
     if ($scriptName !== '') {
-        foreach (['/app/', '/assets/', '/uploads/', '/temp/', '/logs/'] as $needle) {
+        foreach (['/app/', '/assets/', '/uploads/', '/temp/', '/logs/', '/xibo/'] as $needle) {
             $pos = strpos($scriptName, $needle);
             if ($pos !== false) {
                 $scriptName = substr($scriptName, 0, $pos);
