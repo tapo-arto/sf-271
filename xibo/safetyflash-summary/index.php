@@ -48,7 +48,18 @@ $groups = [];
 foreach ($rows as $row) {
     $row['sort_ts'] = strtotime((string)($row['occurred_at'] ?? $row['created_at'] ?? '')) ?: 0;
     $groupId = !empty($row['translation_group_id']) ? (int)$row['translation_group_id'] : (int)$row['id'];
-    if (!isset($groups[$groupId])) {
+    $rowLanguage = strtolower(trim((string)($row['lang'] ?? '')));
+    if ($rowLanguage === $uiLang) {
+        $row['lang_priority'] = 0;
+    } elseif ($rowLanguage === 'fi') {
+        $row['lang_priority'] = 1;
+    } else {
+        $row['lang_priority'] = 2;
+    }
+    if (
+        !isset($groups[$groupId])
+        || $row['lang_priority'] < (int)($groups[$groupId]['lang_priority'] ?? PHP_INT_MAX)
+    ) {
         $groups[$groupId] = $row;
     }
 }
@@ -138,26 +149,26 @@ $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
 
 $typeLabels = [
     'red' => [
+        'fi' => 'Ensitiedote',
+        'sv' => 'Första underrättelse',
+        'en' => 'First release',
+        'it' => 'Primo comunicato',
+        'el' => 'Πρώτη ανακοίνωση',
+    ][$uiLang] ?? 'First release',
+    'yellow' => [
+        'fi' => 'Vaaratilanne / läheltä piti',
+        'sv' => 'Farlig situation / nära på',
+        'en' => 'Dangerous situation / near miss',
+        'it' => 'Situazione pericolosa',
+        'el' => 'Επικίνδυνη κατάσταση',
+    ][$uiLang] ?? 'Dangerous situation',
+    'green' => [
         'fi' => 'Tutkintatiedote',
         'sv' => 'Utredningsrapport',
         'en' => 'Investigation report',
         'it' => 'Rapporto di indagine',
         'el' => 'Έκθεση έρευνας',
     ][$uiLang] ?? 'Investigation report',
-    'yellow' => [
-        'fi' => 'Ensitiedote',
-        'sv' => 'Första underrättelse',
-        'en' => 'Initial report',
-        'it' => 'Rapporto iniziale',
-        'el' => 'Αρχική αναφορά',
-    ][$uiLang] ?? 'Initial report',
-    'green' => [
-        'fi' => 'Vaaratilanne / läheltä piti',
-        'sv' => 'Farlig situation / nära på',
-        'en' => 'Near miss / hazard',
-        'it' => 'Quasi incidente / pericolo',
-        'el' => 'Παρ’ ολίγον ατύχημα / κίνδυνος',
-    ][$uiLang] ?? 'Near miss / hazard',
 ];
 
 $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', ''));
@@ -340,14 +351,10 @@ header('Content-Type: text/html; charset=utf-8');
             overflow: hidden;
         }
         .sf-summary::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: transparent;
-            z-index: 0;
+            display: none;
         }
         .sf-summary.sf-summary--with-background::before {
-            background: rgba(15, 23, 42, 0.08);
+            display: none;
         }
         .sf-summary-inner {
             position: relative;
@@ -355,32 +362,10 @@ header('Content-Type: text/html; charset=utf-8');
             height: 100%;
             display: flex;
             flex-direction: column;
-            background: rgba(248, 250, 252, 0.74);
-            border-radius: 24px;
+            background: transparent;
+            border-radius: 0;
             padding: 26px 30px;
-            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
-        }
-        .sf-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-        .sf-title {
-            margin: 0;
-            font-size: 52px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #0f172a;
-        }
-        .sf-pill {
-            padding: 9px 14px;
-            border-radius: 999px;
-            border: 1px solid #fed7aa;
-            background: #fff7ed;
-            color: #c2410c;
-            font-weight: 700;
-            font-size: 20px;
+            box-shadow: none;
         }
         .sf-table-head,
         .sf-row {
@@ -483,11 +468,6 @@ header('Content-Type: text/html; charset=utf-8');
 <div class="sf-stage">
     <div class="sf-summary" id="sfSummaryRoot">
         <div class="sf-summary-inner">
-            <div class="sf-header">
-                <h1 class="sf-title"><?= htmlspecialchars($viewI18n['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-                <div class="sf-pill"><?= htmlspecialchars($viewI18n['summary'], ENT_QUOTES, 'UTF-8') ?></div>
-            </div>
-
             <div class="sf-table-head">
                 <div><?= htmlspecialchars($viewI18n['col_title'], ENT_QUOTES, 'UTF-8') ?></div>
                 <div><?= htmlspecialchars($viewI18n['col_site'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -534,7 +514,7 @@ header('Content-Type: text/html; charset=utf-8');
     const i18n = <?= json_encode($viewI18n, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
-    const itemsPerPage = 7;
+    const itemsPerPage = 6;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
 
