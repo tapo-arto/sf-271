@@ -40,31 +40,7 @@ $allowedLangs = ['fi', 'sv', 'en', 'it', 'el'];
 $requestedLang = strtolower(trim((string)($_GET['lang'] ?? 'fi')));
 $uiLang = in_array($requestedLang, $allowedLangs, true) ? $requestedLang : 'fi';
 
-$stmt = $pdo->prepare("
-    SELECT
-        f.id,
-        f.translation_group_id,
-        f.lang,
-        f.title,
-        f.site,
-        f.type,
-        f.occurred_at,
-        f.created_at
-    FROM sf_flashes f
-    WHERE f.state = 'published'
-      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())
-      AND f.display_removed_at IS NULL
-    ORDER BY
-        COALESCE(f.translation_group_id, f.id) ASC,
-        CASE
-            WHEN f.lang = :preferred_lang THEN 0
-            WHEN f.lang = 'en' THEN 1
-            WHEN f.id = COALESCE(f.translation_group_id, f.id) THEN 2
-            ELSE 3
-        END ASC,
-        COALESCE(f.occurred_at, f.created_at) DESC,
-        f.id DESC
-");
+$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        CASE\n            WHEN f.lang = :preferred_lang THEN 0\n            WHEN f.lang = 'en' THEN 1\n            WHEN f.id = COALESCE(f.translation_group_id, f.id) THEN 2\n            ELSE 3\n        END ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
 $stmt->execute([':preferred_lang' => $uiLang]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -160,7 +136,7 @@ $viewTexts = [
 ];
 $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
 
-$typeLabels = [
+typeLabels = [
     'red' => [
         'fi' => 'Tutkintatiedote',
         'sv' => 'Utredningsrapport',
@@ -421,6 +397,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body class="<?= $isStandaloneMode ? 'sf-xibo-standalone' : '' ?>">
 <?php if (!$isStandaloneMode): ?>
+<?php require_once __DIR__ . '/../../assets/lib/sf_terms.php'; ?>
 <?php require_once __DIR__ . '/../../app/includes/header.php'; ?>
 <div class="sf-container sf-xibo-summary-container" id="sfContainer">
     <div class="sf-xibo-preview-card">
