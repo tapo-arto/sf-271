@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/statuses.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+const SF_NEW_COMMENT_LOOKBACK_DAYS = 7;
 
 function sf_list_updates_json(array $data, int $code = 200): void
 {
@@ -140,7 +141,7 @@ try {
                               '1970-01-01 00:00:00'
                           ),
                           :user_created_at,
-                          DATE_SUB(NOW(), INTERVAL 7 DAY)
+                          DATE_SUB(NOW(), INTERVAL " . (int)SF_NEW_COMMENT_LOOKBACK_DAYS . " DAY)
                       )
                 ) AS new_comment_count
             FROM sf_flashes f

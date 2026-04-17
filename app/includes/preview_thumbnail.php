@@ -1,6 +1,14 @@
 <?php
 declare(strict_types=1);
 
+const SF_PREVIEW_THUMB_DEFAULT_MAX_WIDTH = 400;
+const SF_PREVIEW_THUMB_MIN_WIDTH = 50;
+const SF_PREVIEW_THUMB_DEFAULT_QUALITY = 78;
+const SF_PREVIEW_THUMB_MIN_QUALITY = 30;
+const SF_PREVIEW_THUMB_MAX_QUALITY = 95;
+const SF_PREVIEW_THUMB_FILE_MODE = 0640;
+const SF_PREVIEW_THUMB_IMAGICK_BLUR = 1.0;
+
 function sf_preview_thumbnail_filename(string $filename): string
 {
     $filename = basename($filename);
@@ -18,13 +26,17 @@ function sf_preview_thumbnail_path(string $originalPath): string
     return $dir . '/' . sf_preview_thumbnail_filename($filename);
 }
 
-function sf_generate_preview_thumbnail(string $originalPath, int $maxWidth = 400, int $quality = 78): bool
+function sf_generate_preview_thumbnail(
+    string $originalPath,
+    int $maxWidth = SF_PREVIEW_THUMB_DEFAULT_MAX_WIDTH,
+    int $quality = SF_PREVIEW_THUMB_DEFAULT_QUALITY
+): bool
 {
-    if ($maxWidth < 50) {
-        $maxWidth = 400;
+    if ($maxWidth < SF_PREVIEW_THUMB_MIN_WIDTH) {
+        $maxWidth = SF_PREVIEW_THUMB_DEFAULT_MAX_WIDTH;
     }
-    if ($quality < 30 || $quality > 95) {
-        $quality = 78;
+    if ($quality < SF_PREVIEW_THUMB_MIN_QUALITY || $quality > SF_PREVIEW_THUMB_MAX_QUALITY) {
+        $quality = SF_PREVIEW_THUMB_DEFAULT_QUALITY;
     }
 
     if (!is_file($originalPath)) {
@@ -32,7 +44,9 @@ function sf_generate_preview_thumbnail(string $originalPath, int $maxWidth = 400
     }
 
     $thumbPath = sf_preview_thumbnail_path($originalPath);
-    if (is_file($thumbPath) && @filemtime($thumbPath) >= @filemtime($originalPath)) {
+    $thumbMtime = is_file($thumbPath) ? filemtime($thumbPath) : false;
+    $originalMtime = filemtime($originalPath);
+    if ($thumbMtime !== false && $originalMtime !== false && $thumbMtime >= $originalMtime) {
         return true;
     }
 
@@ -43,7 +57,7 @@ function sf_generate_preview_thumbnail(string $originalPath, int $maxWidth = 400
             $img = $img->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);
             $width = $img->getImageWidth();
             if ($width > $maxWidth) {
-                $img->resizeImage($maxWidth, 0, Imagick::FILTER_LANCZOS, 1, true);
+                $img->resizeImage($maxWidth, 0, Imagick::FILTER_LANCZOS, SF_PREVIEW_THUMB_IMAGICK_BLUR, true);
             }
             $img->setImageFormat('jpeg');
             $img->setImageCompression(Imagick::COMPRESSION_JPEG);
@@ -52,13 +66,19 @@ function sf_generate_preview_thumbnail(string $originalPath, int $maxWidth = 400
             $img->clear();
             $img->destroy();
             if ($ok) {
-                @chmod($thumbPath, 0644);
+                if (!chmod($thumbPath, SF_PREVIEW_THUMB_FILE_MODE)) {
+                    error_log('sf_generate_preview_thumbnail: chmod failed for ' . $thumbPath);
+                }
             }
             return (bool)$ok;
         }
 
-        if (function_exists('imagecreatefromjpeg') && function_exists('imagejpeg')) {
-            $src = @imagecreatefromjpeg($originalPath);
+        if (function_exists('imagecreatefromstring') && function_exists('imagejpeg')) {
+            $originalBinary = file_get_contents($originalPath);
+            if ($originalBinary === false) {
+                return false;
+            }
+            $src = @imagecreatefromstring($originalBinary);
             if (!$src) {
                 return false;
             }
@@ -73,7 +93,9 @@ function sf_generate_preview_thumbnail(string $originalPath, int $maxWidth = 400
             imagedestroy($src);
             imagedestroy($dst);
             if ($ok) {
-                @chmod($thumbPath, 0644);
+                if (!chmod($thumbPath, SF_PREVIEW_THUMB_FILE_MODE)) {
+                    error_log('sf_generate_preview_thumbnail: chmod failed for ' . $thumbPath);
+                }
             }
             return (bool)$ok;
         }

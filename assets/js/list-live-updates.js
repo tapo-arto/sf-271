@@ -11,6 +11,7 @@
     }
 
     let inFlight = false;
+    let pollTimerId = null;
 
     function getVisibleCards() {
         return Array.from(document.querySelectorAll('.card[data-flash-id]'))
@@ -143,8 +144,11 @@
     }
 
     function init() {
+        if (pollTimerId !== null) {
+            window.clearInterval(pollTimerId);
+        }
         pollUpdates();
-        window.setInterval(pollUpdates, pollIntervalMs);
+        pollTimerId = window.setInterval(pollUpdates, pollIntervalMs);
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
                 pollUpdates();

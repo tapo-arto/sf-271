@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../app/includes/protect.php';
 require_once __DIR__ . '/../../app/includes/statuses.php';
+require_once __DIR__ . '/../../app/includes/preview_thumbnail.php';
 
 $baseUrl = rtrim($config['base_url'] ?? '', '/');
 
@@ -1072,21 +1073,12 @@ if (!empty($rows)) {
         }
         return $url;
     };
-    $sfListThumbName = static function (string $filename): string {
-        $filename = basename($filename);
-        $dotPos = strrpos($filename, '.');
-        if ($dotPos === false) {
-            return $filename . '_thumb.jpg';
-        }
-        return substr($filename, 0, $dotPos) . '_thumb' . substr($filename, $dotPos);
-    };
-
     $thumb = "$baseUrl/assets/img/camera-placeholder.png";
     $thumbAbsPath = null;
 
     if (!empty($r['preview_filename'])) {
         $previewFilename = basename((string) $r['preview_filename']);
-        $previewThumbFilename = $sfListThumbName($previewFilename);
+        $previewThumbFilename = sf_preview_thumbnail_filename($previewFilename);
         $previewAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $previewFilename;
         $previewThumbAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $previewThumbFilename;
 
@@ -1099,7 +1091,7 @@ if (!empty($rows)) {
         }
     } elseif (!empty($r['display_snapshot_preview'])) {
         $snapshotFilename = basename((string) $r['display_snapshot_preview']);
-        $snapshotThumbFilename = $sfListThumbName($snapshotFilename);
+        $snapshotThumbFilename = sf_preview_thumbnail_filename($snapshotFilename);
         $snapshotAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $snapshotFilename;
         $snapshotThumbAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $snapshotThumbFilename;
 
@@ -1216,7 +1208,7 @@ if (!empty($rows)) {
 
         <span class="comment-badge"
               data-role="comment-badge"
-              <?= $newCommentCount > 0 ? '' : 'hidden' ?>
+              <?= $newCommentCount > 0 ? '' : 'hidden="hidden"' ?>
               title="<?= (int)$newCommentCount ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
             <svg class="comment-badge-icon" viewBox="0 0 100 100" fill="currentColor">
                 <path d="M100 10.495v67.2c0 2.212-1.793 4.005-4.005 4.005H68.53c-1.063 0-2.082.422-2.833 1.174L51.412 97.167c-1.564 1.565-4.1 1.565-5.665 0L31.453 82.874c-.751-.751-1.77-1.173-2.833-1.173H4.005C1.793 81.7 0 79.907 0 77.695v-67.2C0 8.283 1.793 6.49 4.005 6.49h91.99C98.207 6.49 100 8.283 100 10.495z"/>
@@ -1270,7 +1262,7 @@ if (!empty($rows)) {
 
                     <span class="comment-badge-mobile"
                           data-role="comment-badge-mobile"
-                          <?= $newCommentCount > 0 ? '' : 'hidden' ?>
+                          <?= $newCommentCount > 0 ? '' : 'hidden="hidden"' ?>
                           title="<?= (int)$newCommentCount ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
                         <svg class="comment-badge-mobile-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
                             <path d="M100 10.495v67.2c0 2.212-1.793 4.005-4.005 4.005H68.53c-1.063 0-2.082.422-2.833 1.174L51.412 97.167c-1.564 1.565-4.1 1.565-5.665 0L31.453 82.874c-.751-.751-1.77-1.173-2.833-1.173H4.005C1.793 81.7 0 79.907 0 77.695v-67.2C0 8.283 1.793 6.49 4.005 6.49h91.99C98.207 6.49 100 8.283 100 10.495z"/>
