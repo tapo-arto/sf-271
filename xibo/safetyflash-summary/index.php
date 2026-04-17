@@ -78,7 +78,7 @@ $summaryPathSuffix = '/xibo/safetyflash-summary';
 if ($appBaseUrl !== '' && substr($appBaseUrl, -strlen($summaryPathSuffix)) === $summaryPathSuffix) {
     $appBaseUrl = substr($appBaseUrl, 0, -strlen($summaryPathSuffix));
 }
-$base = rtrim($appBaseUrl, '/');
+$base = $appBaseUrl;
 $config['base_url'] = $base;
 $backgroundUrl = '';
 if ($backgroundPath !== '') {
