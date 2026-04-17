@@ -71,7 +71,10 @@ $backgroundPath = trim((string)sf_get_setting('xibo_summary_background_image', '
 $baseUrl = rtrim((string)($config['base_url'] ?? ''), '/');
 $backgroundUrl = '';
 if ($backgroundPath !== '') {
-    if (preg_match('#^(?:https?:)?//#i', $backgroundPath) === 1 || strpos($backgroundPath, 'data:') === 0) {
+    $normalizedBackgroundPath = strtolower($backgroundPath);
+    $isAbsoluteHttp = strpos($normalizedBackgroundPath, 'http://') === 0 || strpos($normalizedBackgroundPath, 'https://') === 0 || strpos($normalizedBackgroundPath, '//') === 0;
+    $isDataUri = strpos($normalizedBackgroundPath, 'data:') === 0;
+    if ($isAbsoluteHttp || $isDataUri) {
         $backgroundUrl = $backgroundPath;
     } elseif ($baseUrl !== '') {
         $backgroundUrl = $baseUrl . '/' . ltrim($backgroundPath, '/');
@@ -116,7 +119,7 @@ header('Content-Type: text/html; charset=utf-8');
             box-sizing: border-box;
             padding: 56px 64px;
             background-color: #ffffff;
-            background-image: var(--sf-bg-image);
+            background-image: none;
             background-size: cover;
             background-position: center;
             overflow: hidden;
@@ -231,7 +234,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body>
 <div class="sf-stage">
-    <div class="sf-summary" id="sfSummaryRoot" style="--sf-bg-image: none;">
+    <div class="sf-summary" id="sfSummaryRoot">
         <div class="sf-summary-inner">
             <div class="sf-header">
                 <h1 class="sf-title">Aktiiviset SafetyFlashit</h1>
@@ -269,7 +272,12 @@ header('Content-Type: text/html; charset=utf-8');
     const indicator = document.getElementById('sfPageIndicator');
 
     if (backgroundUrl) {
-        root.style.setProperty('--sf-bg-image', `url(${JSON.stringify(backgroundUrl)})`);
+        try {
+            const resolvedBackgroundUrl = new URL(backgroundUrl, window.location.origin);
+            if (resolvedBackgroundUrl.protocol === 'http:' || resolvedBackgroundUrl.protocol === 'https:' || resolvedBackgroundUrl.protocol === 'data:') {
+                root.style.backgroundImage = `url("${resolvedBackgroundUrl.href.replace(/"/g, '%22')}")`;
+            }
+        } catch (error) {}
     }
 
     const escapeHtml = (value) => String(value || '')
@@ -282,16 +290,12 @@ header('Content-Type: text/html; charset=utf-8');
     const getTypePresentation = (typeValue) => {
         const rawType = String(typeValue || '').trim();
         const normalized = rawType.toLowerCase();
-        if (normalized === 'red') {
-            return { label: 'Punainen', className: 'sf-type--red' };
-        }
-        if (normalized === 'yellow') {
-            return { label: 'Keltainen', className: 'sf-type--yellow' };
-        }
-        if (normalized === 'green') {
-            return { label: 'Vihreä', className: 'sf-type--green' };
-        }
-        return { label: rawType || '-', className: 'sf-type--default' };
+        const knownTypes = {
+            red: { label: 'Punainen', className: 'sf-type--red' },
+            yellow: { label: 'Keltainen', className: 'sf-type--yellow' },
+            green: { label: 'Vihreä', className: 'sf-type--green' },
+        };
+        return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default' };
     };
 
     const renderPage = () => {
