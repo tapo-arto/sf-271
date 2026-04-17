@@ -5,7 +5,6 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
 require_once __DIR__ . '/../../app/includes/auth.php';
-require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     http_response_code(405);
@@ -15,6 +14,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 
 $apiKey = trim((string)($_GET['api_key'] ?? ''));
 $requestedMode = strtolower(trim((string)($_GET['mode'] ?? '')));
+if (!in_array($requestedMode, ['', 'app', 'standalone'], true)) {
+    $requestedMode = '';
+}
 $configuredApiKeySetting = sf_get_setting('xibo_summary_api_key', null);
 $configuredApiKey = $configuredApiKeySetting === null ? '' : trim((string)$configuredApiKeySetting);
 if ($configuredApiKeySetting === null) {
@@ -24,9 +26,7 @@ if ($configuredApiKeySetting === null) {
 $user = sf_current_user();
 $isAuthenticated = $user !== null;
 $hasValidApiKey = $apiKey !== '' && $configuredApiKey !== '' && hash_equals($configuredApiKey, $apiKey);
-$forceStandaloneMode = $requestedMode === 'standalone';
-$forceAppMode = $requestedMode === 'app' && $isAuthenticated;
-$isStandaloneMode = $forceStandaloneMode || (!$forceAppMode && $hasValidApiKey);
+$isStandaloneMode = $requestedMode === 'standalone' || (!$isAuthenticated && $hasValidApiKey);
 
 if (!$isAuthenticated && !$hasValidApiKey) {
     http_response_code(401);
@@ -159,6 +159,7 @@ header('Content-Type: text/html; charset=utf-8');
             position: absolute;
             inset: 0 auto auto 0;
             transform-origin: top left;
+            transform: scale(1);
             transform: scale(min(1, calc(100cqw / 1920)));
         }
 
@@ -284,6 +285,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body class="<?= $isStandaloneMode ? 'sf-xibo-standalone' : '' ?>">
 <?php if (!$isStandaloneMode): ?>
+<?php require_once __DIR__ . '/../../assets/lib/sf_terms.php'; ?>
 <?php require_once __DIR__ . '/../../app/includes/header.php'; ?>
 <div class="sf-container sf-xibo-summary-container" id="sfContainer">
     <div class="sf-xibo-preview-card">
@@ -325,6 +327,7 @@ header('Content-Type: text/html; charset=utf-8');
 
     const flashes = <?= json_encode($flashes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const backgroundUrl = <?= json_encode($backgroundUrl, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
     const itemsPerPage = 7;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
@@ -332,6 +335,7 @@ header('Content-Type: text/html; charset=utf-8');
     const root = document.getElementById('sfSummaryRoot');
     const list = document.getElementById('sfSummaryList');
     const indicator = document.getElementById('sfPageIndicator');
+    const previewFrame = isStandaloneMode ? null : document.querySelector('.sf-xibo-preview-frame');
 
     if (backgroundUrl) {
         try {
@@ -340,6 +344,33 @@ header('Content-Type: text/html; charset=utf-8');
                 root.style.backgroundImage = `url("${resolvedBackgroundUrl.href.replace(/"/g, '%22')}")`;
             }
         } catch (error) {}
+    }
+
+    const supportsContainerQueryUnits = window.CSS
+        && CSS.supports
+        && CSS.supports('width', '1cqw')
+        && CSS.supports('transform', 'scale(calc(100cqw / 1920))');
+    if (previewFrame && !supportsContainerQueryUnits) {
+        const stage = previewFrame.querySelector('.sf-stage');
+        let resizeRaf = 0;
+        const syncPreviewScale = () => {
+            if (!stage) {
+                return;
+            }
+            const scale = Math.min(1, previewFrame.clientWidth / 1920);
+            stage.style.transform = `scale(${scale})`;
+        };
+        const handleResize = () => {
+            if (resizeRaf) {
+                return;
+            }
+            resizeRaf = window.requestAnimationFrame(() => {
+                resizeRaf = 0;
+                syncPreviewScale();
+            });
+        };
+        syncPreviewScale();
+        window.addEventListener('resize', handleResize);
     }
 
     const escapeHtml = (value) => String(value || '')
