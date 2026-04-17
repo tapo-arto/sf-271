@@ -94,8 +94,9 @@ foreach ($groups as $group) {
         $selected = $rowsInGroup[0];
     }
 
-    $selected['sort_ts'] = max((int)($selected['sort_ts'] ?? 0), (int)($group['group_sort_ts'] ?? 0));
-    $selectedRows[] = $selected;
+    $selectedWithSortTs = $selected;
+    $selectedWithSortTs['sort_ts'] = max((int)($selected['sort_ts'] ?? 0), (int)($group['group_sort_ts'] ?? 0));
+    $selectedRows[] = $selectedWithSortTs;
 }
 usort($selectedRows, static function (array $a, array $b): int {
     return ((int)($b['sort_ts'] ?? 0)) <=> ((int)($a['sort_ts'] ?? 0));
@@ -131,6 +132,8 @@ $viewTexts = [
         'empty' => 'Ei aktiivisia SafetyFlasheja',
         'page' => 'Sivu',
         'of' => '/',
+        'preview_languages' => 'Kieliversiot',
+        'standalone_lang_note' => 'Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (%s).',
     ],
     'sv' => [
         'title' => 'Aktiva SafetyFlashar',
@@ -142,6 +145,8 @@ $viewTexts = [
         'empty' => 'Inga aktiva SafetyFlashar',
         'page' => 'Sida',
         'of' => '/',
+        'preview_languages' => 'Språkversioner',
+        'standalone_lang_note' => 'Byt landspecifik språkversion med parametern <code>lang=</code> (%s).',
     ],
     'en' => [
         'title' => 'Active SafetyFlashes',
@@ -153,6 +158,8 @@ $viewTexts = [
         'empty' => 'No active SafetyFlashes',
         'page' => 'Page',
         'of' => '/',
+        'preview_languages' => 'Language versions',
+        'standalone_lang_note' => 'Change country-specific language version with the <code>lang=</code> parameter (%s).',
     ],
     'it' => [
         'title' => 'SafetyFlash attivi',
@@ -164,6 +171,8 @@ $viewTexts = [
         'empty' => 'Nessun SafetyFlash attivo',
         'page' => 'Pagina',
         'of' => '/',
+        'preview_languages' => 'Versioni lingua',
+        'standalone_lang_note' => 'Cambia la versione linguistica per paese con il parametro <code>lang=</code> (%s).',
     ],
     'el' => [
         'title' => 'Ενεργά SafetyFlash',
@@ -175,6 +184,8 @@ $viewTexts = [
         'empty' => 'Δεν υπάρχουν ενεργά SafetyFlash',
         'page' => 'Σελίδα',
         'of' => '/',
+        'preview_languages' => 'Γλωσσικές εκδόσεις',
+        'standalone_lang_note' => 'Αλλάξτε γλωσσική έκδοση ανά χώρα με την παράμετρο <code>lang=</code> (%s).',
     ],
 ];
 $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
@@ -227,6 +238,13 @@ if ($backgroundPath !== '') {
 }
 $activeFlashCount = count($flashes);
 $rotationSeconds = 15;
+$langCodeList = implode('/', array_map(static function (string $langCode): string {
+    return strtoupper($langCode);
+}, $allowedLangs));
+$standaloneLangNote = sprintf(
+    (string)($viewI18n['standalone_lang_note'] ?? 'Change country-specific language version with the <code>lang=</code> parameter (%s).'),
+    htmlspecialchars($langCodeList, ENT_QUOTES, 'UTF-8')
+);
 $previewAppUrls = [];
 $previewStandaloneUrls = [];
 foreach ($allowedLangs as $langCode) {
@@ -552,7 +570,7 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
                 <div class="sf-xibo-meta-item">
                     <span class="sf-xibo-meta-label">Xibo standalone-URL</span>
-                    <p class="sf-xibo-meta-value">Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (FI/SV/EN/IT/EL).</p>
+                    <p class="sf-xibo-meta-value"><?= $standaloneLangNote ?></p>
                     <ul class="sf-standalone-lang-list">
 <?php foreach ($previewStandaloneUrls as $langCode => $langStandaloneUrl): ?>
                         <li><strong><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></strong>: <a href="<?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></li>
@@ -560,15 +578,17 @@ header('Content-Type: text/html; charset=utf-8');
                     </ul>
                 </div>
                 <div class="sf-xibo-meta-item">
-                    <span class="sf-xibo-meta-label">Kieliversiot</span>
-                    <p class="sf-xibo-meta-value">
-<?php $isFirstLang = true; ?>
+                    <span class="sf-xibo-meta-label"><?= htmlspecialchars((string)($viewI18n['preview_languages'] ?? 'Language versions'), ENT_QUOTES, 'UTF-8') ?></span>
+<?php $previewLanguageLinks = []; ?>
 <?php foreach ($previewAppUrls as $langCode => $langAppUrl): ?>
-<?php if (!$isFirstLang): ?> | <?php endif; ?>
-<?php $isFirstLang = false; ?>
-                        <a href="<?= htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $langCode === $uiLang ? 'sf-lang-link--active' : '' ?>"><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></a>
+<?php
+    $linkHref = htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8');
+    $linkText = strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8'));
+    $linkClassAttr = $langCode === $uiLang ? ' class="sf-lang-link--active"' : '';
+    $previewLanguageLinks[] = '<a href="' . $linkHref . '"' . $linkClassAttr . '>' . $linkText . '</a>';
+?>
 <?php endforeach; ?>
-                    </p>
+                    <p class="sf-xibo-meta-value"><?= implode(' | ', $previewLanguageLinks) ?></p>
                 </div>
             </div>
         </div>
