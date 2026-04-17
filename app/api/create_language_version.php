@@ -107,6 +107,17 @@ try {
 
     sf_app_log("[create_language_version] Source flash found: type=" . $source['type']);
 
+    // Permission check: owner, admin or safety team
+    $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
+    $isAdmin = (int)$currentUser['role_id'] === 1;
+    $isSafety = (int)$currentUser['role_id'] === 3;
+    if (!$isOwner && !$isAdmin && !$isSafety) {
+        sf_app_log("[create_language_version] ERROR: Permission denied for user " . $currentUser['id']);
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Ei käyttöoikeutta']);
+        exit;
+    }
+
     // Translation group
     $groupId = !empty($source['translation_group_id'])
         ? (int)$source['translation_group_id']

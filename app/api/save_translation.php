@@ -69,6 +69,22 @@ try {
         exit;
     }
 
+    // Permission check: owner, admin or safety team
+    $currentUser = sf_current_user();
+    $currentUserId = (int)($currentUser['id'] ?? 0);
+    $currentRoleId = (int)($currentUser['role_id'] ?? 0);
+    $isOwner = ($currentUserId > 0 && (int)($baseFlash['created_by'] ?? 0) === $currentUserId);
+    $isAdmin = ($currentRoleId === 1);
+    $isSafety = ($currentRoleId === 3);
+    if (!$isOwner && !$isAdmin && !$isSafety) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Ei käyttöoikeutta',
+        ]);
+        exit;
+    }
+
     // Ensure translation_group_id
     if ($groupId <= 0) {
         $groupId = !empty($baseFlash['translation_group_id'])

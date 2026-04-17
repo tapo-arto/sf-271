@@ -74,10 +74,11 @@ try {
         exit;
     }
 
-    // Permission check: owner or admin
+    // Permission check: owner, admin or safety team
     $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
     $isAdmin = (int)$currentUser['role_id'] === 1;
-    if (!$isOwner && !$isAdmin) {
+    $isSafety = (int)$currentUser['role_id'] === 3;
+    if (!$isOwner && !$isAdmin && !$isSafety) {
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => 'Ei käyttöoikeutta']);
         exit;
