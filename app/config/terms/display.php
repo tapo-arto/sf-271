@@ -736,4 +736,32 @@ return [
     'it' => 'Visualizzato a tempo indeterminato',
     'el' => 'Εμφανίζεται επ\' αόριστον',
 ],
+'display_expired_title' => [
+    'fi' => 'Näkyvyysaika umpeutunut',
+    'sv' => 'Visningstiden har gått ut',
+    'en' => 'Display time expired',
+    'it' => 'Tempo di visualizzazione scaduto',
+    'el' => 'Ο χρόνος εμφάνισης έληξε',
+],
+'display_expired_description' => [
+    'fi' => 'Tämän tiedotteen näkyvyysaika infonäytöillä on päättynyt. Valitse uusi näkyvyysaika ja tallenna julkaistaksesi uudelleen.',
+    'sv' => 'Visningstiden för detta meddelande har gått ut. Välj en ny visningstid och spara för att publicera igen.',
+    'en' => 'The display time for this notice has expired. Select a new display time and save to republish.',
+    'it' => 'Il tempo di visualizzazione di questo avviso è scaduto. Seleziona un nuovo tempo e salva per ripubblicare.',
+    'el' => 'Ο χρόνος εμφάνισης αυτής της ανακοίνωσης έληξε. Επιλέξτε νέο χρόνο και αποθηκεύστε για επαναδημοσίευση.',
+],
+'display_no_targets_warning' => [
+    'fi' => 'Ei näytöillä tallennuksen jälkeen — valitse vähintään yksi näyttökohde.',
+    'sv' => 'Visas inte på skärmar efter spara — välj minst ett visningsmål.',
+    'en' => 'Not on any displays after saving — select at least one display target.',
+    'it' => 'Non su nessun display dopo il salvataggio — seleziona almeno un target.',
+    'el' => 'Δεν εμφανίζεται σε οθόνες μετά την αποθήκευση — επιλέξτε τουλάχιστον έναν στόχο.',
+],
+'btn_republish_to_displays' => [
+    'fi' => 'Julkaise uudelleen näytöille',
+    'sv' => 'Publicera igen på skärmar',
+    'en' => 'Republish to displays',
+    'it' => 'Ripubblica sui display',
+    'el' => 'Επαναδημοσίευση στις οθόνες',
+],
 ];

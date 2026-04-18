@@ -10,6 +10,100 @@
     var modalId = 'displayTargetsModal';
     var defaultTab = 'timing';
     var ttlPreviewUpdater = function () {};
+    var _modalSnapshot = null;
+
+    function updateNoDisplaysWarning() {
+        var warningEl = document.getElementById('dtNoDisplaysWarning');
+        if (!warningEl) return;
+        var checked = document.querySelectorAll('#displayTargetsModal .dt-display-chip-cb:checked');
+        warningEl.classList.toggle('hidden', checked.length > 0);
+    }
+
+    function takeSnapshot() {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        _modalSnapshot = {
+            checkboxes: [],
+            radios: [],
+            ttlChipStates: [],
+            durationChipStates: []
+        };
+
+        modal.querySelectorAll('.dt-display-chip-cb').forEach(function (cb) {
+            _modalSnapshot.checkboxes.push({
+                value: cb.value,
+                checked: cb.checked
+            });
+        });
+
+        modal.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+            _modalSnapshot.radios.push({
+                name: radio.name,
+                value: radio.value,
+                checked: radio.checked
+            });
+        });
+
+        modal.querySelectorAll('.sf-ttl-chip').forEach(function (chip, index) {
+            _modalSnapshot.ttlChipStates.push({
+                key: chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index),
+                selected: chip.classList.contains('sf-ttl-chip-selected')
+            });
+        });
+
+        modal.querySelectorAll('.sf-duration-chip').forEach(function (chip, index) {
+            _modalSnapshot.durationChipStates.push({
+                key: chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index),
+                selected: chip.classList.contains('sf-duration-chip-selected')
+            });
+        });
+    }
+
+    function restoreSnapshot() {
+        if (!_modalSnapshot) return;
+
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+        var container = getContainer();
+
+        modal.querySelectorAll('.dt-display-chip-cb').forEach(function (cb) {
+            var snap = _modalSnapshot.checkboxes.find(function (item) {
+                return item.value === cb.value;
+            });
+            if (snap) cb.checked = !!snap.checked;
+        });
+
+        modal.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+            var snap = _modalSnapshot.radios.find(function (item) {
+                return item.name === radio.name && item.value === radio.value;
+            });
+            if (snap) radio.checked = !!snap.checked;
+        });
+
+        modal.querySelectorAll('.sf-ttl-chip').forEach(function (chip, index) {
+            var key = chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index);
+            var snap = _modalSnapshot.ttlChipStates.find(function (item) {
+                return item.key === key;
+            });
+            chip.classList.toggle('sf-ttl-chip-selected', !!(snap && snap.selected));
+        });
+
+        modal.querySelectorAll('.sf-duration-chip').forEach(function (chip, index) {
+            var key = chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index);
+            var snap = _modalSnapshot.durationChipStates.find(function (item) {
+                return item.key === key;
+            });
+            chip.classList.toggle('sf-duration-chip-selected', !!(snap && snap.selected));
+        });
+
+        if (container) {
+            updateSelectionDisplay(container);
+            updateLangChipStates(container);
+        }
+        updateNoDisplaysWarning();
+        ttlPreviewUpdater();
+    }
 
     function setActiveTab(tabName) {
         var modal = document.getElementById(modalId);
@@ -134,6 +228,7 @@
     }
 
     function openDisplayTargetsModal() {
+        takeSnapshot();
         if (window._sf && window._sf.openModal) {
             window._sf.openModal(modalId);
         } else if (window.openModal) {
@@ -147,10 +242,12 @@
         }
         setActiveTab(defaultTab);
         ttlPreviewUpdater();
+        updateNoDisplaysWarning();
         clearStatus();
     }
 
     function closeDisplayTargetsModal() {
+        restoreSnapshot();
         if (window._sf && window._sf.closeModal) {
             window._sf.closeModal(modalId);
         } else if (window.closeModal) {
@@ -205,12 +302,14 @@
         if (!container) return;
         updateSelectionDisplay(container);
         updateLangChipStates(container);
+        updateNoDisplaysWarning();
 
         // Checkbox changes (delegated)
         container.addEventListener('change', function (e) {
             if (e.target.classList.contains('dt-display-chip-cb')) {
                 updateSelectionDisplay(container);
                 updateLangChipStates(container);
+                updateNoDisplaysWarning();
             }
         });
 
@@ -223,6 +322,7 @@
                 });
                 updateSelectionDisplay(container);
                 updateLangChipStates(container);
+                updateNoDisplaysWarning();
             });
         }
     }
@@ -247,6 +347,7 @@
                 cb.checked = false;
                 updateSelectionDisplay(container);
                 updateLangChipStates(container);
+                updateNoDisplaysWarning();
             });
             tag.appendChild(text);
             tag.appendChild(removeBtn);
@@ -294,6 +395,7 @@
                 });
                 updateLangChipStates(container);
                 updateSelectionDisplay(container);
+                updateNoDisplaysWarning();
             });
         });
 
@@ -311,6 +413,7 @@
                 cbs.forEach(function (cb) { cb.checked = !isActive; });
                 updateLangChipStates(container);
                 updateSelectionDisplay(container);
+                updateNoDisplaysWarning();
             });
         });
     }
@@ -419,6 +522,7 @@
                 })
                 .then(function (data) {
                     if (data && data.ok) {
+                        _modalSnapshot = null;
                         btn.innerHTML = '✓ Tallennettu!';
                         setStatus(data.message || '✓ Tallennettu!', false);
                         // Reload page after short delay to reflect changes
