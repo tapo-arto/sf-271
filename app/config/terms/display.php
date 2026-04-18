@@ -708,4 +708,18 @@ return [
     'it' => 'Impostazioni di visualizzazione del cantiere',
     'el' => 'Ρυθμίσεις προβολής εργοταξίου',
 ],
+'display_tab_timing' => [
+    'fi' => 'Kestoasetukset',
+    'sv' => 'Tidsinställningar',
+    'en' => 'Timing settings',
+    'it' => 'Impostazioni di durata',
+    'el' => 'Ρυθμίσεις χρονισμού',
+],
+'display_tab_targets' => [
+    'fi' => 'Infonäyttökohteet',
+    'sv' => 'Visningsenheter',
+    'en' => 'Display targets',
+    'it' => 'Destinazioni display',
+    'el' => 'Στόχοι οθόνης',
+],
 ];
