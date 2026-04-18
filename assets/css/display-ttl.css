@@ -49,7 +49,7 @@
 .sf-ttl-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.2rem;
     margin-bottom: 1rem;
 }
 
@@ -1095,6 +1095,7 @@
 
 .sf-dt-tab-panel.sf-dt-tab-panel-active {
     display: block;
+    margin-top: 25px;
 }
 
 /* Compact two-column row for TTL + Duration */
