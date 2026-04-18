@@ -9,7 +9,7 @@
 
     var modalId = 'displayTargetsModal';
     var defaultTab = 'timing';
-    var refreshTtlPreview = function () {};
+    var ttlPreviewUpdater = function () {};
 
     function setActiveTab(tabName) {
         var modal = document.getElementById(modalId);
@@ -129,7 +129,7 @@
 
         initChipGroup('#dtTtlChips', '.sf-ttl-chip', 'sf-ttl-chip-selected', '.sf-ttl-radio', updateTtlPreview);
         initChipGroup('#dtDurationChips', '.sf-duration-chip', 'sf-duration-chip-selected', '.sf-duration-radio');
-        refreshTtlPreview = updateTtlPreview;
+        ttlPreviewUpdater = updateTtlPreview;
         updateTtlPreview();
     }
 
@@ -146,7 +146,7 @@
             }
         }
         setActiveTab(defaultTab);
-        refreshTtlPreview();
+        ttlPreviewUpdater();
         clearStatus();
     }
 
