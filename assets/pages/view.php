@@ -600,7 +600,7 @@ case 'request_info':
         break;
 
     case 'published': 
-        if ($isAdmin || $isComms) {
+        if ($isAdmin || $isSafety || $isComms) {
             $actions[] = 'edit';
         }
         // Add archive action for admin and safety team
