@@ -57,6 +57,44 @@
         setActiveTab(defaultTab);
     }
 
+    function initChipToggles() {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        function initChipGroup(containerSelector, chipSelector, selectedClass, radioSelector) {
+            var container = modal.querySelector(containerSelector);
+            if (!container) return;
+
+            function setSelectedChip(selectedChip) {
+                container.querySelectorAll(chipSelector).forEach(function (chip) {
+                    chip.classList.toggle(selectedClass, chip === selectedChip);
+                });
+            }
+
+            container.addEventListener('click', function (e) {
+                var chip = e.target.closest(chipSelector);
+                if (!chip || !container.contains(chip)) return;
+
+                var radio = chip.querySelector(radioSelector);
+                if (radio) {
+                    radio.checked = true;
+                }
+                setSelectedChip(chip);
+            });
+
+            container.addEventListener('change', function (e) {
+                if (!e.target.matches(radioSelector)) return;
+                var chip = e.target.closest(chipSelector);
+                if (chip) {
+                    setSelectedChip(chip);
+                }
+            });
+        }
+
+        initChipGroup('#dtTtlChips', '.sf-ttl-chip', 'sf-ttl-chip-selected', '.sf-ttl-radio');
+        initChipGroup('#dtDurationChips', '.sf-duration-chip', 'sf-duration-chip-selected', '.sf-duration-radio');
+    }
+
     function openDisplayTargetsModal() {
         if (window._sf && window._sf.openModal) {
             window._sf.openModal(modalId);
@@ -377,6 +415,7 @@
 
         initSelectionDisplay();
         initTabs();
+        initChipToggles();
         initLangChips();
         initSearch();
         initSaveButton();
