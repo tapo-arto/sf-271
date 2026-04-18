@@ -806,6 +806,13 @@ return [
     'it' => 'Non su nessun display dopo il salvataggio — seleziona almeno un target.',
     'el' => 'Δεν εμφανίζεται σε οθόνες μετά την αποθήκευση — επιλέξτε τουλάχιστον έναν στόχο.',
 ],
+'display_no_targets_title' => [
+    'fi' => 'Ei näytöillä tallennuksen jälkeen',
+    'sv' => 'Visas inte på skärmar efter sparning',
+    'en' => 'Not on displays after saving',
+    'it' => 'Non sui display dopo il salvataggio',
+    'el' => 'Δεν εμφανίζεται στις οθόνες μετά την αποθήκευση',
+],
 'btn_republish_to_displays' => [
     'fi' => 'Julkaise uudelleen näytöille',
     'sv' => 'Publicera igen på skärmar',

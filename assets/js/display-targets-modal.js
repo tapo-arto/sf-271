@@ -182,13 +182,16 @@
             }
 
             function formatDateTime(dateObj) {
-                return dateObj.toLocaleDateString(locale, {
+                var datePart = dateObj.toLocaleDateString(locale, {
                     day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric'
+                });
+                var timePart = dateObj.toLocaleTimeString(locale, {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
+                return datePart + ' ' + timePart;
             }
 
             function setPreviewRow(row, icon, label, mainText, extraText) {

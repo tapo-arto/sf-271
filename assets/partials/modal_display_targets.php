@@ -180,10 +180,6 @@ $dtDurationOptions = [
                         </svg>
                         <h4><?= htmlspecialchars(sf_term('display_targets_heading', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?></h4>
                     </div>
-                    <div class="sf-dt-no-displays-warning hidden" id="dtNoDisplaysWarning" role="alert">
-                        <span aria-hidden="true">⚠️</span>
-                        <?= htmlspecialchars(sf_term('display_no_targets_warning', $currentUiLang) ?? 'Ei näytöillä tallennuksen jälkeen — valitse vähintään yksi näyttökohde.', ENT_QUOTES, 'UTF-8') ?>
-                    </div>
                     <?php
                         // Käytä modaalin omaa esivalintakyselyä (is_active=1) display_target_selector-includeessa
                         $preselectedIds = $dtPreselectedIds;
@@ -194,6 +190,13 @@ $dtDurationOptions = [
                         $flash = $dtOriginalFlash;
                         unset($preselectedIds, $dtOriginalFlash);
                     ?>
+                    <div class="sf-dt-no-displays-alert hidden" id="dtNoDisplaysWarning" role="alert">
+                        <div class="sf-dt-no-displays-alert-icon" aria-hidden="true">⚠️</div>
+                        <div class="sf-dt-no-displays-alert-content">
+                            <strong><?= htmlspecialchars(sf_term('display_no_targets_title', $currentUiLang) ?? 'Ei näytöillä tallennuksen jälkeen', ENT_QUOTES, 'UTF-8') ?></strong>
+                            <p><?= htmlspecialchars(sf_term('display_no_targets_warning', $currentUiLang) ?? 'Valitse vähintään yksi näyttökohde ennen tallennusta.', ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
