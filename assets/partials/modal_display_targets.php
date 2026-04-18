@@ -57,6 +57,7 @@ $dtDurationOptions = [
 <div class="sf-modal hidden"
      id="displayTargetsModal"
      data-current-expires="<?= htmlspecialchars($flash['display_expires_at'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+     data-locale="<?= htmlspecialchars($currentUiLang ?? 'fi', ENT_QUOTES, 'UTF-8') ?>"
      role="dialog"
      aria-modal="true"
      aria-labelledby="displayTargetsModalTitle">

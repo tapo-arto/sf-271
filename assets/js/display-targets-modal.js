@@ -161,6 +161,7 @@
 
         function updateTtlPreview() {
             if (!ttlPreview) return;
+            var MS_PER_DAY = 86400000;
             var currentRow = ttlPreview.querySelector('.sf-dt-ttl-current');
             var newRow = ttlPreview.querySelector('.sf-dt-ttl-new');
             var currentExpires = modal.getAttribute('data-current-expires') || '';
@@ -170,6 +171,7 @@
             var daysLeftLabel = ttlPreview.getAttribute('data-days-left-label') || 'pv jäljellä';
             var expiredLabel = ttlPreview.getAttribute('data-expired-label') || 'umpeutunut';
             var noLimitText = ttlPreview.getAttribute('data-no-limit-text') || 'Näkyy toistaiseksi';
+            var locale = (modal.getAttribute('data-locale') || document.documentElement.getAttribute('lang') || 'fi').replace('_', '-');
 
             function parseDateTime(value) {
                 if (!value) return null;
@@ -180,7 +182,7 @@
             }
 
             function formatDateTime(dateObj) {
-                return dateObj.toLocaleDateString('fi-FI', {
+                return dateObj.toLocaleDateString(locale, {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric',
@@ -189,16 +191,35 @@
                 });
             }
 
+            function setPreviewRow(row, icon, label, mainText, extraText) {
+                row.textContent = '';
+                row.appendChild(document.createTextNode(icon + ' '));
+                var strong = document.createElement('strong');
+                strong.textContent = label + ':';
+                row.appendChild(strong);
+                row.appendChild(document.createTextNode(' ' + mainText));
+                if (extraText) {
+                    row.appendChild(document.createTextNode(' '));
+                    var em = document.createElement('em');
+                    em.textContent = extraText;
+                    row.appendChild(em);
+                }
+                row.style.display = '';
+            }
+
             if (currentRow) {
                 var currentExpiryDate = parseDateTime(currentExpires);
                 if (currentExpires && currentExpiryDate) {
-                    var daysLeft = Math.ceil((currentExpiryDate.getTime() - Date.now()) / 86400000);
-                    currentRow.innerHTML = '🟢 <strong>' + currentLabel + ':</strong> ' + expiresPrefix + ' ' + formatDateTime(currentExpiryDate) +
-                        (daysLeft > 0 ? ' <em>(' + daysLeft + ' ' + daysLeftLabel + ')</em>' : ' <em>(' + expiredLabel + ')</em>');
-                    currentRow.style.display = '';
+                    var daysLeft = Math.ceil((currentExpiryDate.getTime() - Date.now()) / MS_PER_DAY);
+                    setPreviewRow(
+                        currentRow,
+                        '🟢',
+                        currentLabel,
+                        expiresPrefix + ' ' + formatDateTime(currentExpiryDate),
+                        daysLeft > 0 ? '(' + daysLeft + ' ' + daysLeftLabel + ')' : '(' + expiredLabel + ')'
+                    );
                 } else if (currentExpires) {
-                    currentRow.innerHTML = '🟢 <strong>' + currentLabel + ':</strong> ' + noLimitText;
-                    currentRow.style.display = '';
+                    setPreviewRow(currentRow, '🟢', currentLabel, noLimitText, '');
                 } else {
                     currentRow.style.display = 'none';
                 }
@@ -211,13 +232,12 @@
                 } else {
                     var days = parseInt(selectedRadio.value, 10) || 0;
                     if (days === 0) {
-                        newRow.innerHTML = '🔵 <strong>' + newLabel + ':</strong> ' + noLimitText;
+                        setPreviewRow(newRow, '🔵', newLabel, noLimitText, '');
                     } else {
                         var expiryDate = new Date();
                         expiryDate.setDate(expiryDate.getDate() + days);
-                        newRow.innerHTML = '🔵 <strong>' + newLabel + ':</strong> ' + expiresPrefix + ' ' + formatDateTime(expiryDate);
+                        setPreviewRow(newRow, '🔵', newLabel, expiresPrefix + ' ' + formatDateTime(expiryDate), '');
                     }
-                    newRow.style.display = '';
                 }
             }
         }
