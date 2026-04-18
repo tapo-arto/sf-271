@@ -15,23 +15,10 @@
  */
 
 $dtFlashId = (int)($flash['id'] ?? 0);
-$dtCurrentTtlDays = 30; // oletus
 $dtIsExpired = false;
 if (!empty($flash['display_expires_at'])) {
     $daysLeft = (int)ceil((strtotime($flash['display_expires_at']) - time()) / 86400);
-    if ($daysLeft <= 0) {
-        $dtIsExpired = true;
-        $dtCurrentTtlDays = 30;
-    } else {
-        // Etsi lähinnä oleva vakioarvo
-        foreach ([0, 7, 14, 30, 60, 90] as $opt) {
-            if ($opt === 0) continue;
-            if ($daysLeft <= $opt + 3) {
-                $dtCurrentTtlDays = $opt;
-                break;
-            }
-        }
-    }
+    $dtIsExpired = $daysLeft <= 0;
 }
 $dtCurrentDuration = (int)($flash['display_duration_seconds'] ?? 30);
 
@@ -67,7 +54,12 @@ $dtDurationOptions = [
 ?>
 
 <!-- Infonäyttö-modaali -->
-<div class="sf-modal hidden" id="displayTargetsModal" role="dialog" aria-modal="true" aria-labelledby="displayTargetsModalTitle">
+<div class="sf-modal hidden"
+     id="displayTargetsModal"
+     data-current-expires="<?= htmlspecialchars($flash['display_expires_at'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="displayTargetsModalTitle">
     <div class="sf-modal-backdrop" onclick="closeDisplayTargetsModal()"></div>
     <div class="sf-modal-content sf-dt-modal-content">
         <div class="sf-modal-header">
@@ -126,10 +118,9 @@ $dtDurationOptions = [
                     <div class="sf-ttl-chips" id="dtTtlChips">
                         <?php foreach ($dtTtlOptions as $days => $opt): ?>
                             <?php $chipId = "dt_ttl_chip_{$days}"; ?>
-                            <label for="<?= $chipId ?>" class="sf-ttl-chip <?= $days === $dtCurrentTtlDays ? 'sf-ttl-chip-selected' : '' ?>">
+                            <label for="<?= $chipId ?>" class="sf-ttl-chip">
                                 <input type="radio" name="dt_display_ttl_days" id="<?= $chipId ?>"
                                        value="<?= $days ?>"
-                                       <?= $days === $dtCurrentTtlDays ? 'checked' : '' ?>
                                        class="sf-ttl-radio">
                                 <span class="sf-chip-label">
                                     <?= htmlspecialchars(sf_term($opt['key'], $currentUiLang) ?? $opt['label'], ENT_QUOTES, 'UTF-8') ?>
@@ -137,11 +128,16 @@ $dtDurationOptions = [
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="sf-ttl-preview sf-ttl-preview-hidden" id="dtTtlPreview">
-                        <span class="sf-preview-icon" aria-hidden="true">📅</span>
-                        <span id="dtTtlPreviewLabel"><?= htmlspecialchars(sf_term('display_ttl_preview_label', $currentUiLang) ?? 'Disappears from display', ENT_QUOTES, 'UTF-8') ?>:</span>
-                        <span id="dtTtlPreviewDate"
-                              data-no-limit-text="<?= htmlspecialchars(sf_term('display_ttl_preview_no_limit', $currentUiLang) ?? 'Displayed indefinitely', ENT_QUOTES, 'UTF-8') ?>"></span>
+                    <div class="sf-dt-ttl-preview-card" id="dtTtlPreview"
+                         data-current-label="<?= htmlspecialchars(sf_term('display_ttl_current_label', $currentUiLang) ?? 'Nykyinen', ENT_QUOTES, 'UTF-8') ?>"
+                         data-new-label="<?= htmlspecialchars(sf_term('display_ttl_new_label', $currentUiLang) ?? 'Uusi valinta', ENT_QUOTES, 'UTF-8') ?>"
+                         data-expires-prefix="<?= htmlspecialchars(sf_term('display_ttl_expires_prefix', $currentUiLang) ?? 'Poistuu', ENT_QUOTES, 'UTF-8') ?>"
+                         data-days-left-label="<?= htmlspecialchars(sf_term('display_ttl_days_left', $currentUiLang) ?? 'pv jäljellä', ENT_QUOTES, 'UTF-8') ?>"
+                         data-expired-label="<?= htmlspecialchars(sf_term('display_ttl_expired', $currentUiLang) ?? 'umpeutunut', ENT_QUOTES, 'UTF-8') ?>"
+                         data-no-limit-text="<?= htmlspecialchars(sf_term('display_ttl_no_limit', $currentUiLang) ?? 'Näkyy toistaiseksi', ENT_QUOTES, 'UTF-8') ?>"
+                         data-not-on-displays-text="<?= htmlspecialchars(sf_term('display_ttl_not_on_displays', $currentUiLang) ?? 'Ei näytöillä', ENT_QUOTES, 'UTF-8') ?>">
+                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-current" style="display:none;"></div>
+                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-new" style="display:none;"></div>
                     </div>
                 </div>
 
