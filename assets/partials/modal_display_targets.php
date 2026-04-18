@@ -122,7 +122,7 @@ $dtDurationOptions = [
                         <?php endforeach; ?>
                     </div>
                     <div class="sf-ttl-preview sf-ttl-preview-hidden" id="dtTtlPreview">
-                        <span class="sf-preview-icon">📅</span>
+                        <span class="sf-preview-icon" aria-hidden="true">📅</span>
                         <span id="dtTtlPreviewLabel"><?= htmlspecialchars(sf_term('display_ttl_preview_label', $currentUiLang) ?? 'Disappears from display', ENT_QUOTES, 'UTF-8') ?>:</span>
                         <span id="dtTtlPreviewDate"
                               data-no-limit-text="<?= htmlspecialchars(sf_term('display_ttl_preview_no_limit', $currentUiLang) ?? 'Displayed indefinitely', ENT_QUOTES, 'UTF-8') ?>"></span>
