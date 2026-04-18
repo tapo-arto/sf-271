@@ -9,6 +9,7 @@
 
     var modalId = 'displayTargetsModal';
     var defaultTab = 'timing';
+    var ttlPreviewUpdater = function () {};
 
     function setActiveTab(tabName) {
         var modal = document.getElementById(modalId);
@@ -60,8 +61,37 @@
     function initChipToggles() {
         var modal = document.getElementById(modalId);
         if (!modal) return;
+        var ttlPreview = modal.querySelector('#dtTtlPreview');
+        var ttlPreviewDate = modal.querySelector('#dtTtlPreviewDate');
 
-        function initChipGroup(containerSelector, chipSelector, selectedClass, radioSelector) {
+        function updateTtlPreview() {
+            if (!ttlPreview || !ttlPreviewDate) return;
+            var selectedRadio = modal.querySelector('#dtTtlChips .sf-ttl-radio:checked');
+            if (!selectedRadio) {
+                ttlPreview.classList.add('sf-ttl-preview-hidden');
+                return;
+            }
+
+            var days = parseInt(selectedRadio.value, 10) || 0;
+            if (days === 0) {
+                ttlPreviewDate.textContent = ttlPreviewDate.getAttribute('data-no-limit-text') || '';
+                ttlPreview.classList.remove('sf-ttl-preview-hidden');
+                return;
+            }
+
+            var expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + days);
+            ttlPreviewDate.textContent = expiryDate.toLocaleDateString('fi-FI', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            ttlPreview.classList.remove('sf-ttl-preview-hidden');
+        }
+
+        function initChipGroup(containerSelector, chipSelector, selectedClass, radioSelector, onSelectChange) {
             var container = modal.querySelector(containerSelector);
             if (!container) return;
 
@@ -80,6 +110,9 @@
                     radio.checked = true;
                 }
                 setSelectedChip(chip);
+                if (typeof onSelectChange === 'function') {
+                    onSelectChange();
+                }
             });
 
             container.addEventListener('change', function (e) {
@@ -88,11 +121,16 @@
                 if (chip) {
                     setSelectedChip(chip);
                 }
+                if (typeof onSelectChange === 'function') {
+                    onSelectChange();
+                }
             });
         }
 
-        initChipGroup('#dtTtlChips', '.sf-ttl-chip', 'sf-ttl-chip-selected', '.sf-ttl-radio');
+        initChipGroup('#dtTtlChips', '.sf-ttl-chip', 'sf-ttl-chip-selected', '.sf-ttl-radio', updateTtlPreview);
         initChipGroup('#dtDurationChips', '.sf-duration-chip', 'sf-duration-chip-selected', '.sf-duration-radio');
+        ttlPreviewUpdater = updateTtlPreview;
+        updateTtlPreview();
     }
 
     function openDisplayTargetsModal() {
@@ -108,6 +146,7 @@
             }
         }
         setActiveTab(defaultTab);
+        ttlPreviewUpdater();
         clearStatus();
     }
 

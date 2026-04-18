@@ -722,4 +722,18 @@ return [
     'it' => 'Destinazioni display',
     'el' => 'Στόχοι οθόνης',
 ],
+'display_ttl_preview_label' => [
+    'fi' => 'Poistuu näkyvistä',
+    'sv' => 'Försvinner från visning',
+    'en' => 'Disappears from display',
+    'it' => 'Scompare dalla visualizzazione',
+    'el' => 'Εξαφανίζεται από την οθόνη',
+],
+'display_ttl_preview_no_limit' => [
+    'fi' => 'Näkyy toistaiseksi',
+    'sv' => 'Visas tills vidare',
+    'en' => 'Displayed indefinitely',
+    'it' => 'Visualizzato a tempo indeterminato',
+    'el' => 'Εμφανίζεται επ\' αόριστον',
+],
 ];

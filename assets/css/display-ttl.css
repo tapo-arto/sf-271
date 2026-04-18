@@ -119,6 +119,11 @@
     color: var(--sf-text-primary, #212529);
 }
 
+#displayTargetsModal .sf-ttl-preview {
+    margin-top: 0.5rem;
+    background: #f0f7ff;
+}
+
 .sf-ttl-preview.sf-ttl-preview-hidden {
     display: none;
 }
