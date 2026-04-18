@@ -71,10 +71,16 @@ if ($flashId <= 0) {
     exit;
 }
 
-// Validate display_ttl_days (0 = no limit)
-$ttlDays = (int)($body['display_ttl_days'] ?? 30);
-if ($ttlDays < 0) {
-    $ttlDays = 0;
+// Validate display_ttl_days (0 = no limit). If value is omitted/null, keep existing expiry unchanged.
+$hasTtlDays = array_key_exists('display_ttl_days', $body)
+    && $body['display_ttl_days'] !== null
+    && $body['display_ttl_days'] !== '';
+$ttlDays = 0;
+if ($hasTtlDays) {
+    $ttlDays = (int)$body['display_ttl_days'];
+    if ($ttlDays < 0) {
+        $ttlDays = 0;
+    }
 }
 
 // Validate display_duration_seconds (5–120)
@@ -140,13 +146,15 @@ try {
     // Update TTL and duration on flash — wrapped in try/catch so a missing column
     // (migration not yet run) does not block the main display-target save operation.
     try {
-        if ($ttlDays > 0) {
-            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlDays} days"));
-            $pdo->prepare("UPDATE sf_flashes SET display_expires_at = ?, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-                ->execute([$expiresAt, $flashId]);
-        } else {
-            $pdo->prepare("UPDATE sf_flashes SET display_expires_at = NULL, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-                ->execute([$flashId]);
+        if ($hasTtlDays) {
+            if ($ttlDays > 0) {
+                $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlDays} days"));
+                $pdo->prepare("UPDATE sf_flashes SET display_expires_at = ?, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
+                    ->execute([$expiresAt, $flashId]);
+            } else {
+                $pdo->prepare("UPDATE sf_flashes SET display_expires_at = NULL, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
+                    ->execute([$flashId]);
+            }
         }
 
         $pdo->prepare("UPDATE sf_flashes SET display_duration_seconds = ? WHERE id = ?")
