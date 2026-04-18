@@ -16,14 +16,21 @@
 
 $dtFlashId = (int)($flash['id'] ?? 0);
 $dtCurrentTtlDays = 30; // oletus
+$dtIsExpired = false;
 if (!empty($flash['display_expires_at'])) {
     $daysLeft = (int)ceil((strtotime($flash['display_expires_at']) - time()) / 86400);
-    // Etsi lähinnä oleva vakioarvo
-    foreach ([0, 7, 14, 30, 60, 90] as $opt) {
-        if ($opt === 0) continue;
-        if ($daysLeft <= $opt + 3) {
-            $dtCurrentTtlDays = $opt;
-            break;
+    if ($daysLeft <= 0) {
+        // Bug 4: Flash display TTL has expired
+        $dtIsExpired = true;
+        $dtCurrentTtlDays = 30; // suggest 30 days for republish
+    } else {
+        // Etsi lähinnä oleva vakioarvo
+        foreach ([0, 7, 14, 30, 60, 90] as $opt) {
+            if ($opt === 0) continue;
+            if ($daysLeft <= $opt + 3) {
+                $dtCurrentTtlDays = $opt;
+                break;
+            }
         }
     }
 }
@@ -73,6 +80,18 @@ $dtDurationOptions = [
         </div>
 
         <div class="sf-modal-body">
+
+            <?php /* Bug 4: Expired banner — shown when display TTL has passed */ ?>
+            <?php if ($dtIsExpired): ?>
+            <div class="sf-dt-expired-banner" id="dtExpiredBanner" role="alert">
+                <span class="sf-dt-expired-icon" aria-hidden="true">⚠️</span>
+                <div class="sf-dt-expired-text">
+                    <strong><?= htmlspecialchars(sf_term('display_expired_title', $currentUiLang) ?? 'Näkyvyysaika umpeutunut', ENT_QUOTES, 'UTF-8') ?></strong>
+                    <p><?= htmlspecialchars(sf_term('display_expired_description', $currentUiLang) ?? 'Tämän tiedotteen näkyvyysaika infonäytöillä on päättynyt. Valitse uusi näkyvyysaika ja tallenna julkaistaksesi uudelleen.', ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="sf-dt-tabs" role="tablist" aria-label="<?= htmlspecialchars(sf_term('display_targets_modal_title', $currentUiLang) ?? 'Työmaanäyttöasetukset', ENT_QUOTES, 'UTF-8') ?>">
                 <button type="button"
                         class="sf-dt-tab sf-dt-tab-active"
@@ -167,6 +186,13 @@ $dtDurationOptions = [
                         </svg>
                         <h4><?= htmlspecialchars(sf_term('display_targets_heading', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?></h4>
                     </div>
+
+                    <?php /* Bug 1: Warning element — hidden by default, shown by JS when no checkboxes selected */ ?>
+                    <div class="sf-dt-no-displays-warning hidden" id="dtNoDisplaysWarning" role="alert">
+                        <span aria-hidden="true">⚠️</span>
+                        <?= htmlspecialchars(sf_term('display_no_targets_warning', $currentUiLang) ?? 'Ei näytöillä tallennuksen jälkeen — valitse vähintään yksi näyttökohde.', ENT_QUOTES, 'UTF-8') ?>
+                    </div>
+
                     <?php
                         // Käytä modaalin omaa esivalintakyselyä (is_active=1) display_target_selector-includeessa
                         $preselectedIds = $dtPreselectedIds;
@@ -188,7 +214,11 @@ $dtDurationOptions = [
                 <?= htmlspecialchars(sf_term('btn_cancel', $currentUiLang) ?? 'Peruuta', ENT_QUOTES, 'UTF-8') ?>
             </button>
             <button type="button" class="sf-btn sf-btn-primary" id="btnSaveDisplayTargets" data-flash-id="<?= $dtFlashId ?>">
-                <?= htmlspecialchars(sf_term('btn_save', $currentUiLang) ?? 'Tallenna', ENT_QUOTES, 'UTF-8') ?>
+                <?php if ($dtIsExpired): ?>
+                    <?= htmlspecialchars(sf_term('btn_republish_to_displays', $currentUiLang) ?? 'Julkaise uudelleen näytöille', ENT_QUOTES, 'UTF-8') ?>
+                <?php else: ?>
+                    <?= htmlspecialchars(sf_term('btn_save', $currentUiLang) ?? 'Tallenna', ENT_QUOTES, 'UTF-8') ?>
+                <?php endif; ?>
             </button>
         </div>
     </div>
