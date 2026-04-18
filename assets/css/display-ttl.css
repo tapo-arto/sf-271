@@ -1043,6 +1043,34 @@
     padding-bottom: 0.5rem;
 }
 
+.sf-dt-ttl-preview-card {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+
+.sf-dt-ttl-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.sf-dt-ttl-preview-row.current {
+    color: #28a745;
+}
+
+.sf-dt-ttl-preview-row.new-selection {
+    color: #0066cc;
+}
+
+.sf-dt-ttl-preview-row.warning {
+    color: #dc3545;
+}
+
 @media (max-width: 600px) {
     .sf-dt-compact-row {
         flex-direction: column;
@@ -1074,6 +1102,33 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--sf-text-primary, #212529);
+}
+
+.sf-dt-remove-actions {
+    margin-top: 0.75rem;
+}
+
+.sf-dt-remove-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    background: transparent;
+    color: #dc3545;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sf-dt-remove-btn:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.sf-dt-remove-warning {
+    margin-top: 0.5rem;
+    color: #dc3545;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .sf-dt-status {

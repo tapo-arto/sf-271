@@ -10,6 +10,7 @@
     var modalId = 'displayTargetsModal';
     var defaultTab = 'timing';
     var ttlPreviewUpdater = function () {};
+    var selectionStateUpdater = function () {};
 
     function setActiveTab(tabName) {
         var modal = document.getElementById(modalId);
@@ -62,33 +63,102 @@
         var modal = document.getElementById(modalId);
         if (!modal) return;
         var ttlPreview = modal.querySelector('#dtTtlPreview');
-        var ttlPreviewDate = modal.querySelector('#dtTtlPreviewDate');
+        var ttlPreviewCurrent = modal.querySelector('#dtTtlPreviewCurrent');
+        var ttlPreviewNew = modal.querySelector('#dtTtlPreviewNew');
+        var ttlPreviewWarning = modal.querySelector('#dtTtlPreviewWarning');
 
-        function updateTtlPreview() {
-            if (!ttlPreview || !ttlPreviewDate) return;
-            var selectedRadio = modal.querySelector('#dtTtlChips .sf-ttl-radio:checked');
-            if (!selectedRadio) {
-                ttlPreview.classList.add('sf-ttl-preview-hidden');
-                return;
+        function parseServerDateTime(value) {
+            if (!value) return null;
+            var trimmed = String(value).trim();
+            if (!trimmed) return null;
+            var normalized = trimmed.replace(' ', 'T');
+            var parsed = new Date(normalized);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
             }
+            parsed = new Date(trimmed);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
 
-            var days = parseInt(selectedRadio.value, 10) || 0;
-            if (days === 0) {
-                ttlPreviewDate.textContent = ttlPreviewDate.getAttribute('data-no-limit-text') || '';
-                ttlPreview.classList.remove('sf-ttl-preview-hidden');
-                return;
-            }
+        function resolveLocaleTag(locale) {
+            var localeMap = {
+                fi: 'fi-FI',
+                sv: 'sv-SE',
+                en: 'en-GB',
+                it: 'it-IT',
+                el: 'el-GR'
+            };
+            var normalized = (locale || '').toLowerCase();
+            return localeMap[normalized] || normalized || 'en-GB';
+        }
 
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + days);
-            ttlPreviewDate.textContent = expiryDate.toLocaleDateString('fi-FI', {
+        function formatDateTime(dateValue) {
+            var localeTag = resolveLocaleTag(modal.getAttribute('data-locale'));
+            return dateValue.toLocaleString(localeTag, {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            ttlPreview.classList.remove('sf-ttl-preview-hidden');
+        }
+
+        function hasCurrentDisplays() {
+            return modal.getAttribute('data-current-has-displays') === '1';
+        }
+
+        function hasSelectedDisplays() {
+            return modal.querySelectorAll('.dt-display-chip-cb:checked').length > 0;
+        }
+
+        function updateTtlPreview() {
+            if (!ttlPreview || !ttlPreviewCurrent || !ttlPreviewNew || !ttlPreviewWarning) return;
+            var currentLabel = ttlPreview.getAttribute('data-current-label') || 'Current';
+            var newLabel = ttlPreview.getAttribute('data-new-label') || 'New selection';
+            var expiresPrefix = ttlPreview.getAttribute('data-expires-prefix') || 'Expires';
+            var daysLeftLabel = ttlPreview.getAttribute('data-days-left') || 'days left';
+            var noLimitLabel = ttlPreview.getAttribute('data-no-limit') || 'Displayed indefinitely';
+            var notOnDisplaysLabel = ttlPreview.getAttribute('data-not-on-displays') || 'Not on displays';
+            var afterSaveLabel = ttlPreview.getAttribute('data-after-save') || 'after saving';
+            var currentExpiryDate = parseServerDateTime(modal.getAttribute('data-current-expires'));
+            var now = new Date();
+
+            if (!hasCurrentDisplays()) {
+                ttlPreviewCurrent.textContent = '🔴 ' + currentLabel + ': ' + notOnDisplaysLabel;
+                ttlPreviewCurrent.classList.add('warning');
+                ttlPreviewCurrent.classList.remove('current');
+            } else if (currentExpiryDate) {
+                var daysLeft = Math.max(0, Math.ceil((currentExpiryDate.getTime() - now.getTime()) / 86400000));
+                ttlPreviewCurrent.textContent = '🟢 ' + currentLabel + ': ' + expiresPrefix + ' ' + formatDateTime(currentExpiryDate) + ' (' + daysLeft + ' ' + daysLeftLabel + ')';
+                ttlPreviewCurrent.classList.add('current');
+                ttlPreviewCurrent.classList.remove('warning');
+            } else {
+                ttlPreviewCurrent.textContent = '🟢 ' + currentLabel + ': ' + noLimitLabel;
+                ttlPreviewCurrent.classList.add('current');
+                ttlPreviewCurrent.classList.remove('warning');
+            }
+
+            var selectedRadio = modal.querySelector('#dtTtlChips .sf-ttl-radio:checked');
+            if (!selectedRadio) {
+                ttlPreviewNew.classList.add('hidden');
+            } else {
+                var days = parseInt(selectedRadio.value, 10) || 0;
+                if (days === 0) {
+                    ttlPreviewNew.textContent = '🔵 ' + newLabel + ': ' + noLimitLabel;
+                } else {
+                    var expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + days);
+                    ttlPreviewNew.textContent = '🔵 ' + newLabel + ': ' + expiresPrefix + ' ' + formatDateTime(expiryDate);
+                }
+                ttlPreviewNew.classList.remove('hidden');
+            }
+
+            if (hasCurrentDisplays() && !hasSelectedDisplays()) {
+                ttlPreviewWarning.textContent = '🔴 ' + notOnDisplaysLabel + ' ' + afterSaveLabel;
+                ttlPreviewWarning.classList.remove('hidden');
+            } else {
+                ttlPreviewWarning.classList.add('hidden');
+            }
         }
 
         function initChipGroup(containerSelector, chipSelector, selectedClass, radioSelector, onSelectChange) {
@@ -130,6 +200,7 @@
         initChipGroup('#dtTtlChips', '.sf-ttl-chip', 'sf-ttl-chip-selected', '.sf-ttl-radio', updateTtlPreview);
         initChipGroup('#dtDurationChips', '.sf-duration-chip', 'sf-duration-chip-selected', '.sf-duration-radio');
         ttlPreviewUpdater = updateTtlPreview;
+        selectionStateUpdater = updateTtlPreview;
         updateTtlPreview();
     }
 
@@ -203,14 +274,29 @@
     function initSelectionDisplay() {
         var container = getContainer();
         if (!container) return;
+        var modal = document.getElementById(modalId);
+        var removeAllBtn = modal ? modal.querySelector('#dtRemoveFromDisplaysBtn') : null;
+        var removeWarning = modal ? modal.querySelector('#dtRemoveWarning') : null;
+
+        function updateRemoveWarningState() {
+            if (removeWarning && modal) {
+                var hasCurrentDisplays = modal.getAttribute('data-current-has-displays') === '1';
+                var hasSelectedTargets = container.querySelectorAll('.dt-display-chip-cb:checked').length > 0;
+                removeWarning.classList.toggle('hidden', !(hasCurrentDisplays && !hasSelectedTargets));
+            }
+            selectionStateUpdater();
+        }
+
         updateSelectionDisplay(container);
         updateLangChipStates(container);
+        updateRemoveWarningState();
 
         // Checkbox changes (delegated)
         container.addEventListener('change', function (e) {
             if (e.target.classList.contains('dt-display-chip-cb')) {
                 updateSelectionDisplay(container);
                 updateLangChipStates(container);
+                updateRemoveWarningState();
             }
         });
 
@@ -223,6 +309,18 @@
                 });
                 updateSelectionDisplay(container);
                 updateLangChipStates(container);
+                updateRemoveWarningState();
+            });
+        }
+
+        if (removeAllBtn) {
+            removeAllBtn.addEventListener('click', function () {
+                container.querySelectorAll('.dt-display-chip-cb').forEach(function (cb) {
+                    cb.checked = false;
+                });
+                updateSelectionDisplay(container);
+                updateLangChipStates(container);
+                updateRemoveWarningState();
             });
         }
     }
@@ -378,7 +476,13 @@
 
             // Collect TTL
             var ttlInput = document.querySelector('#displayTargetsModal input[name="dt_display_ttl_days"]:checked');
-            var ttlDays = ttlInput ? parseInt(ttlInput.value, 10) : 30;
+            var ttlDays = null;
+            if (ttlInput) {
+                ttlDays = parseInt(ttlInput.value, 10);
+                if (isNaN(ttlDays)) {
+                    ttlDays = 0;
+                }
+            }
 
             // Collect Duration
             var durationInput = document.querySelector('#displayTargetsModal input[name="dt_display_duration_seconds"]:checked');
