@@ -3,7 +3,7 @@
  * API Endpoint: Delete Additional Info Entry
  *
  * Deletes an entry from sf_flash_additional_info.
- * - Only the entry owner or an admin can delete
+ * - Only the entry owner, admin, or safety team can delete
  * Requires user authentication and CSRF validation.
  *
  * POST params:
@@ -44,6 +44,7 @@ if (!sf_csrf_validate()) {
 $userId  = (int)$user['id'];
 $roleId  = (int)($user['role_id'] ?? 0);
 $isAdmin = ($roleId === 1);
+$isSafety = ($roleId === 3);
 
 try {
     $entryId = (int)($_POST['id'] ?? 0);
@@ -68,7 +69,7 @@ try {
 
     $isOwner = (int)$entry['user_id'] === $userId;
 
-    if (!$isOwner && !$isAdmin) {
+    if (!$isOwner && !$isAdmin && !$isSafety) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
         exit;

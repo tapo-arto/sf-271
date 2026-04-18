@@ -133,7 +133,7 @@ try {
         }
 
         $entryOwner = (int)$existing['user_id'];
-        if ($entryOwner !== $userId && !$isAdmin) {
+        if ($entryOwner !== $userId && !$isAdmin && !$isSafety) {
             http_response_code(403);
             echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
             exit;

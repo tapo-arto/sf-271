@@ -51,6 +51,7 @@ try {
         echo json_encode(['success' => false, 'error' => 'Kirjautuminen vaaditaan']);
         exit;
     }
+    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
     sf_app_log("[create_language_version] User authenticated: ID=" . $currentUser['id']);
 
@@ -106,6 +107,17 @@ try {
     }
 
     sf_app_log("[create_language_version] Source flash found: type=" . $source['type']);
+
+    // Permission check: owner, admin or safety team
+    $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
+    $isAdmin = (int)$currentUser['role_id'] === 1;
+    $isSafety = (int)$currentUser['role_id'] === 3;
+    if (!$isOwner && !$isAdmin && !$isSafety) {
+        sf_app_log("[create_language_version] ERROR: Permission denied for user " . $currentUser['id']);
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => sf_term('error_no_edit_permission', $currentUiLang)]);
+        exit;
+    }
 
     // Translation group
     $groupId = !empty($source['translation_group_id'])
@@ -253,7 +265,6 @@ try {
 
     // Kirjaa tapahtuma myös safetyflash_logs-tauluun
     require_once __DIR__ . '/../includes/log.php';
-    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
     $logDesc = sf_term('log_translation_created', $currentUiLang) . ":  {$targetLang}";
     sf_log_event($newId, 'CREATED', $logDesc);
 

@@ -50,11 +50,12 @@ if (!$flash) {
     exit;
 }
 
-// Check permissions: owner or admin
+// Check permissions: owner, admin or safety team
 $isOwner = (int)$flash['created_by'] === (int)$currentUser['id'];
 $isAdmin = (int)$currentUser['role_id'] === 1;
+$isSafety = (int)$currentUser['role_id'] === 3;
 
-if (!$isOwner && !$isAdmin) {
+if (!$isOwner && !$isAdmin && !$isSafety) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'Access denied']);
     exit;

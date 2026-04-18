@@ -26,6 +26,7 @@ try {
 
     require_once __DIR__ . '/../../config.php';
     require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
     if (!function_exists('sf_current_user')) {
         echo json_encode(['success' => false, 'error' => 'Auth-funktio puuttuu']);
@@ -38,6 +39,7 @@ try {
         echo json_encode(['success' => false, 'error' => 'Kirjautuminen vaaditaan']);
         exit;
     }
+    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         http_response_code(405);
@@ -74,12 +76,13 @@ try {
         exit;
     }
 
-    // Permission check: owner or admin
+    // Permission check: owner, admin or safety team
     $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
     $isAdmin = (int)$currentUser['role_id'] === 1;
-    if (!$isOwner && !$isAdmin) {
+    $isSafety = (int)$currentUser['role_id'] === 3;
+    if (!$isOwner && !$isAdmin && !$isSafety) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Ei käyttöoikeutta']);
+        echo json_encode(['success' => false, 'error' => sf_term('error_no_edit_permission', $currentUiLang)]);
         exit;
     }
 
@@ -166,8 +169,6 @@ try {
     // Log the event
     require_once __DIR__ . '/../includes/log.php';
     require_once __DIR__ . '/../includes/audit_log.php';
-    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
-    $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
     sf_log_event($newId, 'CREATED', sf_term('log_bundle_language_created', $currentUiLang) . ': ' . $targetLang);
 
     sf_audit_log(
