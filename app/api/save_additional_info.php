@@ -47,9 +47,6 @@ if (!sf_csrf_validate()) {
 
 $userId = (int)$user['id'];
 $roleId = (int)($user['role_id'] ?? 0);
-$isAdmin  = ($roleId === 1);
-$isSafety = ($roleId === 3);
-$isComms = ($roleId === 4);
 
 try {
     $flashId = (int)($_POST['flash_id'] ?? 0);
@@ -138,8 +135,8 @@ try {
         }
 
         $entryOwner = (int)$existing['user_id'];
-        $isCommsStateAllowed = ($isComms && in_array((string)($flash['state'] ?? ''), ['to_comms', 'published'], true));
-        if ($entryOwner !== $userId && !$isAdmin && !$isSafety && !$isCommsStateAllowed) {
+        $isCommsStateAllowed = ($roleId === 4 && in_array((string)($flash['state'] ?? ''), ['to_comms', 'published'], true));
+        if ($entryOwner !== $userId && !in_array($roleId, [1, 3], true) && !$isCommsStateAllowed) {
             http_response_code(403);
             echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
             exit;
