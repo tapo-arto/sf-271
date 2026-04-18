@@ -73,80 +73,105 @@ $dtDurationOptions = [
         </div>
 
         <div class="sf-modal-body">
-
-            <!-- TTL + Duration valitsimet vierekkäin -->
-            <div class="sf-dt-compact-row">
-
-            <!-- TTL valitsin -->
-            <div class="sf-dt-section">
-                <div class="sf-ttl-header">
-                    <svg class="sf-ttl-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <h4><?= htmlspecialchars(sf_term('display_ttl_heading', $currentUiLang) ?? 'Näkyvyysaika infonäytöillä', ENT_QUOTES, 'UTF-8') ?></h4>
-                </div>
-                <div class="sf-ttl-chips" id="dtTtlChips">
-                    <?php foreach ($dtTtlOptions as $days => $opt): ?>
-                        <?php $chipId = "dt_ttl_chip_{$days}"; ?>
-                        <label for="<?= $chipId ?>" class="sf-ttl-chip <?= $days === $dtCurrentTtlDays ? 'sf-ttl-chip-selected' : '' ?>">
-                            <input type="radio" name="dt_display_ttl_days" id="<?= $chipId ?>"
-                                   value="<?= $days ?>"
-                                   <?= $days === $dtCurrentTtlDays ? 'checked' : '' ?>
-                                   class="sf-ttl-radio">
-                            <span class="sf-chip-label">
-                                <?= htmlspecialchars(sf_term($opt['key'], $currentUiLang) ?? $opt['label'], ENT_QUOTES, 'UTF-8') ?>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
+            <div class="sf-dt-tabs" role="tablist" aria-label="<?= htmlspecialchars(sf_term('display_targets_modal_title', $currentUiLang) ?? 'Työmaanäyttöasetukset', ENT_QUOTES, 'UTF-8') ?>">
+                <button type="button"
+                        class="sf-dt-tab sf-dt-tab-active"
+                        id="dtTabTiming"
+                        data-tab="timing"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="dtPanelTiming">
+                    <?= htmlspecialchars(sf_term('display_tab_timing', $currentUiLang) ?? 'Kestoasetukset', ENT_QUOTES, 'UTF-8') ?>
+                </button>
+                <button type="button"
+                        class="sf-dt-tab"
+                        id="dtTabTargets"
+                        data-tab="targets"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="dtPanelTargets"
+                        tabindex="-1">
+                    <?= htmlspecialchars(sf_term('display_tab_targets', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?>
+                </button>
             </div>
 
-            <!-- Duration valitsin -->
-            <div class="sf-dt-section">
-                <div class="sf-duration-header">
-                    <svg class="sf-duration-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <h4><?= htmlspecialchars(sf_term('display_duration_heading', $currentUiLang) ?? 'Näyttökesto infonäytöllä', ENT_QUOTES, 'UTF-8') ?></h4>
+            <div class="sf-dt-tab-panel sf-dt-tab-panel-active" id="dtPanelTiming" data-tab-panel="timing" role="tabpanel" aria-labelledby="dtTabTiming">
+                <!-- TTL + Duration valitsimet vierekkäin -->
+                <div class="sf-dt-compact-row">
+
+                <!-- TTL valitsin -->
+                <div class="sf-dt-section">
+                    <div class="sf-ttl-header">
+                        <svg class="sf-ttl-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <h4><?= htmlspecialchars(sf_term('display_ttl_heading', $currentUiLang) ?? 'Näkyvyysaika infonäytöillä', ENT_QUOTES, 'UTF-8') ?></h4>
+                    </div>
+                    <div class="sf-ttl-chips" id="dtTtlChips">
+                        <?php foreach ($dtTtlOptions as $days => $opt): ?>
+                            <?php $chipId = "dt_ttl_chip_{$days}"; ?>
+                            <label for="<?= $chipId ?>" class="sf-ttl-chip <?= $days === $dtCurrentTtlDays ? 'sf-ttl-chip-selected' : '' ?>">
+                                <input type="radio" name="dt_display_ttl_days" id="<?= $chipId ?>"
+                                       value="<?= $days ?>"
+                                       <?= $days === $dtCurrentTtlDays ? 'checked' : '' ?>
+                                       class="sf-ttl-radio">
+                                <span class="sf-chip-label">
+                                    <?= htmlspecialchars(sf_term($opt['key'], $currentUiLang) ?? $opt['label'], ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <div class="sf-duration-chips" id="dtDurationChips">
-                    <?php foreach ($dtDurationOptions as $seconds => $termKey): ?>
-                        <?php $chipId = "dt_duration_chip_{$seconds}"; ?>
-                        <label for="<?= $chipId ?>" class="sf-duration-chip <?= $seconds === $dtCurrentDuration ? 'sf-duration-chip-selected' : '' ?>">
-                            <input type="radio" name="dt_display_duration_seconds" id="<?= $chipId ?>"
-                                   value="<?= $seconds ?>"
-                                   <?= $seconds === $dtCurrentDuration ? 'checked' : '' ?>
-                                   class="sf-duration-radio">
-                            <span class="sf-chip-label">
-                                <?= htmlspecialchars(sf_term($termKey, $currentUiLang) ?? "{$seconds}s", ENT_QUOTES, 'UTF-8') ?>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
+
+                <!-- Duration valitsin -->
+                <div class="sf-dt-section">
+                    <div class="sf-duration-header">
+                        <svg class="sf-duration-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <h4><?= htmlspecialchars(sf_term('display_duration_heading', $currentUiLang) ?? 'Näyttökesto infonäytöllä', ENT_QUOTES, 'UTF-8') ?></h4>
+                    </div>
+                    <div class="sf-duration-chips" id="dtDurationChips">
+                        <?php foreach ($dtDurationOptions as $seconds => $termKey): ?>
+                            <?php $chipId = "dt_duration_chip_{$seconds}"; ?>
+                            <label for="<?= $chipId ?>" class="sf-duration-chip <?= $seconds === $dtCurrentDuration ? 'sf-duration-chip-selected' : '' ?>">
+                                <input type="radio" name="dt_display_duration_seconds" id="<?= $chipId ?>"
+                                       value="<?= $seconds ?>"
+                                       <?= $seconds === $dtCurrentDuration ? 'checked' : '' ?>
+                                       class="sf-duration-radio">
+                                <span class="sf-chip-label">
+                                    <?= htmlspecialchars(sf_term($termKey, $currentUiLang) ?? "{$seconds}s", ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
+
+                </div><!-- /.sf-dt-compact-row -->
             </div>
 
-            </div><!-- /.sf-dt-compact-row -->
-
-            <!-- Näyttökohteet -->
-            <div class="sf-dt-section">
-                <div class="sf-dt-displays-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--sf-primary,#0066cc);">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                    <h4><?= htmlspecialchars(sf_term('display_targets_heading', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?></h4>
+            <div class="sf-dt-tab-panel" id="dtPanelTargets" data-tab-panel="targets" role="tabpanel" aria-labelledby="dtTabTargets">
+                <!-- Näyttökohteet -->
+                <div class="sf-dt-section">
+                    <div class="sf-dt-displays-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--sf-primary,#0066cc);">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        <h4><?= htmlspecialchars(sf_term('display_targets_heading', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?></h4>
+                    </div>
+                    <?php
+                        // Käytä modaalin omaa esivalintakyselyä (is_active=1) display_target_selector-includeessa
+                        $preselectedIds = $dtPreselectedIds;
+                        $dtOriginalFlash = $flash;
+                        $flash = ['id' => $dtFlashId];
+                        $context = 'safety_team';
+                        require __DIR__ . '/display_target_selector.php';
+                        $flash = $dtOriginalFlash;
+                        unset($preselectedIds, $dtOriginalFlash);
+                    ?>
                 </div>
-                <?php
-                    // Käytä modaalin omaa esivalintakyselyä (is_active=1) display_target_selector-includeessa
-                    $preselectedIds = $dtPreselectedIds;
-                    $dtOriginalFlash = $flash;
-                    $flash = ['id' => $dtFlashId];
-                    $context = 'safety_team';
-                    require __DIR__ . '/display_target_selector.php';
-                    $flash = $dtOriginalFlash;
-                    unset($preselectedIds, $dtOriginalFlash);
-                ?>
             </div>
 
             <div id="dtSaveStatus" class="sf-dt-status" role="status" aria-live="polite"></div>

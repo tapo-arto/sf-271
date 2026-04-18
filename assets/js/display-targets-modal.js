@@ -8,6 +8,54 @@
     'use strict';
 
     var modalId = 'displayTargetsModal';
+    var defaultTab = 'timing';
+
+    function setActiveTab(tabName) {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        modal.querySelectorAll('.sf-dt-tab').forEach(function (tab) {
+            var isActive = tab.getAttribute('data-tab') === tabName;
+            tab.classList.toggle('sf-dt-tab-active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+        });
+
+        modal.querySelectorAll('.sf-dt-tab-panel').forEach(function (panel) {
+            var isActive = panel.getAttribute('data-tab-panel') === tabName;
+            panel.classList.toggle('sf-dt-tab-panel-active', isActive);
+        });
+    }
+
+    function initTabs() {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        var tabs = modal.querySelectorAll('.sf-dt-tab');
+        if (!tabs.length) return;
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                setActiveTab(tab.getAttribute('data-tab') || defaultTab);
+            });
+
+            tab.addEventListener('keydown', function (e) {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                e.preventDefault();
+                var orderedTabs = Array.from(tabs);
+                var currentIndex = orderedTabs.indexOf(tab);
+                if (currentIndex < 0) return;
+                var nextIndex = e.key === 'ArrowRight'
+                    ? (currentIndex + 1) % orderedTabs.length
+                    : (currentIndex - 1 + orderedTabs.length) % orderedTabs.length;
+                var nextTab = orderedTabs[nextIndex];
+                setActiveTab(nextTab.getAttribute('data-tab') || defaultTab);
+                nextTab.focus();
+            });
+        });
+
+        setActiveTab(defaultTab);
+    }
 
     function openDisplayTargetsModal() {
         if (window._sf && window._sf.openModal) {
@@ -21,6 +69,7 @@
                 document.body.classList.add('sf-modal-open');
             }
         }
+        setActiveTab(defaultTab);
         clearStatus();
     }
 
@@ -327,6 +376,7 @@
         }
 
         initSelectionDisplay();
+        initTabs();
         initLangChips();
         initSearch();
         initSaveButton();
