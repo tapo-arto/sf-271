@@ -129,17 +129,7 @@ $dtDurationOptions = [
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="sf-dt-ttl-preview-card" id="dtTtlPreview"
-                         data-current-label="<?= htmlspecialchars(sf_term('display_ttl_current_label', $currentUiLang) ?? 'Nykyinen', ENT_QUOTES, 'UTF-8') ?>"
-                         data-new-label="<?= htmlspecialchars(sf_term('display_ttl_new_label', $currentUiLang) ?? 'Uusi valinta', ENT_QUOTES, 'UTF-8') ?>"
-                         data-expires-prefix="<?= htmlspecialchars(sf_term('display_ttl_expires_prefix', $currentUiLang) ?? 'Poistuu', ENT_QUOTES, 'UTF-8') ?>"
-                         data-days-left-label="<?= htmlspecialchars(sf_term('display_ttl_days_left', $currentUiLang) ?? 'pv jäljellä', ENT_QUOTES, 'UTF-8') ?>"
-                         data-expired-label="<?= htmlspecialchars(sf_term('display_ttl_expired', $currentUiLang) ?? 'umpeutunut', ENT_QUOTES, 'UTF-8') ?>"
-                         data-no-limit-text="<?= htmlspecialchars(sf_term('display_ttl_no_limit', $currentUiLang) ?? 'Näkyy toistaiseksi', ENT_QUOTES, 'UTF-8') ?>"
-                         data-not-on-displays-text="<?= htmlspecialchars(sf_term('display_ttl_not_on_displays', $currentUiLang) ?? 'Ei näytöillä', ENT_QUOTES, 'UTF-8') ?>">
-                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-current" style="display:none;"></div>
-                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-new" style="display:none;"></div>
-                    </div>
+
                 </div>
 
                 <!-- Duration valitsin -->
@@ -199,6 +189,18 @@ $dtDurationOptions = [
                     </div>
                 </div>
             </div>
+
+                                <div class="sf-dt-ttl-preview-card" id="dtTtlPreview"
+                         data-current-label="<?= htmlspecialchars(sf_term('display_ttl_current_label', $currentUiLang) ?? 'Nykyinen', ENT_QUOTES, 'UTF-8') ?>"
+                         data-new-label="<?= htmlspecialchars(sf_term('display_ttl_new_label', $currentUiLang) ?? 'Uusi valinta', ENT_QUOTES, 'UTF-8') ?>"
+                         data-expires-prefix="<?= htmlspecialchars(sf_term('display_ttl_expires_prefix', $currentUiLang) ?? 'Poistuu', ENT_QUOTES, 'UTF-8') ?>"
+                         data-days-left-label="<?= htmlspecialchars(sf_term('display_ttl_days_left', $currentUiLang) ?? 'pv jäljellä', ENT_QUOTES, 'UTF-8') ?>"
+                         data-expired-label="<?= htmlspecialchars(sf_term('display_ttl_expired', $currentUiLang) ?? 'umpeutunut', ENT_QUOTES, 'UTF-8') ?>"
+                         data-no-limit-text="<?= htmlspecialchars(sf_term('display_ttl_no_limit', $currentUiLang) ?? 'Näkyy toistaiseksi', ENT_QUOTES, 'UTF-8') ?>"
+                         data-not-on-displays-text="<?= htmlspecialchars(sf_term('display_ttl_not_on_displays', $currentUiLang) ?? 'Ei näytöillä', ENT_QUOTES, 'UTF-8') ?>">
+                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-current" style="display:none;"></div>
+                        <div class="sf-dt-ttl-preview-row sf-dt-ttl-new" style="display:none;"></div>
+                    </div>
 
             <div id="dtSaveStatus" class="sf-dt-status" role="status" aria-live="polite"></div>
         </div>
