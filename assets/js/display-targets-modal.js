@@ -13,9 +13,11 @@
     var _modalSnapshot = null;
 
     function updateNoDisplaysWarning() {
-        var warningEl = document.getElementById('dtNoDisplaysWarning');
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+        var warningEl = modal.querySelector('#dtNoDisplaysWarning');
         if (!warningEl) return;
-        var checked = document.querySelectorAll('#displayTargetsModal .dt-display-chip-cb:checked');
+        var checked = modal.querySelectorAll('.dt-display-chip-cb:checked');
         warningEl.classList.toggle('hidden', checked.length > 0);
     }
 
@@ -156,33 +158,88 @@
         var modal = document.getElementById(modalId);
         if (!modal) return;
         var ttlPreview = modal.querySelector('#dtTtlPreview');
-        var ttlPreviewDate = modal.querySelector('#dtTtlPreviewDate');
 
         function updateTtlPreview() {
-            if (!ttlPreview || !ttlPreviewDate) return;
+            if (!ttlPreview) return;
+            var MS_PER_DAY = 86400000;
+            var currentRow = ttlPreview.querySelector('.sf-dt-ttl-current');
+            var newRow = ttlPreview.querySelector('.sf-dt-ttl-new');
+            var currentExpires = modal.getAttribute('data-current-expires') || '';
+            var currentLabel = ttlPreview.getAttribute('data-current-label') || 'Nykyinen';
+            var newLabel = ttlPreview.getAttribute('data-new-label') || 'Uusi valinta';
+            var expiresPrefix = ttlPreview.getAttribute('data-expires-prefix') || 'Poistuu';
+            var daysLeftLabel = ttlPreview.getAttribute('data-days-left-label') || 'pv jäljellä';
+            var expiredLabel = ttlPreview.getAttribute('data-expired-label') || 'umpeutunut';
+            var noLimitText = ttlPreview.getAttribute('data-no-limit-text') || 'Näkyy toistaiseksi';
+            var locale = (modal.getAttribute('data-locale') || document.documentElement.getAttribute('lang') || 'fi').replace('_', '-');
+
+            function parseDateTime(value) {
+                if (!value) return null;
+                var parsed = new Date(value);
+                if (!isNaN(parsed.getTime())) return parsed;
+                parsed = new Date(String(value).replace(' ', 'T'));
+                return isNaN(parsed.getTime()) ? null : parsed;
+            }
+
+            function formatDateTime(dateObj) {
+                return dateObj.toLocaleDateString(locale, {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function setPreviewRow(row, icon, label, mainText, extraText) {
+                row.textContent = '';
+                row.appendChild(document.createTextNode(icon + ' '));
+                var strong = document.createElement('strong');
+                strong.textContent = label + ':';
+                row.appendChild(strong);
+                row.appendChild(document.createTextNode(' ' + mainText));
+                if (extraText) {
+                    row.appendChild(document.createTextNode(' '));
+                    var em = document.createElement('em');
+                    em.textContent = extraText;
+                    row.appendChild(em);
+                }
+                row.style.display = '';
+            }
+
+            if (currentRow) {
+                var currentExpiryDate = parseDateTime(currentExpires);
+                if (currentExpires && currentExpiryDate) {
+                    var daysLeft = Math.ceil((currentExpiryDate.getTime() - Date.now()) / MS_PER_DAY);
+                    setPreviewRow(
+                        currentRow,
+                        '🟢',
+                        currentLabel,
+                        expiresPrefix + ' ' + formatDateTime(currentExpiryDate),
+                        daysLeft > 0 ? '(' + daysLeft + ' ' + daysLeftLabel + ')' : '(' + expiredLabel + ')'
+                    );
+                } else if (currentExpires) {
+                    setPreviewRow(currentRow, '🟢', currentLabel, noLimitText, '');
+                } else {
+                    currentRow.style.display = 'none';
+                }
+            }
+
             var selectedRadio = modal.querySelector('#dtTtlChips .sf-ttl-radio:checked');
-            if (!selectedRadio) {
-                ttlPreview.classList.add('sf-ttl-preview-hidden');
-                return;
+            if (newRow) {
+                if (!selectedRadio) {
+                    newRow.style.display = 'none';
+                } else {
+                    var days = parseInt(selectedRadio.value, 10) || 0;
+                    if (days === 0) {
+                        setPreviewRow(newRow, '🔵', newLabel, noLimitText, '');
+                    } else {
+                        var expiryDate = new Date();
+                        expiryDate.setDate(expiryDate.getDate() + days);
+                        setPreviewRow(newRow, '🔵', newLabel, expiresPrefix + ' ' + formatDateTime(expiryDate), '');
+                    }
+                }
             }
-
-            var days = parseInt(selectedRadio.value, 10) || 0;
-            if (days === 0) {
-                ttlPreviewDate.textContent = ttlPreviewDate.getAttribute('data-no-limit-text') || '';
-                ttlPreview.classList.remove('sf-ttl-preview-hidden');
-                return;
-            }
-
-            var expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + days);
-            ttlPreviewDate.textContent = expiryDate.toLocaleDateString('fi-FI', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            ttlPreview.classList.remove('sf-ttl-preview-hidden');
         }
 
         function initChipGroup(containerSelector, chipSelector, selectedClass, radioSelector, onSelectChange) {
@@ -241,8 +298,15 @@
             }
         }
         setActiveTab(defaultTab);
-        ttlPreviewUpdater();
-        updateNoDisplaysWarning();
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(function () {
+                ttlPreviewUpdater();
+                updateNoDisplaysWarning();
+            });
+        } else {
+            ttlPreviewUpdater();
+            updateNoDisplaysWarning();
+        }
         clearStatus();
     }
 
