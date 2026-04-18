@@ -36,8 +36,8 @@ class FlashPermissionService
             return true;
         }
         
-        // Safety team permissions
-        if ($isSafety && in_array($state, ['pending_supervisor', 'pending_review', 'reviewed', 'to_comms', 'published'], true)) {
+        // Safety team permissions (all except draft)
+        if ($isSafety && $state !== 'draft') {
             return true;
         }
         
@@ -107,7 +107,7 @@ class FlashPermissionService
                 return ['draft', 'request_info', 'pending_supervisor', 'pending_review', 'reviewed', 'to_comms', 'published'];
             
             case 3: // Safety Team
-                return ['pending_supervisor', 'pending_review', 'reviewed', 'to_comms', 'published'];
+                return ['request_info', 'pending_supervisor', 'pending_review', 'reviewed', 'to_comms', 'published'];
             
             case 4: // Communications
                 return ['to_comms', 'published'];

@@ -17,6 +17,7 @@ require_once __DIR__ . '/../includes/audit_log.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../../assets/services/email_services.php'; 
 require_once __DIR__ . '/../includes/file_cleanup.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $id  = sf_validate_id();
 $pdo = sf_get_pdo();
@@ -50,6 +51,32 @@ $logFlashId = !empty($flash['translation_group_id'])
 $userId = $_SESSION['user_id'] ?? null;
 $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 // ================================================
+
+$currentUser = sf_current_user();
+$roleId = (int)($currentUser['role_id'] ?? ($_SESSION['role_id'] ?? 0));
+$isAdmin = ($roleId === 1);
+$isSafety = ($roleId === 3);
+$isComms = ($roleId === 4);
+
+if (!$isAdmin && !$isSafety && !$isComms) {
+    $permissionError = function_exists('sf_term')
+        ? sf_term('error_no_edit_permission', $currentUiLang)
+        : 'No permission.';
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode([
+            'ok' => false,
+            'error' => $permissionError,
+        ]);
+        exit;
+    }
+    http_response_code(403);
+    echo $permissionError;
+    exit;
+}
 
 // Lue POST-parametrit (julkaisumodaalista)
 $sendToDistribution = isset($_POST['send_to_distribution']) && $_POST['send_to_distribution'] === '1';

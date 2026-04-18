@@ -26,6 +26,7 @@ try {
 
     require_once __DIR__ . '/../../config.php';
     require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../services/FlashPermissionService.php';
     require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
     if (!function_exists('sf_current_user')) {
@@ -76,11 +77,9 @@ try {
         exit;
     }
 
-    // Permission check: owner, admin or safety team
-    $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
-    $isAdmin = (int)$currentUser['role_id'] === 1;
-    $isSafety = (int)$currentUser['role_id'] === 3;
-    if (!$isOwner && !$isAdmin && !$isSafety) {
+    // Permission check via centralized role/state hierarchy
+    $permissionService = new FlashPermissionService();
+    if (!$permissionService->canEdit($currentUser, $source)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => sf_term('error_no_edit_permission', $currentUiLang)]);
         exit;

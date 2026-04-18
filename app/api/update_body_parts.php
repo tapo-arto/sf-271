@@ -14,6 +14,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
+require_once __DIR__ . '/../services/FlashPermissionService.php';
 
 // Initialize Database connection
 global $config;
@@ -42,10 +43,6 @@ if (!sf_csrf_validate()) {
 }
 
 $userId = (int)$user['id'];
-$roleId = (int)($user['role_id'] ?? 0);
-$isAdmin  = ($roleId === 1);
-$isSafety = ($roleId === 3);
-
 try {
     $flashId = (int)($_POST['flash_id'] ?? 0);
     if ($flashId <= 0) {
@@ -57,7 +54,7 @@ try {
     $pdo = Database::getInstance();
 
     // Load the flash to verify it exists and is editable
-    $stmt = $pdo->prepare("SELECT id, type, created_by, is_archived FROM sf_flashes WHERE id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, type, state, created_by, is_archived FROM sf_flashes WHERE id = ? LIMIT 1");
     $stmt->execute([$flashId]);
     $flash = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -74,9 +71,9 @@ try {
         exit;
     }
 
-    // Permission: owner, admin, or safety team
-    $isOwner = ($userId > 0 && (int)$flash['created_by'] === $userId);
-    if (!$isOwner && !$isAdmin && !$isSafety) {
+    // Permission via centralized role/state hierarchy
+    $permissionService = new FlashPermissionService();
+    if (!$permissionService->canEdit($user, $flash)) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
         exit;

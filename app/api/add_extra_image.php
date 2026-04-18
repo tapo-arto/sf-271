@@ -16,6 +16,7 @@ require_once __DIR__ . '/../../config.php';
 define('SF_SKIP_AUTO_CSRF', true);
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../services/FlashPermissionService.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -48,7 +49,7 @@ try {
     }
 
     // Verify flash exists and user has permission to edit it
-    $stmt = $pdo->prepare("SELECT id, created_by FROM sf_flashes WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, created_by, state, is_archived FROM sf_flashes WHERE id = ?");
     $stmt->execute([$flashId]);
     $flash = $stmt->fetch();
 
@@ -57,16 +58,22 @@ try {
         exit;
     }
 
+    if (!empty($flash['is_archived'])) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'error' => 'Cannot edit archived reports']);
+        exit;
+    }
+
     // Check permissions - user must be able to edit the flash
     $currentUser = sf_current_user();
     $currentUserId = (int)($currentUser['id'] ?? 0);
-    $roleId = (int)($currentUser['role_id'] ?? 0);
-    $isAdmin = ($roleId === 1);
-    $isSafety = ($roleId === 3);
     $isOwner = ($currentUserId > 0 && (int)$flash['created_by'] === $currentUserId);
+    $permissionService = new FlashPermissionService();
+    $hasGeneralEditPermission = $permissionService->canEdit($currentUser, $flash);
+    $isOwnerPublished = ($isOwner && (($flash['state'] ?? '') === 'published'));
 
-    // Simple permission check - admin, safety, or owner can add images
-    if (!$isAdmin && !$isSafety && !$isOwner) {
+    // Allow normal edit permissions + owner in published state
+    if (!$hasGeneralEditPermission && !$isOwnerPublished) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Permission denied']);
         exit;

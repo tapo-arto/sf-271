@@ -29,6 +29,7 @@ try {
 
     require_once $configPath;
     require_once $authPath;
+    require_once __DIR__ . '/../services/FlashPermissionService.php';
     require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
     sf_app_log("[create_language_version] Config and auth loaded");
@@ -108,11 +109,9 @@ try {
 
     sf_app_log("[create_language_version] Source flash found: type=" . $source['type']);
 
-    // Permission check: owner, admin or safety team
-    $isOwner = (int)$source['created_by'] === (int)$currentUser['id'];
-    $isAdmin = (int)$currentUser['role_id'] === 1;
-    $isSafety = (int)$currentUser['role_id'] === 3;
-    if (!$isOwner && !$isAdmin && !$isSafety) {
+    // Permission check via centralized role/state hierarchy
+    $permissionService = new FlashPermissionService();
+    if (!$permissionService->canEdit($currentUser, $source)) {
         sf_app_log("[create_language_version] ERROR: Permission denied for user " . $currentUser['id']);
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => sf_term('error_no_edit_permission', $currentUiLang)]);

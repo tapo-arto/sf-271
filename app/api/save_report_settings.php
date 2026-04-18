@@ -21,6 +21,7 @@ define('SF_SKIP_AUTO_CSRF', true);
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../includes/log.php';
 require_once __DIR__ . '/../includes/audit_log.php';
+require_once __DIR__ . '/../services/FlashPermissionService.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
 
 global $config;
@@ -28,7 +29,6 @@ Database::setConfig($config['db'] ?? []);
 
 $user   = sf_current_user();
 $userId = (int)$user['id'];
-$roleId = (int)($user['role_id'] ?? 0);
 
 // Method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -43,9 +43,6 @@ if (!sf_csrf_validate()) {
     echo json_encode(['ok' => false, 'error' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-$isAdmin  = ($roleId === 1);
-$isSafety = ($roleId === 3);
 
 try {
     // Validate flash_id
@@ -69,9 +66,9 @@ try {
         exit;
     }
 
-    // Authorization
-    $isOwner = ($userId > 0 && (int)$flash['created_by'] === $userId);
-    if (!$isAdmin && !$isSafety && !$isOwner) {
+    // Authorization via centralized role/state hierarchy
+    $permissionService = new FlashPermissionService();
+    if (!$permissionService->canEdit($user, $flash)) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
         exit;
