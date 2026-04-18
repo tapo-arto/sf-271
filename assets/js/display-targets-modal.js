@@ -45,12 +45,18 @@
             });
         });
 
-        modal.querySelectorAll('.sf-ttl-chip').forEach(function (chip) {
-            _modalSnapshot.ttlChipStates.push(chip.classList.contains('sf-ttl-chip-selected'));
+        modal.querySelectorAll('.sf-ttl-chip').forEach(function (chip, index) {
+            _modalSnapshot.ttlChipStates.push({
+                key: chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index),
+                selected: chip.classList.contains('sf-ttl-chip-selected')
+            });
         });
 
-        modal.querySelectorAll('.sf-duration-chip').forEach(function (chip) {
-            _modalSnapshot.durationChipStates.push(chip.classList.contains('sf-duration-chip-selected'));
+        modal.querySelectorAll('.sf-duration-chip').forEach(function (chip, index) {
+            _modalSnapshot.durationChipStates.push({
+                key: chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index),
+                selected: chip.classList.contains('sf-duration-chip-selected')
+            });
         });
     }
 
@@ -76,11 +82,19 @@
         });
 
         modal.querySelectorAll('.sf-ttl-chip').forEach(function (chip, index) {
-            chip.classList.toggle('sf-ttl-chip-selected', !!_modalSnapshot.ttlChipStates[index]);
+            var key = chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index);
+            var snap = _modalSnapshot.ttlChipStates.find(function (item) {
+                return item.key === key;
+            });
+            chip.classList.toggle('sf-ttl-chip-selected', !!(snap && snap.selected));
         });
 
         modal.querySelectorAll('.sf-duration-chip').forEach(function (chip, index) {
-            chip.classList.toggle('sf-duration-chip-selected', !!_modalSnapshot.durationChipStates[index]);
+            var key = chip.getAttribute('for') || chip.getAttribute('data-chip-id') || String(index);
+            var snap = _modalSnapshot.durationChipStates.find(function (item) {
+                return item.key === key;
+            });
+            chip.classList.toggle('sf-duration-chip-selected', !!(snap && snap.selected));
         });
 
         if (container) {
