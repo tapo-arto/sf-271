@@ -62,6 +62,7 @@
     function initChipToggles() {
         var modal = document.getElementById(modalId);
         if (!modal) return;
+        var msPerDay = 24 * 60 * 60 * 1000;
         var ttlPreview = modal.querySelector('#dtTtlPreview');
         var ttlPreviewCurrent = modal.querySelector('#dtTtlPreviewCurrent');
         var ttlPreviewNew = modal.querySelector('#dtTtlPreviewNew');
@@ -128,7 +129,7 @@
                 ttlPreviewCurrent.classList.add('warning');
                 ttlPreviewCurrent.classList.remove('current');
             } else if (currentExpiryDate) {
-                var daysLeft = Math.max(0, Math.ceil((currentExpiryDate.getTime() - now.getTime()) / 86400000));
+                var daysLeft = Math.max(0, Math.ceil((currentExpiryDate.getTime() - now.getTime()) / msPerDay));
                 ttlPreviewCurrent.textContent = '🟢 ' + currentLabel + ': ' + expiresPrefix + ' ' + formatDateTime(currentExpiryDate) + ' (' + daysLeft + ' ' + daysLeftLabel + ')';
                 ttlPreviewCurrent.classList.add('current');
                 ttlPreviewCurrent.classList.remove('warning');
