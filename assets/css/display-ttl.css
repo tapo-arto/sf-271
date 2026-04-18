@@ -980,9 +980,9 @@
 }
 
 .sf-dt-tab.sf-dt-tab-active {
-    background: #0066cc;
-    color: #ffffff;
-    border-color: #0066cc;
+    background: var(--sf-primary, #0066cc);
+    color: var(--sf-text-on-primary, #ffffff);
+    border-color: var(--sf-primary, #0066cc);
 }
 
 .sf-dt-tab.sf-dt-tab-active::after {
@@ -995,12 +995,12 @@
     height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-top: 8px solid #0066cc;
+    border-top: 8px solid var(--sf-primary, #0066cc);
 }
 
 .sf-dt-tab.sf-dt-tab-active:hover {
-    background: #0066cc;
-    color: #ffffff;
+    background: var(--sf-primary, #0066cc);
+    color: var(--sf-text-on-primary, #ffffff);
 }
 
 .sf-dt-tab:focus-visible {
