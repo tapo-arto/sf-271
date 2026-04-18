@@ -478,9 +478,9 @@
             var ttlInput = document.querySelector('#displayTargetsModal input[name="dt_display_ttl_days"]:checked');
             var ttlDays = null;
             if (ttlInput) {
-                ttlDays = parseInt(ttlInput.value, 10);
-                if (isNaN(ttlDays)) {
-                    ttlDays = 0;
+                var parsedTtlDays = parseInt(ttlInput.value, 10);
+                if (!isNaN(parsedTtlDays)) {
+                    ttlDays = parsedTtlDays;
                 }
             }
 
