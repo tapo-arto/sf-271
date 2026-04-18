@@ -15,6 +15,7 @@ try {
     require_once __DIR__ . '/../includes/statuses.php';
     require_once __DIR__ . '/../includes/log.php';
     require_once __DIR__ . '/../includes/log_app.php';
+    require_once __DIR__ . '/../services/FlashPermissionService.php';
     require_once __DIR__ . '/../../assets/lib/sf_terms.php';
     require_once __DIR__ . '/../../assets/lib/Database.php';
 
@@ -69,14 +70,10 @@ try {
         exit;
     }
 
-    // Permission check: owner, admin or safety team
+    // Permission check via centralized role/state hierarchy
     $currentUser = sf_current_user();
-    $currentUserId = (int)($currentUser['id'] ?? 0);
-    $currentRoleId = (int)($currentUser['role_id'] ?? 0);
-    $isOwner = ($currentUserId > 0 && (int)($baseFlash['created_by'] ?? 0) === $currentUserId);
-    $isAdmin = ($currentRoleId === 1);
-    $isSafety = ($currentRoleId === 3);
-    if (!$isOwner && !$isAdmin && !$isSafety) {
+    $permissionService = new FlashPermissionService();
+    if (!$permissionService->canEdit($currentUser, $baseFlash)) {
         http_response_code(403);
         echo json_encode([
             'success' => false,

@@ -21,6 +21,7 @@ header('Content-Type: application/json; charset=utf-8');
 define('SF_SKIP_AUTO_CSRF', true);
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
+require_once __DIR__ . '/../services/FlashPermissionService.php';
 
 global $config;
 Database::setConfig($config['db'] ?? []);
@@ -48,6 +49,7 @@ $userId = (int)$user['id'];
 $roleId = (int)($user['role_id'] ?? 0);
 $isAdmin  = ($roleId === 1);
 $isSafety = ($roleId === 3);
+$isComms = ($roleId === 4);
 
 try {
     $flashId = (int)($_POST['flash_id'] ?? 0);
@@ -85,7 +87,7 @@ try {
     ");
 
     // Load flash to verify it exists and check permissions
-    $stmt = $pdo->prepare("SELECT id, created_by, is_archived FROM sf_flashes WHERE id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, created_by, state, is_archived FROM sf_flashes WHERE id = ? LIMIT 1");
     $stmt->execute([$flashId]);
     $flash = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -102,7 +104,10 @@ try {
     }
 
     $isOwner = ($userId > 0 && (int)$flash['created_by'] === $userId);
-    if (!$isOwner && !$isAdmin && !$isSafety) {
+    $permissionService = new FlashPermissionService();
+    $hasGeneralEditPermission = $permissionService->canEdit($user, $flash);
+    $isOwnerPublished = ($isOwner && (($flash['state'] ?? '') === 'published'));
+    if (!$hasGeneralEditPermission && !$isOwnerPublished) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -133,7 +138,8 @@ try {
         }
 
         $entryOwner = (int)$existing['user_id'];
-        if ($entryOwner !== $userId && !$isAdmin && !$isSafety) {
+        $isCommsStateAllowed = ($isComms && in_array((string)($flash['state'] ?? ''), ['to_comms', 'published'], true));
+        if ($entryOwner !== $userId && !$isAdmin && !$isSafety && !$isCommsStateAllowed) {
             http_response_code(403);
             echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
             exit;

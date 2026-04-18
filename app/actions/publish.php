@@ -51,6 +51,29 @@ $userId = $_SESSION['user_id'] ?? null;
 $currentUiLang = $_SESSION['ui_lang'] ?? 'fi';
 // ================================================
 
+$currentUser = sf_current_user();
+$roleId = (int)($currentUser['role_id'] ?? ($_SESSION['role_id'] ?? 0));
+$isAdmin = ($roleId === 1);
+$isSafety = ($roleId === 3);
+$isComms = ($roleId === 4);
+
+if (!$isAdmin && !$isSafety && !$isComms) {
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode([
+            'ok' => false,
+            'error' => 'Ei oikeuksia.',
+        ]);
+        exit;
+    }
+    http_response_code(403);
+    echo 'Ei oikeuksia.';
+    exit;
+}
+
 // Lue POST-parametrit (julkaisumodaalista)
 $sendToDistribution = isset($_POST['send_to_distribution']) && $_POST['send_to_distribution'] === '1';
 $hasPersonalInjury = isset($_POST['has_personal_injury']) && $_POST['has_personal_injury'] === '1';
