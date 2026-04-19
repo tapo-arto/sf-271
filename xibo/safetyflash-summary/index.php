@@ -617,7 +617,7 @@ header('Content-Type: text/html; charset=utf-8');
             white-space: normal;
             max-width: 100%;
             font-weight: 700;
-            font-size: 38px;
+            font-size: 30px;
             line-height: var(--sf-title-line-height);
         }
         .sf-new-badge {
@@ -658,7 +658,7 @@ header('Content-Type: text/html; charset=utf-8');
             display: flex;
             gap: 18px;
             color: #475569;
-            font-size: 24px;
+            font-size: 20px;
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
@@ -769,7 +769,7 @@ header('Content-Type: text/html; charset=utf-8');
     const i18n = <?= json_encode($viewI18n, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
-    const itemsPerPage = 6;
+    const itemsPerPage = 5;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
 
