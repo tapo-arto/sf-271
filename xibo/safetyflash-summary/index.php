@@ -644,7 +644,7 @@ header('Content-Type: text/html; charset=utf-8');
             border-color: #9ca3af;
         }
         .sf-page-btn:disabled {
-            opacity: 0.42;
+            opacity: 0.4;
             cursor: default;
         }
         .sf-page-numbers {
@@ -664,12 +664,22 @@ header('Content-Type: text/html; charset=utf-8');
             color: #374151;
             font-size: 18px;
             font-weight: 600;
+            cursor: pointer;
+        }
+        .sf-page-num:disabled {
+            cursor: default;
         }
         .sf-page-num.active {
             background: #fee000;
             border-color: #fee000;
             color: #111827;
             font-weight: 700;
+        }
+        .sf-page-ellipsis {
+            color: #9ca3af;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
         }
         .sf-page-info {
             margin-left: 8px;
@@ -769,6 +779,7 @@ header('Content-Type: text/html; charset=utf-8');
     const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
     const itemsPerPage = 6;
+    const maxVisiblePages = 7;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
 
@@ -837,8 +848,8 @@ header('Content-Type: text/html; charset=utf-8');
 
     const buildPageWindow = (current, total) => {
         const pages = [];
-        if (total <= 7) {
-            for (let page = 1; page <= total; page += 1) {
+        if (total <= maxVisiblePages) {
+            for (let page = 1; page <= total; page++) {
                 pages.push(page);
             }
             return pages;
@@ -850,7 +861,7 @@ header('Content-Type: text/html; charset=utf-8');
         if (start > 2) {
             pages.push('…');
         }
-        for (let page = start; page <= end; page += 1) {
+        for (let page = start; page <= end; page++) {
             pages.push(page);
         }
         if (end < total - 1) {
@@ -864,8 +875,9 @@ header('Content-Type: text/html; charset=utf-8');
         const current = currentPage + 1;
         indicator.textContent = `${i18n.page || 'Page'} ${current} ${i18n.of || '/'} ${totalPages}`;
 
-        prevButton.disabled = totalPages <= 1;
-        nextButton.disabled = totalPages <= 1;
+        const isNavigationDisabled = totalPages <= 1;
+        prevButton.disabled = isNavigationDisabled;
+        nextButton.disabled = isNavigationDisabled;
 
         if (!pageNumbers) {
             return;
@@ -874,11 +886,13 @@ header('Content-Type: text/html; charset=utf-8');
         const visiblePages = buildPageWindow(current, totalPages);
         pageNumbers.innerHTML = visiblePages.map((entry) => {
             if (entry === '…') {
-                return '<span class="sf-page-num">…</span>';
+                return '<span class="sf-page-ellipsis" aria-hidden="true">…</span>';
             }
             const page = Number(entry);
             const activeClass = page === current ? ' active' : '';
-            return `<span class="sf-page-num${activeClass}">${page}</span>`;
+            const ariaCurrent = page === current ? ' aria-current="page"' : '';
+            const disabledAttr = page === current ? ' disabled' : '';
+            return `<button type="button" class="sf-page-num${activeClass}" data-page="${page}" aria-label="${escapeHtml(i18n.page || 'Page')} ${page}"${ariaCurrent}${disabledAttr}>${page}</button>`;
         }).join('');
     };
 
@@ -930,6 +944,24 @@ header('Content-Type: text/html; charset=utf-8');
                 return;
             }
             currentPage = (currentPage + 1) % totalPages;
+            renderPage();
+        });
+    }
+
+    if (pageNumbers) {
+        pageNumbers.addEventListener('click', (event) => {
+            const pageButton = event.target instanceof HTMLElement ? event.target.closest('[data-page]') : null;
+            if (!(pageButton instanceof HTMLElement)) {
+                return;
+            }
+            if (totalPages <= 1) {
+                return;
+            }
+            const targetPage = Number(pageButton.getAttribute('data-page'));
+            if (!Number.isInteger(targetPage) || targetPage < 1 || targetPage > totalPages) {
+                return;
+            }
+            currentPage = targetPage - 1;
             renderPage();
         });
     }
