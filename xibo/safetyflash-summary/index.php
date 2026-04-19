@@ -152,6 +152,9 @@ $viewTexts = [
         'pagination_next' => 'Seuraava',
         'preview_languages' => 'Kieliversiot',
         'standalone_lang_note' => 'Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (%s).',
+        'standalone_urls_heading' => 'Xibo standalone-URL:t',
+        'toolbar_meta' => '%d aktiivista · %ds kierto',
+        'fullscreen_label' => 'Koko ruutu',
         'new_badge' => 'UUSI',
         'published_tag' => 'Julkaistu',
     ],
@@ -169,6 +172,9 @@ $viewTexts = [
         'pagination_next' => 'Nästa',
         'preview_languages' => 'Språkversioner',
         'standalone_lang_note' => 'Byt landspecifik språkversion med parametern <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'Xibo standalone-URL:er',
+        'toolbar_meta' => '%d aktiva · %ds växling',
+        'fullscreen_label' => 'Helskärm',
         'new_badge' => 'NY',
         'published_tag' => 'Publicerad',
     ],
@@ -186,6 +192,9 @@ $viewTexts = [
         'pagination_next' => 'Next',
         'preview_languages' => 'Language versions',
         'standalone_lang_note' => 'Change country-specific language version with the <code>lang=</code> parameter (%s).',
+        'standalone_urls_heading' => 'Xibo standalone URLs',
+        'toolbar_meta' => '%d active · %ds rotation',
+        'fullscreen_label' => 'Fullscreen',
         'new_badge' => 'NEW',
         'published_tag' => 'Published',
     ],
@@ -203,6 +212,9 @@ $viewTexts = [
         'pagination_next' => 'Successiva',
         'preview_languages' => 'Versioni lingua',
         'standalone_lang_note' => 'Cambia la versione linguistica per paese con il parametro <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'URL standalone Xibo',
+        'toolbar_meta' => '%d attivi · rotazione %ds',
+        'fullscreen_label' => 'Schermo intero',
         'new_badge' => 'NUOVO',
         'published_tag' => 'Pubblicato',
     ],
@@ -220,6 +232,9 @@ $viewTexts = [
         'pagination_next' => 'Επόμενη',
         'preview_languages' => 'Γλωσσικές εκδόσεις',
         'standalone_lang_note' => 'Αλλάξτε γλωσσική έκδοση ανά χώρα με την παράμετρο <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'Διευθύνσεις Xibo standalone',
+        'toolbar_meta' => '%d ενεργά · εναλλαγή %ds',
+        'fullscreen_label' => 'Πλήρης οθόνη',
         'new_badge' => 'ΝΕΟ',
         'published_tag' => 'Δημοσιευμένο',
     ],
@@ -280,6 +295,11 @@ $langCodeList = implode('/', array_map(static function (string $langCode): strin
 $standaloneLangNote = sprintf(
     (string)($viewI18n['standalone_lang_note'] ?? 'Change country-specific language version with the <code>lang=</code> parameter (%s).'),
     htmlspecialchars($langCodeList, ENT_QUOTES, 'UTF-8')
+);
+$toolbarMetaText = sprintf(
+    (string)($viewI18n['toolbar_meta'] ?? '%d active · %ds rotation'),
+    (int)$activeFlashCount,
+    (int)$rotationSeconds
 );
 $previewAppUrls = [];
 $previewStandaloneUrls = [];
@@ -392,49 +412,144 @@ header('Content-Type: text/html; charset=utf-8');
         }
 
         .sf-xibo-summary-container {
+            --sf-preview-max-height-offset: 280px;
+            --sf-preview-aspect-ratio: 1.7777777778;
             min-height: calc(100vh - 72px);
             box-sizing: border-box;
-            padding: 24px;
+            padding: 14px 20px 20px;
             background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            overflow: hidden;
         }
         .sf-xibo-summary-shell {
-            max-width: 1440px;
+            max-width: 1700px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
         }
         .sf-xibo-page-header {
-            margin-bottom: 16px;
-            gap: 0;
-            flex-direction: column;
-            align-items: flex-start;
+            margin: 0;
+            gap: 6px;
+            flex-direction: row;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .sf-xibo-page-header .sf-page-title {
+            margin: 0;
         }
         .sf-xibo-page-description {
-            margin: 8px 0 0;
-            color: rgba(255, 255, 255, 0.88);
-            font-size: 1rem;
-            max-width: 72ch;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            max-width: 80ch;
         }
-        .sf-xibo-preview-card {
+        .sf-xibo-preview-workspace {
             border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.16);
             background: #ffffff;
             box-shadow: 0 12px 30px rgba(2, 6, 23, 0.24);
-            padding: 18px;
+            padding: 12px;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .sf-xibo-preview-label {
-            margin: 0 0 12px;
+        .sf-xibo-preview-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .sf-xibo-language-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .sf-xibo-language-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
             color: #1e293b;
-            font-size: 1.05rem;
+            text-decoration: none;
+            font-size: 0.82rem;
             font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .sf-xibo-language-link:hover {
+            background: #eef2ff;
+        }
+        .sf-lang-link--active.sf-xibo-language-link {
+            border-color: #2563eb;
+            background: #dbeafe;
+            color: #1d4ed8 !important;
+            text-decoration: none;
+        }
+        .sf-xibo-preview-meta {
+            margin: 0;
+            color: #334155;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+        .sf-xibo-fullscreen-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #0f172a;
+            font: inherit;
+            font-size: 0.95rem;
+            line-height: 1;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 7px 10px;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sf-xibo-fullscreen-btn:hover {
+            background: #e2e8f0;
+        }
+        .sf-xibo-fullscreen-icon {
+            line-height: 1;
+            width: 14px;
+            height: 14px;
+        }
+        .sf-xibo-preview-stage-wrap {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
         .sf-xibo-preview-frame {
             position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
+            width: min(100%, calc((100vh - var(--sf-preview-max-height-offset)) * var(--sf-preview-aspect-ratio)));
+            max-width: 100%;
+            aspect-ratio: var(--sf-preview-aspect-ratio);
             border-radius: 12px;
             border: 1px solid #dbe4ee;
             background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             overflow: hidden;
             container-type: inline-size;
+        }
+        .sf-xibo-preview-frame:fullscreen {
+            width: 100vw;
+            max-width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            border: none;
         }
         .sf-xibo-preview-frame .sf-stage {
             position: absolute;
@@ -443,48 +558,28 @@ header('Content-Type: text/html; charset=utf-8');
             transform: scale(1);
             transform: scale(min(1, calc(100cqw / 1920)));
         }
-
-        .sf-xibo-preview-info {
-            margin-top: 14px;
-            display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        .sf-xibo-standalone-panel {
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.14);
+            padding: 0 12px;
         }
-        .sf-xibo-meta-item {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: #f8fafc;
-            padding: 10px 12px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-        }
-        .sf-xibo-meta-label {
-            display: block;
-            color: #64748b;
-            font-size: 0.78rem;
+        .sf-xibo-standalone-panel summary {
+            cursor: pointer;
+            padding: 10px 0;
+            color: #1e293b;
+            font-size: 0.92rem;
             font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+            user-select: none;
         }
-        .sf-xibo-meta-value {
-            margin: 0;
-            color: #0f172a;
-            font-size: 0.95rem;
-            font-weight: 600;
-            overflow-wrap: anywhere;
-            word-break: break-word;
+        .sf-xibo-panel-body {
+            padding: 0 0 10px;
+            color: #334155;
+            font-size: 0.88rem;
         }
-        .sf-xibo-meta-value a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-        .sf-xibo-meta-value a:hover {
-            text-decoration: underline;
-        }
-        .sf-lang-link--active {
-            font-weight: 800;
-            color: #0f172a !important;
-            text-decoration: underline;
+        .sf-xibo-panel-note {
+            margin: 0 0 8px;
         }
         .sf-standalone-lang-list {
             margin: 0;
@@ -495,6 +590,26 @@ header('Content-Type: text/html; charset=utf-8');
         }
         .sf-standalone-lang-list li {
             margin: 0;
+        }
+        .sf-standalone-lang-list a {
+            color: #2563eb;
+            text-decoration: none;
+            overflow-wrap: anywhere;
+        }
+        .sf-standalone-lang-list a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 960px) {
+            .sf-xibo-summary-container {
+                overflow: auto;
+            }
+            .sf-xibo-preview-frame {
+                width: 100%;
+            }
+            .sf-xibo-preview-meta {
+                width: 100%;
+            }
         }
 
         .sf-summary {
@@ -706,9 +821,26 @@ header('Content-Type: text/html; charset=utf-8');
             <h1 class="sf-page-title">SafetyFlash-koonti</h1>
             <p class="sf-xibo-page-description">Tässä näkymässä voit esikatsella Xibo-näytölle jaettavaa SafetyFlash-koontia. Näet listan ulkoasun, sivutuksen ja taustakuvan ennen varsinaista julkaisua.</p>
         </div>
-        <div class="sf-xibo-preview-card">
-            <p class="sf-xibo-preview-label">Xibo-näytön esikatselu</p>
-            <div class="sf-xibo-preview-frame">
+        <div class="sf-xibo-preview-workspace">
+            <div class="sf-xibo-preview-toolbar">
+                <div class="sf-xibo-language-switch">
+<?php foreach ($previewAppUrls as $langCode => $langAppUrl): ?>
+<?php
+    $linkClassAttr = $langCode === $uiLang ? ' sf-lang-link--active' : '';
+?>
+                    <a href="<?= htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-xibo-language-link<?= $linkClassAttr ?>"><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></a>
+<?php endforeach; ?>
+                </div>
+                <p class="sf-xibo-preview-meta"><?= htmlspecialchars($toolbarMetaText, ENT_QUOTES, 'UTF-8') ?></p>
+                <button type="button" id="sfFullscreenBtn" class="sf-xibo-fullscreen-btn" aria-label="<?= htmlspecialchars((string)($viewI18n['fullscreen_label'] ?? 'Fullscreen'), ENT_QUOTES, 'UTF-8') ?>">
+                    <svg class="sf-xibo-fullscreen-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 9V3h6v2H5v4H3zm16 0V5h-4V3h6v6h-2zm0 6h2v6h-6v-2h4v-4zM3 15h2v4h4v2H3v-6z" fill="currentColor"></path>
+                    </svg>
+                    <span><?= htmlspecialchars((string)($viewI18n['fullscreen_label'] ?? 'Fullscreen'), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
+            </div>
+            <div class="sf-xibo-preview-stage-wrap">
+                <div class="sf-xibo-preview-frame">
 <?php endif; ?>
 <div class="sf-stage">
     <div class="sf-summary" id="sfSummaryRoot">
@@ -722,40 +854,20 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 </div>
 <?php if (!$isStandaloneMode): ?>
-            </div>
-            <div class="sf-xibo-preview-info">
-                <div class="sf-xibo-meta-item">
-                    <span class="sf-xibo-meta-label">Aktiivisia SafetyFlasheja</span>
-                    <p class="sf-xibo-meta-value"><?= (int)$activeFlashCount ?></p>
-                </div>
-                <div class="sf-xibo-meta-item">
-                    <span class="sf-xibo-meta-label">Autokierto</span>
-                    <p class="sf-xibo-meta-value"><?= (int)$rotationSeconds ?> sekuntia / sivu</p>
-                </div>
-                <div class="sf-xibo-meta-item">
-                    <span class="sf-xibo-meta-label">Xibo standalone-URL</span>
-                    <p class="sf-xibo-meta-value"><?= $standaloneLangNote ?></p>
-                    <ul class="sf-standalone-lang-list">
-<?php foreach ($previewStandaloneUrls as $langCode => $langStandaloneUrl): ?>
-                        <li><strong><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></strong>: <a href="<?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></li>
-<?php endforeach; ?>
-                    </ul>
-                </div>
-                <div class="sf-xibo-meta-item">
-                    <span class="sf-xibo-meta-label"><?= htmlspecialchars((string)($viewI18n['preview_languages'] ?? 'Language versions'), ENT_QUOTES, 'UTF-8') ?></span>
-<?php $previewLanguageLinks = []; ?>
-<?php foreach ($previewAppUrls as $langCode => $langAppUrl): ?>
-<?php
-    $linkHref = htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8');
-    $linkText = strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8'));
-    $linkClassAttr = $langCode === $uiLang ? ' class="sf-lang-link--active"' : '';
-    $previewLanguageLinks[] = '<a href="' . $linkHref . '"' . $linkClassAttr . '>' . $linkText . '</a>';
-?>
-<?php endforeach; ?>
-                    <p class="sf-xibo-meta-value"><?= implode(' | ', $previewLanguageLinks) ?></p>
                 </div>
             </div>
         </div>
+        <details class="sf-xibo-standalone-panel">
+            <summary><?= htmlspecialchars((string)($viewI18n['standalone_urls_heading'] ?? 'Xibo standalone URLs'), ENT_QUOTES, 'UTF-8') ?></summary>
+            <div class="sf-xibo-panel-body">
+                <p class="sf-xibo-panel-note"><?= $standaloneLangNote ?></p>
+                <ul class="sf-standalone-lang-list">
+<?php foreach ($previewStandaloneUrls as $langCode => $langStandaloneUrl): ?>
+                    <li><strong><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></strong>: <a href="<?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($langStandaloneUrl, ENT_QUOTES, 'UTF-8') ?></a></li>
+<?php endforeach; ?>
+                </ul>
+            </div>
+        </details>
     </div>
 </div>
 <?php require_once __DIR__ . '/../../app/includes/footer.php'; ?>
@@ -778,6 +890,7 @@ header('Content-Type: text/html; charset=utf-8');
     const list = document.getElementById('sfSummaryList');
     const indicator = document.getElementById('sfPageIndicator');
     const previewFrame = isStandaloneMode ? null : document.querySelector('.sf-xibo-preview-frame');
+    const fullscreenBtn = isStandaloneMode ? null : document.getElementById('sfFullscreenBtn');
 
     if (backgroundUrl) {
         try {
@@ -814,6 +927,20 @@ header('Content-Type: text/html; charset=utf-8');
         };
         syncPreviewScale();
         window.addEventListener('resize', handleResize);
+    }
+
+    if (fullscreenBtn && previewFrame) {
+        fullscreenBtn.addEventListener('click', async () => {
+            if (document.fullscreenElement) {
+                try {
+                    await document.exitFullscreen();
+                } catch (error) {}
+            } else {
+                try {
+                    await previewFrame.requestFullscreen();
+                } catch (error) {}
+            }
+        });
     }
 
     const escapeHtml = (value) => String(value || '')
