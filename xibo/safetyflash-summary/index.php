@@ -152,6 +152,9 @@ $viewTexts = [
         'pagination_next' => 'Seuraava',
         'preview_languages' => 'Kieliversiot',
         'standalone_lang_note' => 'Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (%s).',
+        'standalone_urls_heading' => 'Xibo standalone-URL:t',
+        'toolbar_meta' => '%d aktiivista · %ds kierto',
+        'fullscreen_label' => 'Koko ruutu',
         'new_badge' => 'UUSI',
         'published_tag' => 'Julkaistu',
     ],
@@ -169,6 +172,9 @@ $viewTexts = [
         'pagination_next' => 'Nästa',
         'preview_languages' => 'Språkversioner',
         'standalone_lang_note' => 'Byt landspecifik språkversion med parametern <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'Xibo standalone-URL:er',
+        'toolbar_meta' => '%d aktiva · %ds växling',
+        'fullscreen_label' => 'Helskärm',
         'new_badge' => 'NY',
         'published_tag' => 'Publicerad',
     ],
@@ -186,6 +192,9 @@ $viewTexts = [
         'pagination_next' => 'Next',
         'preview_languages' => 'Language versions',
         'standalone_lang_note' => 'Change country-specific language version with the <code>lang=</code> parameter (%s).',
+        'standalone_urls_heading' => 'Xibo standalone URLs',
+        'toolbar_meta' => '%d active · %ds rotation',
+        'fullscreen_label' => 'Fullscreen',
         'new_badge' => 'NEW',
         'published_tag' => 'Published',
     ],
@@ -203,6 +212,9 @@ $viewTexts = [
         'pagination_next' => 'Successiva',
         'preview_languages' => 'Versioni lingua',
         'standalone_lang_note' => 'Cambia la versione linguistica per paese con il parametro <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'URL standalone Xibo',
+        'toolbar_meta' => '%d attivi · rotazione %ds',
+        'fullscreen_label' => 'Schermo intero',
         'new_badge' => 'NUOVO',
         'published_tag' => 'Pubblicato',
     ],
@@ -220,6 +232,9 @@ $viewTexts = [
         'pagination_next' => 'Επόμενη',
         'preview_languages' => 'Γλωσσικές εκδόσεις',
         'standalone_lang_note' => 'Αλλάξτε γλωσσική έκδοση ανά χώρα με την παράμετρο <code>lang=</code> (%s).',
+        'standalone_urls_heading' => 'Διευθύνσεις Xibo standalone',
+        'toolbar_meta' => '%d ενεργά · εναλλαγή %ds',
+        'fullscreen_label' => 'Πλήρης οθόνη',
         'new_badge' => 'ΝΕΟ',
         'published_tag' => 'Δημοσιευμένο',
     ],
@@ -280,6 +295,11 @@ $langCodeList = implode('/', array_map(static function (string $langCode): strin
 $standaloneLangNote = sprintf(
     (string)($viewI18n['standalone_lang_note'] ?? 'Change country-specific language version with the <code>lang=</code> parameter (%s).'),
     htmlspecialchars($langCodeList, ENT_QUOTES, 'UTF-8')
+);
+$toolbarMetaText = sprintf(
+    (string)($viewI18n['toolbar_meta'] ?? '%d active · %ds rotation'),
+    (int)$activeFlashCount,
+    (int)$rotationSeconds
 );
 $previewAppUrls = [];
 $previewStandaloneUrls = [];
@@ -392,6 +412,8 @@ header('Content-Type: text/html; charset=utf-8');
         }
 
         .sf-xibo-summary-container {
+            --sf-preview-max-height-offset: 280px;
+            --sf-preview-aspect-ratio: 1.7777777778;
             min-height: calc(100vh - 72px);
             box-sizing: border-box;
             padding: 14px 20px 20px;
@@ -491,9 +513,17 @@ header('Content-Type: text/html; charset=utf-8');
             cursor: pointer;
             padding: 7px 10px;
             min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .sf-xibo-fullscreen-btn:hover {
             background: #e2e8f0;
+        }
+        .sf-xibo-fullscreen-icon {
+            line-height: 1;
+            width: 14px;
+            height: 14px;
         }
         .sf-xibo-preview-stage-wrap {
             flex: 1;
@@ -505,9 +535,9 @@ header('Content-Type: text/html; charset=utf-8');
         }
         .sf-xibo-preview-frame {
             position: relative;
-            width: min(100%, calc((100vh - 280px) * (16 / 9)));
+            width: min(100%, calc((100vh - var(--sf-preview-max-height-offset)) * var(--sf-preview-aspect-ratio)));
             max-width: 100%;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: var(--sf-preview-aspect-ratio);
             border-radius: 12px;
             border: 1px solid #dbe4ee;
             background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
@@ -536,24 +566,12 @@ header('Content-Type: text/html; charset=utf-8');
             padding: 0 12px;
         }
         .sf-xibo-standalone-panel summary {
-            list-style: none;
             cursor: pointer;
             padding: 10px 0;
             color: #1e293b;
             font-size: 0.92rem;
             font-weight: 700;
             user-select: none;
-        }
-        .sf-xibo-standalone-panel summary::-webkit-details-marker {
-            display: none;
-        }
-        .sf-xibo-standalone-panel summary::after {
-            content: '▾';
-            float: right;
-            color: #64748b;
-        }
-        .sf-xibo-standalone-panel[open] summary::after {
-            content: '▴';
         }
         .sf-xibo-panel-body {
             padding: 0 0 10px;
@@ -813,8 +831,13 @@ header('Content-Type: text/html; charset=utf-8');
                     <a href="<?= htmlspecialchars($langAppUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-xibo-language-link<?= $linkClassAttr ?>"><?= strtoupper(htmlspecialchars($langCode, ENT_QUOTES, 'UTF-8')) ?></a>
 <?php endforeach; ?>
                 </div>
-                <p class="sf-xibo-preview-meta"><?= (int)$activeFlashCount ?> aktiivista · <?= (int)$rotationSeconds ?>s kierto</p>
-                <button type="button" id="sfFullscreenBtn" class="sf-xibo-fullscreen-btn" aria-label="Koko ruutu">⛶</button>
+                <p class="sf-xibo-preview-meta"><?= htmlspecialchars($toolbarMetaText, ENT_QUOTES, 'UTF-8') ?></p>
+                <button type="button" id="sfFullscreenBtn" class="sf-xibo-fullscreen-btn" aria-label="<?= htmlspecialchars((string)($viewI18n['fullscreen_label'] ?? 'Fullscreen'), ENT_QUOTES, 'UTF-8') ?>">
+                    <svg class="sf-xibo-fullscreen-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 9V3h6v2H5v4H3zm16 0V5h-4V3h6v6h-2zm0 6h2v6h-6v-2h4v-4zM3 15h2v4h4v2H3v-6z" fill="currentColor"></path>
+                    </svg>
+                    <span><?= htmlspecialchars((string)($viewI18n['fullscreen_label'] ?? 'Fullscreen'), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
             </div>
             <div class="sf-xibo-preview-stage-wrap">
                 <div class="sf-xibo-preview-frame">
@@ -835,7 +858,7 @@ header('Content-Type: text/html; charset=utf-8');
             </div>
         </div>
         <details class="sf-xibo-standalone-panel">
-            <summary>Xibo standalone-URL:t</summary>
+            <summary><?= htmlspecialchars((string)($viewI18n['standalone_urls_heading'] ?? 'Xibo standalone URLs'), ENT_QUOTES, 'UTF-8') ?></summary>
             <div class="sf-xibo-panel-body">
                 <p class="sf-xibo-panel-note"><?= $standaloneLangNote ?></p>
                 <ul class="sf-standalone-lang-list">
@@ -907,11 +930,15 @@ header('Content-Type: text/html; charset=utf-8');
     }
 
     if (fullscreenBtn && previewFrame) {
-        fullscreenBtn.addEventListener('click', () => {
+        fullscreenBtn.addEventListener('click', async () => {
             if (document.fullscreenElement) {
-                document.exitFullscreen();
+                try {
+                    await document.exitFullscreen();
+                } catch (error) {}
             } else {
-                previewFrame.requestFullscreen();
+                try {
+                    await previewFrame.requestFullscreen();
+                } catch (error) {}
             }
         });
     }
