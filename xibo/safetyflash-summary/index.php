@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+const SUMMARY_NEW_BADGE_DAYS = 5;
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
@@ -112,12 +113,13 @@ $flashes = array_map(static function (array $row): array {
         }
     }
 
-    $newnessDateRaw = trim((string)($row['created_at'] ?? ''));
-    if ($newnessDateRaw === '') {
-        $newnessDateRaw = $eventDateRaw;
+    $freshnessDateRaw = trim((string)($row['created_at'] ?? ''));
+    if ($freshnessDateRaw === '') {
+        $freshnessDateRaw = $eventDateRaw;
     }
-    $newnessTimestamp = $newnessDateRaw !== '' ? strtotime($newnessDateRaw) : false;
-    $isNew = $newnessTimestamp !== false && $newnessTimestamp >= (time() - (5 * 24 * 60 * 60));
+    $freshnessTimestamp = $freshnessDateRaw !== '' ? strtotime($freshnessDateRaw) : false;
+    $freshnessWindowSeconds = SUMMARY_NEW_BADGE_DAYS * 24 * 60 * 60;
+    $isNew = $freshnessTimestamp !== false && $freshnessTimestamp >= (time() - $freshnessWindowSeconds);
 
     return [
         'title' => trim((string)($row['title'] ?? '')),
@@ -436,6 +438,7 @@ header('Content-Type: text/html; charset=utf-8');
             height: 1080px;
             box-sizing: border-box;
             padding: 140px 64px 40px 64px;
+            --sf-title-line-height: 1.22;
             background-color: #ffffff;
             background-image: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
             background-size: cover;
@@ -456,13 +459,13 @@ header('Content-Type: text/html; charset=utf-8');
             flex-direction: column;
             background: transparent;
             border-radius: 0;
-            padding: 24px;
+            padding: 16px 24px 24px 88px;
             box-shadow: none;
         }
         .sf-table-head,
         .sf-row {
             display: grid;
-            grid-template-columns: 2.9fr 1.25fr 0.95fr 1fr;
+            grid-template-columns: 2.5fr 1.2fr 0.9fr 1fr;
             column-gap: 18px;
             align-items: start;
         }
@@ -561,7 +564,7 @@ header('Content-Type: text/html; charset=utf-8');
             white-space: normal;
             max-width: 100%;
             font-weight: 700;
-            line-height: 1.22;
+            line-height: var(--sf-title-line-height);
         }
         .sf-pill {
             display: inline-flex;
@@ -769,7 +772,7 @@ header('Content-Type: text/html; charset=utf-8');
                 <div class="sf-cell sf-cell--title">
                     <div class="sf-title-wrap">
                         <span class="sf-pill sf-pill--published">${escapeHtml(i18n.published_tag || 'Published')}</span>
-                        ${flash.is_new ? `<span class="sf-pill sf-pill--new">${escapeHtml(i18n.new_badge || 'UUSI')}</span>` : ''}
+                        ${flash.is_new ? `<span class="sf-pill sf-pill--new">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
                     </div>
                     <span class="sf-title-text">${escapeHtml(flash.title)}</span>
                 </div>
