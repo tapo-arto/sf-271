@@ -452,7 +452,7 @@ header('Content-Type: text/html; charset=utf-8');
             width: 1920px;
             height: 1080px;
             box-sizing: border-box;
-            padding: 140px 80px 40px 120px;
+            padding: 140px 80px 40px 104px;
             --sf-title-line-height: 1.22;
             background-color: #ffffff;
             background-image: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
@@ -474,7 +474,7 @@ header('Content-Type: text/html; charset=utf-8');
             flex-direction: column;
             background: transparent;
             border-radius: 0;
-            padding: 16px 24px 24px 156px;
+            padding: 16px 24px 24px 132px;
             box-shadow: none;
         }
         .sf-list {
@@ -502,7 +502,7 @@ header('Content-Type: text/html; charset=utf-8');
             border-left-color: #dc2626;
         }
         .sf-row--yellow {
-            border-left-color: #facc15;
+            border-left-color: #eab308;
         }
         .sf-row--green {
             border-left-color: #16a34a;
@@ -777,11 +777,11 @@ header('Content-Type: text/html; charset=utf-8');
         const rawType = String(typeValue || '').trim();
         const normalized = rawType.toLowerCase();
         const knownTypes = {
-            red: { label: typeLabels.red || rawType, className: 'sf-type--red', rowClass: 'sf-row--red' },
-            yellow: { label: typeLabels.yellow || rawType, className: 'sf-type--yellow', rowClass: 'sf-row--yellow' },
-            green: { label: typeLabels.green || rawType, className: 'sf-type--green', rowClass: 'sf-row--green' },
+            red: { label: typeLabels.red || rawType, badgeClass: 'sf-badge--red', rowClass: 'sf-row--red' },
+            yellow: { label: typeLabels.yellow || rawType, badgeClass: 'sf-badge--yellow', rowClass: 'sf-row--yellow' },
+            green: { label: typeLabels.green || rawType, badgeClass: 'sf-badge--green', rowClass: 'sf-row--green' },
         };
-        return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default', rowClass: '' };
+        return knownTypes[normalized] || { label: rawType || '-', badgeClass: 'sf-badge--default', rowClass: '' };
     };
 
     const renderPagination = () => {
@@ -804,7 +804,7 @@ header('Content-Type: text/html; charset=utf-8');
             <div class="sf-row ${type.rowClass}">
                 ${flash.is_new ? `<span class="sf-new-badge">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
                 <div class="sf-card-head">
-                    <span class="sf-badge ${type.className.replace('sf-type', 'sf-badge')}">${escapeHtml(type.label)}</span>
+                    <span class="sf-badge ${type.badgeClass}">${escapeHtml(type.label)}</span>
                     <span class="sf-status sf-status--published">${escapeHtml(i18n.published_tag || 'Published')}</span>
                 </div>
                 <div class="sf-title-text">${escapeHtml(flash.title)}</div>
