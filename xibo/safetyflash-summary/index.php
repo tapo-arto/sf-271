@@ -41,7 +41,7 @@ $allowedLangs = ['fi', 'sv', 'en', 'it', 'el'];
 $requestedLang = strtolower(trim((string)($_GET['lang'] ?? 'fi')));
 $uiLang = in_array($requestedLang, $allowedLangs, true) ? $requestedLang : 'fi';
 
-$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n      AND EXISTS (\n          SELECT 1\n          FROM sf_flash_display_targets t\n          INNER JOIN sf_display_api_keys k ON k.id = t.display_key_id\n          WHERE t.flash_id = f.id\n            AND t.is_active = 1\n            AND k.is_active = 1\n            AND (k.expires_at IS NULL OR k.expires_at > NOW())\n      )\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
+$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.site_detail,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n      AND EXISTS (\n          SELECT 1\n          FROM sf_flash_display_targets t\n          INNER JOIN sf_display_api_keys k ON k.id = t.display_key_id\n          WHERE t.flash_id = f.id\n            AND t.is_active = 1\n            AND k.is_active = 1\n            AND (k.expires_at IS NULL OR k.expires_at > NOW())\n      )\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -129,6 +129,7 @@ $flashes = array_map(static function (array $row): array {
     return [
         'title' => trim((string)($row['title'] ?? '')),
         'site_name' => trim((string)($row['site'] ?? '')),
+        'site_detail' => trim((string)($row['site_detail'] ?? '')),
         'type' => trim((string)($row['type'] ?? '')),
         'lang' => trim((string)($row['lang'] ?? '')),
         'event_date' => $formattedDate,
@@ -849,6 +850,9 @@ header('Content-Type: text/html; charset=utf-8');
         const pageItems = flashes.slice(start, start + itemsPerPage);
         list.innerHTML = pageItems.map((flash) => {
             const type = getTypePresentation(flash.type);
+            const siteText = flash.site_detail
+                ? `${escapeHtml(flash.site_name)} – ${escapeHtml(flash.site_detail)}`
+                : escapeHtml(flash.site_name);
             return `
             <div class="sf-row ${type.rowClass}">
                 ${flash.is_new ? `<span class="sf-new-badge">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
@@ -858,7 +862,7 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
                 <div class="sf-title-text">${escapeHtml(flash.title)}</div>
                 <div class="sf-meta">
-                    <span>${escapeHtml(flash.site_name)}</span>
+                    <span>${siteText}</span>
                     <span>${escapeHtml(flash.event_date)}</span>
                 </div>
             </div>
