@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+const SUMMARY_NEW_BADGE_DAYS = 5;
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../assets/lib/Database.php';
@@ -112,12 +113,21 @@ $flashes = array_map(static function (array $row): array {
         }
     }
 
+    $freshnessDateRaw = trim((string)($row['created_at'] ?? ''));
+    if ($freshnessDateRaw === '') {
+        $freshnessDateRaw = $eventDateRaw;
+    }
+    $freshnessTimestamp = $freshnessDateRaw !== '' ? strtotime($freshnessDateRaw) : false;
+    $freshnessWindowSeconds = SUMMARY_NEW_BADGE_DAYS * 24 * 60 * 60;
+    $isNew = $freshnessTimestamp !== false && $freshnessTimestamp >= (time() - $freshnessWindowSeconds);
+
     return [
         'title' => trim((string)($row['title'] ?? '')),
         'site_name' => trim((string)($row['site'] ?? '')),
         'type' => trim((string)($row['type'] ?? '')),
         'lang' => trim((string)($row['lang'] ?? '')),
         'event_date' => $formattedDate,
+        'is_new' => $isNew,
     ];
 }, $selectedRows);
 
@@ -134,6 +144,8 @@ $viewTexts = [
         'of' => '/',
         'preview_languages' => 'Kieliversiot',
         'standalone_lang_note' => 'Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (%s).',
+        'new_badge' => 'UUSI',
+        'published_tag' => 'Julkaistu',
     ],
     'sv' => [
         'title' => 'Aktiva SafetyFlashar',
@@ -147,6 +159,8 @@ $viewTexts = [
         'of' => '/',
         'preview_languages' => 'Språkversioner',
         'standalone_lang_note' => 'Byt landspecifik språkversion med parametern <code>lang=</code> (%s).',
+        'new_badge' => 'NY',
+        'published_tag' => 'Publicerad',
     ],
     'en' => [
         'title' => 'Active SafetyFlashes',
@@ -160,6 +174,8 @@ $viewTexts = [
         'of' => '/',
         'preview_languages' => 'Language versions',
         'standalone_lang_note' => 'Change country-specific language version with the <code>lang=</code> parameter (%s).',
+        'new_badge' => 'NEW',
+        'published_tag' => 'Published',
     ],
     'it' => [
         'title' => 'SafetyFlash attivi',
@@ -173,6 +189,8 @@ $viewTexts = [
         'of' => '/',
         'preview_languages' => 'Versioni lingua',
         'standalone_lang_note' => 'Cambia la versione linguistica per paese con il parametro <code>lang=</code> (%s).',
+        'new_badge' => 'NUOVO',
+        'published_tag' => 'Pubblicato',
     ],
     'el' => [
         'title' => 'Ενεργά SafetyFlash',
@@ -186,6 +204,8 @@ $viewTexts = [
         'of' => '/',
         'preview_languages' => 'Γλωσσικές εκδόσεις',
         'standalone_lang_note' => 'Αλλάξτε γλωσσική έκδοση ανά χώρα με την παράμετρο <code>lang=</code> (%s).',
+        'new_badge' => 'ΝΕΟ',
+        'published_tag' => 'Δημοσιευμένο',
     ],
 ];
 $viewI18n = $viewTexts[$uiLang] ?? $viewTexts['fi'];
@@ -282,7 +302,7 @@ header('Content-Type: text/html; charset=utf-8');
         html,
         body {
             margin: 0;
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: 'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
             color: #0f172a;
         }
 
@@ -290,7 +310,7 @@ header('Content-Type: text/html; charset=utf-8');
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #020617;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -310,7 +330,7 @@ header('Content-Type: text/html; charset=utf-8');
             min-height: calc(100vh - 72px);
             box-sizing: border-box;
             padding: 24px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
         }
         .sf-xibo-summary-shell {
             max-width: 1440px;
@@ -324,15 +344,15 @@ header('Content-Type: text/html; charset=utf-8');
         }
         .sf-xibo-page-description {
             margin: 8px 0 0;
-            color: #475569;
+            color: rgba(255, 255, 255, 0.88);
             font-size: 1rem;
             max-width: 72ch;
         }
         .sf-xibo-preview-card {
             border-radius: 18px;
-            border: 1px solid #dbe4ee;
+            border: 1px solid rgba(255, 255, 255, 0.16);
             background: #ffffff;
-            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 12px 30px rgba(2, 6, 23, 0.24);
             padding: 18px;
         }
         .sf-xibo-preview-label {
@@ -346,7 +366,7 @@ header('Content-Type: text/html; charset=utf-8');
             width: 100%;
             aspect-ratio: 16 / 9;
             border-radius: 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #dbe4ee;
             background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             overflow: hidden;
             container-type: inline-size;
@@ -418,8 +438,9 @@ header('Content-Type: text/html; charset=utf-8');
             height: 1080px;
             box-sizing: border-box;
             padding: 140px 64px 40px 64px;
+            --sf-title-line-height: 1.22;
             background-color: #ffffff;
-            background-image: none;
+            background-image: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
             background-size: cover;
             background-position: center;
             overflow: hidden;
@@ -438,20 +459,20 @@ header('Content-Type: text/html; charset=utf-8');
             flex-direction: column;
             background: transparent;
             border-radius: 0;
-            padding: 10px 26px 26px 150px;
+            padding: 16px 24px 24px 88px;
             box-shadow: none;
         }
         .sf-table-head,
         .sf-row {
             display: grid;
-            grid-template-columns: 2fr 1.2fr 0.9fr 1fr;
+            grid-template-columns: 2.5fr 1.2fr 0.9fr 1fr;
             column-gap: 18px;
-            align-items: center;
+            align-items: start;
         }
         .sf-table-head {
             font-size: 20px;
             font-weight: 700;
-            color: #334155;
+            color: #f8fafc;
             margin-bottom: 14px;
             padding: 0 14px;
             text-transform: uppercase;
@@ -464,37 +485,56 @@ header('Content-Type: text/html; charset=utf-8');
             align-content: start;
         }
         .sf-row {
-            min-height: 112px;
+            min-height: 124px;
             padding: 18px 20px;
-            border-radius: 16px;
-            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            border: 1px solid rgba(17, 24, 39, 0.12);
             border-left: 8px solid transparent;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.11);
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
         .sf-row--red {
-            border-left-color: #b91c1c;
+            border-left-color: #dc2626;
         }
         .sf-row--yellow {
-            border-left-color: #b45309;
+            border-left-color: #a16207;
         }
         .sf-row--green {
-            border-left-color: #15803d;
+            border-left-color: #16a34a;
         }
         .sf-type {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid transparent;
             font-weight: 700;
+            font-size: 18px;
+            line-height: 1.2;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
         .sf-type--red {
-            color: #b91c1c;
+            color: #dc2626;
+            background: #fef2f2;
+            border-color: #fecaca;
         }
         .sf-type--yellow {
-            color: #b45309;
+            color: #a16207;
+            background: #fefce8;
+            border-color: #fde047;
         }
         .sf-type--green {
-            color: #15803d;
+            color: #16a34a;
+            background: #f0fdf4;
+            border-color: #86efac;
         }
         .sf-type--default {
             color: #334155;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
         }
         .sf-cell {
             font-size: 28px;
@@ -502,6 +542,52 @@ header('Content-Type: text/html; charset=utf-8');
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .sf-cell--title {
+            white-space: normal;
+            overflow: visible;
+        }
+        .sf-title-wrap {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .sf-title-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            max-width: 100%;
+            font-weight: 700;
+            line-height: var(--sf-title-line-height);
+        }
+        .sf-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+        .sf-pill--published {
+            background: var(--status-published-bg, #16a34a);
+            color: var(--status-published-text, #ffffff);
+        }
+        .sf-pill--new {
+            background: #fefce8;
+            color: #a16207;
+            border-color: #fde047;
         }
         .sf-empty {
             display: flex;
@@ -683,7 +769,13 @@ header('Content-Type: text/html; charset=utf-8');
             const type = getTypePresentation(flash.type);
             return `
             <div class="sf-row ${type.rowClass}">
-                <div class="sf-cell">${escapeHtml(flash.title)}</div>
+                <div class="sf-cell sf-cell--title">
+                    <div class="sf-title-wrap">
+                        <span class="sf-pill sf-pill--published">${escapeHtml(i18n.published_tag || 'Published')}</span>
+                        ${flash.is_new ? `<span class="sf-pill sf-pill--new">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
+                    </div>
+                    <span class="sf-title-text">${escapeHtml(flash.title)}</span>
+                </div>
                 <div class="sf-cell">${escapeHtml(flash.site_name)}</div>
                 <div class="sf-cell sf-type ${type.className}">${escapeHtml(type.label)}</div>
                 <div class="sf-cell">${escapeHtml(flash.event_date)}</div>
