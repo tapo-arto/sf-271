@@ -41,7 +41,7 @@ $allowedLangs = ['fi', 'sv', 'en', 'it', 'el'];
 $requestedLang = strtolower(trim((string)($_GET['lang'] ?? 'fi')));
 $uiLang = in_array($requestedLang, $allowedLangs, true) ? $requestedLang : 'fi';
 
-$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
+$stmt = $pdo->prepare("\n    SELECT\n        f.id,\n        f.translation_group_id,\n        f.lang,\n        f.title,\n        f.site,\n        f.type,\n        f.occurred_at,\n        f.created_at\n    FROM sf_flashes f\n    WHERE f.state = 'published'\n      AND (f.display_expires_at IS NULL OR f.display_expires_at > NOW())\n      AND f.display_removed_at IS NULL\n      AND EXISTS (\n          SELECT 1\n          FROM sf_flash_display_targets t\n          INNER JOIN sf_display_api_keys k ON k.id = t.display_key_id\n          WHERE t.flash_id = f.id\n            AND t.is_active = 1\n            AND k.is_active = 1\n            AND (k.expires_at IS NULL OR k.expires_at > NOW())\n      )\n    ORDER BY\n        COALESCE(f.translation_group_id, f.id) ASC,\n        COALESCE(f.occurred_at, f.created_at) DESC,\n        f.id DESC\n");
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -452,7 +452,7 @@ header('Content-Type: text/html; charset=utf-8');
             width: 1920px;
             height: 1080px;
             box-sizing: border-box;
-            padding: 140px 64px 40px 64px;
+            padding: 140px 80px 40px 104px;
             --sf-title-line-height: 1.22;
             background-color: #ffffff;
             background-image: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
@@ -474,100 +474,89 @@ header('Content-Type: text/html; charset=utf-8');
             flex-direction: column;
             background: transparent;
             border-radius: 0;
-            padding: 16px 24px 24px 88px;
+            padding: 16px 24px 24px 132px;
             box-shadow: none;
-        }
-        .sf-table-head,
-        .sf-row {
-            display: grid;
-            grid-template-columns: 2.5fr 1.2fr 0.9fr 1fr;
-            column-gap: 18px;
-            align-items: start;
-        }
-        .sf-table-head {
-            font-size: 20px;
-            font-weight: 700;
-            color: #f8fafc;
-            margin-bottom: 14px;
-            padding: 0 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
         }
         .sf-list {
             flex: 1;
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: 14px;
-            align-content: start;
+            align-content: flex-start;
         }
         .sf-row {
-            min-height: 124px;
-            padding: 18px 20px;
+            position: relative;
+            min-height: 132px;
+            padding: 16px 20px 16px 22px;
             border-radius: 14px;
             border: 1px solid rgba(17, 24, 39, 0.12);
-            border-left: 8px solid transparent;
+            border-left: 6px solid transparent;
             background: #ffffff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
         }
         .sf-row--red {
             border-left-color: #dc2626;
         }
         .sf-row--yellow {
-            border-left-color: #a16207;
+            border-left-color: #eab308;
         }
         .sf-row--green {
             border-left-color: #16a34a;
         }
-        .sf-type {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: fit-content;
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid transparent;
-            font-weight: 700;
-            font-size: 18px;
-            line-height: 1.2;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-        .sf-type--red {
-            color: #dc2626;
-            background: #fef2f2;
-            border-color: #fecaca;
-        }
-        .sf-type--yellow {
-            color: #a16207;
-            background: #fefce8;
-            border-color: #fde047;
-        }
-        .sf-type--green {
-            color: #16a34a;
-            background: #f0fdf4;
-            border-color: #86efac;
-        }
-        .sf-type--default {
-            color: #334155;
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-        }
-        .sf-cell {
-            font-size: 28px;
-            line-height: 1.25;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .sf-cell--title {
-            white-space: normal;
-            overflow: visible;
-        }
-        .sf-title-wrap {
+        .sf-card-head {
             display: flex;
             align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 8px;
+            padding-right: 86px;
+        }
+        .sf-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 11px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .sf-badge--red {
+            color: #dc2626;
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .sf-badge--yellow {
+            color: #a16207;
+            background: #fde047;
+            border-color: #facc15;
+        }
+        .sf-badge--green {
+            color: #16a34a;
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+        .sf-badge--default {
+            color: #334155;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .sf-status {
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-weight: 900;
+            font-size: 11px;
+            white-space: nowrap;
+            background: var(--status-published-bg, #16a34a);
+            color: var(--status-published-text, #ffffff);
         }
         .sf-title-text {
             display: -webkit-box;
@@ -579,30 +568,57 @@ header('Content-Type: text/html; charset=utf-8');
             white-space: normal;
             max-width: 100%;
             font-weight: 700;
+            font-size: 38px;
             line-height: var(--sf-title-line-height);
         }
-        .sf-pill {
+        .sf-new-badge {
+            position: absolute;
+            top: 12px;
+            right: 10px;
+            z-index: 2;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 4px 10px;
             border-radius: 999px;
-            border: 1px solid transparent;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
+            font-size: 11px;
+            font-weight: 800;
             line-height: 1.1;
-            white-space: nowrap;
-        }
-        .sf-pill--published {
-            background: var(--status-published-bg, #16a34a);
-            color: var(--status-published-text, #ffffff);
-        }
-        .sf-pill--new {
-            background: #fefce8;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: #fde047;
             color: #a16207;
-            border-color: #fde047;
+            border: 1px solid #facc15;
+            animation: sf-new-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes sf-new-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55);
+            }
+            70% {
+                transform: scale(1.04);
+                box-shadow: 0 0 0 8px rgba(250, 204, 21, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+            }
+        }
+        .sf-meta {
+            display: flex;
+            gap: 18px;
+            color: #475569;
+            font-size: 24px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sf-meta > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sf-empty {
             display: flex;
@@ -621,65 +637,7 @@ header('Content-Type: text/html; charset=utf-8');
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
             color: #64748b;
-        }
-        .sf-page-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            background: #ffffff;
-            color: #111827;
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 1;
-            cursor: pointer;
-        }
-        .sf-page-btn:hover:not(:disabled) {
-            background: #f3f4f6;
-            border-color: #9ca3af;
-        }
-        .sf-page-btn:disabled {
-            opacity: 0.4;
-            cursor: default;
-        }
-        .sf-page-numbers {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .sf-page-num {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            background: #ffffff;
-            color: #374151;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .sf-page-num:disabled {
-            cursor: default;
-        }
-        .sf-page-num.active {
-            background: #fee000;
-            border-color: #fee000;
-            color: #111827;
-            font-weight: 700;
-        }
-        .sf-page-ellipsis {
-            color: #9ca3af;
-            font-size: 18px;
-            width: 24px;
-            text-align: center;
         }
         .sf-page-info {
             margin-left: 8px;
@@ -705,25 +663,9 @@ header('Content-Type: text/html; charset=utf-8');
 <div class="sf-stage">
     <div class="sf-summary" id="sfSummaryRoot">
         <div class="sf-summary-inner">
-            <div class="sf-table-head">
-                <div><?= htmlspecialchars($viewI18n['col_title'], ENT_QUOTES, 'UTF-8') ?></div>
-                <div><?= htmlspecialchars($viewI18n['col_site'], ENT_QUOTES, 'UTF-8') ?></div>
-                <div><?= htmlspecialchars($viewI18n['col_type'], ENT_QUOTES, 'UTF-8') ?></div>
-                <div><?= htmlspecialchars($viewI18n['col_event_date'], ENT_QUOTES, 'UTF-8') ?></div>
-            </div>
-
             <div class="sf-list" id="sfSummaryList"></div>
 
             <div class="sf-footer">
-                <button type="button" id="sfPagePrev" class="sf-page-btn">
-                    <span aria-hidden="true">‹</span>
-                    <span><?= htmlspecialchars((string)($viewI18n['pagination_prev'] ?? 'Previous'), ENT_QUOTES, 'UTF-8') ?></span>
-                </button>
-                <div class="sf-page-numbers" id="sfPageNumbers"></div>
-                <button type="button" id="sfPageNext" class="sf-page-btn">
-                    <span><?= htmlspecialchars((string)($viewI18n['pagination_next'] ?? 'Next'), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span aria-hidden="true">›</span>
-                </button>
                 <span id="sfPageIndicator" class="sf-page-info">Sivu 1 / 1</span>
             </div>
         </div>
@@ -779,16 +721,12 @@ header('Content-Type: text/html; charset=utf-8');
     const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
     const itemsPerPage = 6;
-    const maxVisiblePages = 7;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
 
     const root = document.getElementById('sfSummaryRoot');
     const list = document.getElementById('sfSummaryList');
     const indicator = document.getElementById('sfPageIndicator');
-    const pageNumbers = document.getElementById('sfPageNumbers');
-    const prevButton = document.getElementById('sfPagePrev');
-    const nextButton = document.getElementById('sfPageNext');
     const previewFrame = isStandaloneMode ? null : document.querySelector('.sf-xibo-preview-frame');
 
     if (backgroundUrl) {
@@ -839,61 +777,16 @@ header('Content-Type: text/html; charset=utf-8');
         const rawType = String(typeValue || '').trim();
         const normalized = rawType.toLowerCase();
         const knownTypes = {
-            red: { label: typeLabels.red || rawType, className: 'sf-type--red', rowClass: 'sf-row--red' },
-            yellow: { label: typeLabels.yellow || rawType, className: 'sf-type--yellow', rowClass: 'sf-row--yellow' },
-            green: { label: typeLabels.green || rawType, className: 'sf-type--green', rowClass: 'sf-row--green' },
+            red: { label: typeLabels.red || rawType, badgeClass: 'sf-badge--red', rowClass: 'sf-row--red' },
+            yellow: { label: typeLabels.yellow || rawType, badgeClass: 'sf-badge--yellow', rowClass: 'sf-row--yellow' },
+            green: { label: typeLabels.green || rawType, badgeClass: 'sf-badge--green', rowClass: 'sf-row--green' },
         };
-        return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default', rowClass: '' };
-    };
-
-    const buildPageWindow = (current, total) => {
-        const pages = [];
-        if (total <= maxVisiblePages) {
-            for (let page = 1; page <= total; page++) {
-                pages.push(page);
-            }
-            return pages;
-        }
-
-        pages.push(1);
-        const start = Math.max(2, current - 1);
-        const end = Math.min(total - 1, current + 1);
-        if (start > 2) {
-            pages.push('…');
-        }
-        for (let page = start; page <= end; page++) {
-            pages.push(page);
-        }
-        if (end < total - 1) {
-            pages.push('…');
-        }
-        pages.push(total);
-        return pages;
+        return knownTypes[normalized] || { label: rawType || '-', badgeClass: 'sf-badge--default', rowClass: '' };
     };
 
     const renderPagination = () => {
         const current = currentPage + 1;
         indicator.textContent = `${i18n.page || 'Page'} ${current} ${i18n.of || '/'} ${totalPages}`;
-
-        const isNavigationDisabled = totalPages <= 1;
-        prevButton.disabled = isNavigationDisabled;
-        nextButton.disabled = isNavigationDisabled;
-
-        if (!pageNumbers) {
-            return;
-        }
-
-        const visiblePages = buildPageWindow(current, totalPages);
-        pageNumbers.innerHTML = visiblePages.map((entry) => {
-            if (entry === '…') {
-                return '<span class="sf-page-ellipsis" aria-hidden="true">…</span>';
-            }
-            const page = Number(entry);
-            const activeClass = page === current ? ' active' : '';
-            const ariaCurrent = page === current ? ' aria-current="page"' : '';
-            const disabledAttr = page === current ? ' disabled' : '';
-            return `<button type="button" class="sf-page-num${activeClass}" data-page="${page}" aria-label="${escapeHtml(i18n.page || 'Page')} ${page}"${ariaCurrent}${disabledAttr}>${page}</button>`;
-        }).join('');
     };
 
     const renderPage = () => {
@@ -909,16 +802,16 @@ header('Content-Type: text/html; charset=utf-8');
             const type = getTypePresentation(flash.type);
             return `
             <div class="sf-row ${type.rowClass}">
-                <div class="sf-cell sf-cell--title">
-                    <div class="sf-title-wrap">
-                        <span class="sf-pill sf-pill--published">${escapeHtml(i18n.published_tag || 'Published')}</span>
-                        ${flash.is_new ? `<span class="sf-pill sf-pill--new">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
-                    </div>
-                    <span class="sf-title-text">${escapeHtml(flash.title)}</span>
+                ${flash.is_new ? `<span class="sf-new-badge">${escapeHtml(i18n.new_badge || 'NEW')}</span>` : ''}
+                <div class="sf-card-head">
+                    <span class="sf-badge ${type.badgeClass}">${escapeHtml(type.label)}</span>
+                    <span class="sf-status sf-status--published">${escapeHtml(i18n.published_tag || 'Published')}</span>
                 </div>
-                <div class="sf-cell">${escapeHtml(flash.site_name)}</div>
-                <div class="sf-cell sf-type ${type.className}">${escapeHtml(type.label)}</div>
-                <div class="sf-cell">${escapeHtml(flash.event_date)}</div>
+                <div class="sf-title-text">${escapeHtml(flash.title)}</div>
+                <div class="sf-meta">
+                    <span>${escapeHtml(flash.site_name)}</span>
+                    <span>${escapeHtml(flash.event_date)}</span>
+                </div>
             </div>
             `;
         }).join('');
@@ -927,44 +820,6 @@ header('Content-Type: text/html; charset=utf-8');
     };
 
     renderPage();
-
-    if (prevButton) {
-        prevButton.addEventListener('click', () => {
-            if (totalPages <= 1) {
-                return;
-            }
-            currentPage = (currentPage - 1 + totalPages) % totalPages;
-            renderPage();
-        });
-    }
-
-    if (nextButton) {
-        nextButton.addEventListener('click', () => {
-            if (totalPages <= 1) {
-                return;
-            }
-            currentPage = (currentPage + 1) % totalPages;
-            renderPage();
-        });
-    }
-
-    if (pageNumbers) {
-        pageNumbers.addEventListener('click', (event) => {
-            const pageButton = event.target instanceof HTMLElement ? event.target.closest('[data-page]') : null;
-            if (!(pageButton instanceof HTMLElement)) {
-                return;
-            }
-            if (totalPages <= 1) {
-                return;
-            }
-            const targetPage = Number(pageButton.getAttribute('data-page'));
-            if (!Number.isInteger(targetPage) || targetPage < 1 || targetPage > totalPages) {
-                return;
-            }
-            currentPage = targetPage - 1;
-            renderPage();
-        });
-    }
 
     if (totalPages > 1) {
         window.setInterval(() => {
