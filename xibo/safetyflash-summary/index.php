@@ -55,6 +55,7 @@ foreach ($rows as $row) {
         $groups[$groupId] = [
             'rows' => [],
             'base_lang' => '',
+            'base_row' => null,
             'group_sort_ts' => 0,
         ];
     }
@@ -63,8 +64,11 @@ foreach ($rows as $row) {
     $groups[$groupId]['group_sort_ts'] = max((int)$groups[$groupId]['group_sort_ts'], (int)$row['sort_ts']);
 
     $isBaseRow = empty($row['translation_group_id']) || (int)$row['id'] === (int)$row['translation_group_id'];
-    if ($isBaseRow && $rowLanguage !== '') {
-        $groups[$groupId]['base_lang'] = $rowLanguage;
+    if ($isBaseRow) {
+        $groups[$groupId]['base_row'] = $row;
+        if ($rowLanguage !== '') {
+            $groups[$groupId]['base_lang'] = $rowLanguage;
+        }
     }
 }
 
@@ -84,13 +88,14 @@ foreach ($groups as $group) {
     }
 
     $baseLang = (string)($group['base_lang'] ?? '');
+    $baseRow = $group['base_row'] ?? null;
     $selected = null;
     if (isset($rowsByLang[$uiLang])) {
         $selected = $rowsByLang[$uiLang];
+    } elseif (is_array($baseRow)) {
+        $selected = $baseRow;
     } elseif ($baseLang !== '' && isset($rowsByLang[$baseLang])) {
         $selected = $rowsByLang[$baseLang];
-    } elseif (isset($rowsByLang['fi'])) {
-        $selected = $rowsByLang['fi'];
     } else {
         $selected = $rowsInGroup[0];
     }
@@ -142,6 +147,8 @@ $viewTexts = [
         'empty' => 'Ei aktiivisia SafetyFlasheja',
         'page' => 'Sivu',
         'of' => '/',
+        'pagination_prev' => 'Edellinen',
+        'pagination_next' => 'Seuraava',
         'preview_languages' => 'Kieliversiot',
         'standalone_lang_note' => 'Vaihda <code>lang=</code>-parametrilla maakohtainen kieliversio (%s).',
         'new_badge' => 'UUSI',
@@ -157,6 +164,8 @@ $viewTexts = [
         'empty' => 'Inga aktiva SafetyFlashar',
         'page' => 'Sida',
         'of' => '/',
+        'pagination_prev' => 'Föregående',
+        'pagination_next' => 'Nästa',
         'preview_languages' => 'Språkversioner',
         'standalone_lang_note' => 'Byt landspecifik språkversion med parametern <code>lang=</code> (%s).',
         'new_badge' => 'NY',
@@ -172,6 +181,8 @@ $viewTexts = [
         'empty' => 'No active SafetyFlashes',
         'page' => 'Page',
         'of' => '/',
+        'pagination_prev' => 'Previous',
+        'pagination_next' => 'Next',
         'preview_languages' => 'Language versions',
         'standalone_lang_note' => 'Change country-specific language version with the <code>lang=</code> parameter (%s).',
         'new_badge' => 'NEW',
@@ -187,6 +198,8 @@ $viewTexts = [
         'empty' => 'Nessun SafetyFlash attivo',
         'page' => 'Pagina',
         'of' => '/',
+        'pagination_prev' => 'Precedente',
+        'pagination_next' => 'Successiva',
         'preview_languages' => 'Versioni lingua',
         'standalone_lang_note' => 'Cambia la versione linguistica per paese con il parametro <code>lang=</code> (%s).',
         'new_badge' => 'NUOVO',
@@ -202,6 +215,8 @@ $viewTexts = [
         'empty' => 'Δεν υπάρχουν ενεργά SafetyFlash',
         'page' => 'Σελίδα',
         'of' => '/',
+        'pagination_prev' => 'Προηγούμενη',
+        'pagination_next' => 'Επόμενη',
         'preview_languages' => 'Γλωσσικές εκδόσεις',
         'standalone_lang_note' => 'Αλλάξτε γλωσσική έκδοση ανά χώρα με την παράμετρο <code>lang=</code> (%s).',
         'new_badge' => 'ΝΕΟ',
@@ -604,9 +619,71 @@ header('Content-Type: text/html; charset=utf-8');
         .sf-footer {
             margin-top: 16px;
             display: flex;
-            justify-content: flex-start;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
             color: #64748b;
-            font-size: 24px;
+        }
+        .sf-page-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #111827;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .sf-page-btn:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        .sf-page-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .sf-page-numbers {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sf-page-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .sf-page-num:disabled {
+            cursor: default;
+        }
+        .sf-page-num.active {
+            background: #fee000;
+            border-color: #fee000;
+            color: #111827;
+            font-weight: 700;
+        }
+        .sf-page-ellipsis {
+            color: #9ca3af;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        .sf-page-info {
+            margin-left: 8px;
+            font-size: 19px;
             font-weight: 600;
         }
     </style>
@@ -638,7 +715,16 @@ header('Content-Type: text/html; charset=utf-8');
             <div class="sf-list" id="sfSummaryList"></div>
 
             <div class="sf-footer">
-                <span id="sfPageIndicator">Sivu 1 / 1</span>
+                <button type="button" id="sfPagePrev" class="sf-page-btn">
+                    <span aria-hidden="true">‹</span>
+                    <span><?= htmlspecialchars((string)($viewI18n['pagination_prev'] ?? 'Previous'), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
+                <div class="sf-page-numbers" id="sfPageNumbers"></div>
+                <button type="button" id="sfPageNext" class="sf-page-btn">
+                    <span><?= htmlspecialchars((string)($viewI18n['pagination_next'] ?? 'Next'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span aria-hidden="true">›</span>
+                </button>
+                <span id="sfPageIndicator" class="sf-page-info">Sivu 1 / 1</span>
             </div>
         </div>
     </div>
@@ -693,12 +779,16 @@ header('Content-Type: text/html; charset=utf-8');
     const typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const isStandaloneMode = <?= $isStandaloneMode ? 'true' : 'false' ?>;
     const itemsPerPage = 6;
+    const maxVisiblePages = 7;
     const totalPages = Math.max(1, Math.ceil(flashes.length / itemsPerPage));
     let currentPage = 0;
 
     const root = document.getElementById('sfSummaryRoot');
     const list = document.getElementById('sfSummaryList');
     const indicator = document.getElementById('sfPageIndicator');
+    const pageNumbers = document.getElementById('sfPageNumbers');
+    const prevButton = document.getElementById('sfPagePrev');
+    const nextButton = document.getElementById('sfPageNext');
     const previewFrame = isStandaloneMode ? null : document.querySelector('.sf-xibo-preview-frame');
 
     if (backgroundUrl) {
@@ -756,10 +846,60 @@ header('Content-Type: text/html; charset=utf-8');
         return knownTypes[normalized] || { label: rawType || '-', className: 'sf-type--default', rowClass: '' };
     };
 
+    const buildPageWindow = (current, total) => {
+        const pages = [];
+        if (total <= maxVisiblePages) {
+            for (let page = 1; page <= total; page++) {
+                pages.push(page);
+            }
+            return pages;
+        }
+
+        pages.push(1);
+        const start = Math.max(2, current - 1);
+        const end = Math.min(total - 1, current + 1);
+        if (start > 2) {
+            pages.push('…');
+        }
+        for (let page = start; page <= end; page++) {
+            pages.push(page);
+        }
+        if (end < total - 1) {
+            pages.push('…');
+        }
+        pages.push(total);
+        return pages;
+    };
+
+    const renderPagination = () => {
+        const current = currentPage + 1;
+        indicator.textContent = `${i18n.page || 'Page'} ${current} ${i18n.of || '/'} ${totalPages}`;
+
+        const isNavigationDisabled = totalPages <= 1;
+        prevButton.disabled = isNavigationDisabled;
+        nextButton.disabled = isNavigationDisabled;
+
+        if (!pageNumbers) {
+            return;
+        }
+
+        const visiblePages = buildPageWindow(current, totalPages);
+        pageNumbers.innerHTML = visiblePages.map((entry) => {
+            if (entry === '…') {
+                return '<span class="sf-page-ellipsis" aria-hidden="true">…</span>';
+            }
+            const page = Number(entry);
+            const activeClass = page === current ? ' active' : '';
+            const ariaCurrent = page === current ? ' aria-current="page"' : '';
+            const disabledAttr = page === current ? ' disabled' : '';
+            return `<button type="button" class="sf-page-num${activeClass}" data-page="${page}" aria-label="${escapeHtml(i18n.page || 'Page')} ${page}"${ariaCurrent}${disabledAttr}>${page}</button>`;
+        }).join('');
+    };
+
     const renderPage = () => {
         if (!flashes.length) {
             list.innerHTML = `<div class="sf-empty">${escapeHtml(i18n.empty || 'No active SafetyFlashes')}</div>`;
-            indicator.textContent = `${i18n.page || 'Page'} 1 ${i18n.of || '/'} 1`;
+            renderPagination();
             return;
         }
 
@@ -783,10 +923,48 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }).join('');
 
-        indicator.textContent = `${i18n.page || 'Page'} ${currentPage + 1} ${i18n.of || '/'} ${totalPages}`;
+        renderPagination();
     };
 
     renderPage();
+
+    if (prevButton) {
+        prevButton.addEventListener('click', () => {
+            if (totalPages <= 1) {
+                return;
+            }
+            currentPage = (currentPage - 1 + totalPages) % totalPages;
+            renderPage();
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', () => {
+            if (totalPages <= 1) {
+                return;
+            }
+            currentPage = (currentPage + 1) % totalPages;
+            renderPage();
+        });
+    }
+
+    if (pageNumbers) {
+        pageNumbers.addEventListener('click', (event) => {
+            const pageButton = event.target instanceof HTMLElement ? event.target.closest('[data-page]') : null;
+            if (!(pageButton instanceof HTMLElement)) {
+                return;
+            }
+            if (totalPages <= 1) {
+                return;
+            }
+            const targetPage = Number(pageButton.getAttribute('data-page'));
+            if (!Number.isInteger(targetPage) || targetPage < 1 || targetPage > totalPages) {
+                return;
+            }
+            currentPage = targetPage - 1;
+            renderPage();
+        });
+    }
 
     if (totalPages > 1) {
         window.setInterval(() => {
