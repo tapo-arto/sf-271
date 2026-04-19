@@ -57,11 +57,17 @@ foreach ($rows as $row) {
             'base_lang' => '',
             'base_row' => null,
             'group_sort_ts' => 0,
+            'group_freshest_created_at' => 0,
         ];
     }
 
     $groups[$groupId]['rows'][] = $row;
     $groups[$groupId]['group_sort_ts'] = max((int)$groups[$groupId]['group_sort_ts'], (int)$row['sort_ts']);
+    $createdAtTs = strtotime((string)($row['created_at'] ?? '')) ?: 0;
+    $groups[$groupId]['group_freshest_created_at'] = max(
+        (int)$groups[$groupId]['group_freshest_created_at'],
+        $createdAtTs
+    );
 
     $isBaseRow = empty($row['translation_group_id']) || (int)$row['id'] === (int)$row['translation_group_id'];
     if ($isBaseRow) {
@@ -102,6 +108,7 @@ foreach ($groups as $group) {
 
     $selectedWithSortTs = $selected;
     $selectedWithSortTs['sort_ts'] = max((int)($selected['sort_ts'] ?? 0), (int)($group['group_sort_ts'] ?? 0));
+    $selectedWithSortTs['group_freshest_created_at'] = $group['group_freshest_created_at'] ?? 0;
     $selectedRows[] = $selectedWithSortTs;
 }
 usort($selectedRows, static function (array $a, array $b): int {
@@ -123,6 +130,10 @@ $flashes = array_map(static function (array $row): array {
         $freshnessDateRaw = $eventDateRaw;
     }
     $freshnessTimestamp = $freshnessDateRaw !== '' ? strtotime($freshnessDateRaw) : false;
+    $groupFreshestTs = (int)($row['group_freshest_created_at'] ?? 0);
+    if ($groupFreshestTs > 0 && ($freshnessTimestamp === false || $groupFreshestTs > $freshnessTimestamp)) {
+        $freshnessTimestamp = $groupFreshestTs;
+    }
     $freshnessWindowSeconds = SUMMARY_NEW_BADGE_DAYS * 24 * 60 * 60;
     $isNew = $freshnessTimestamp !== false && $freshnessTimestamp >= (time() - $freshnessWindowSeconds);
 
