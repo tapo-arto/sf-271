@@ -314,11 +314,60 @@ header('Content-Type: text/html; charset=utf-8');
     <link rel="stylesheet" href="<?= sf_asset_url('assets/css/modals.css', $base) ?>">
 <?php endif; ?>
     <style>
+<?php if ($isStandaloneMode): ?>
+        @font-face {
+            font-family: 'Open Sans';
+            src: url('<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/fonts/OpenSans-Light.woff2') format('woff2');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Open Sans';
+            src: url('<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/fonts/OpenSans-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Open Sans';
+            src: url('<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/fonts/OpenSans-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Open Sans';
+            src: url('<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/fonts/OpenSans-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+<?php endif; ?>
+        :root {
+            --status-published-bg: #16a34a;
+            --status-published-text: #ffffff;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         html,
         body {
             margin: 0;
             font-family: 'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
             color: #0f172a;
+        }
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         body.sf-xibo-standalone {
