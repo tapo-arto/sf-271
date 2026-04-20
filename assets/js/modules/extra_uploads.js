@@ -11,6 +11,7 @@
     const MAX_EXTRA_IMAGES = 20;
     const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
     const CONCURRENT_UPLOADS = 3;
+    const RETRY_DELAY_MS = 2000;
     const ALLOWED_MIME_REGEX = /^image\/(jpeg|png|gif|webp|heic|heif)$/i;
     const ALLOWED_EXTENSION_REGEX = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
 
@@ -65,11 +66,56 @@
         return ALLOWED_EXTENSION_REGEX.test(name);
     }
 
+    function isSafeImageUrl(url, allowBlob) {
+        if (typeof url !== 'string') return false;
+        const trimmed = url.trim();
+        if (!trimmed) return false;
+        if (allowBlob && trimmed.startsWith('blob:')) return true;
+        return /^https?:\/\//i.test(trimmed)
+            || trimmed.startsWith('/')
+            || trimmed.startsWith('./')
+            || trimmed.startsWith('../');
+    }
+
+    function setImageSource(imgElement, url, allowBlob) {
+        if (!imgElement || !isSafeImageUrl(url, allowBlob)) return false;
+        const trimmed = String(url).trim();
+        if (allowBlob && trimmed.startsWith('blob:')) {
+            imgElement.src = trimmed;
+            return true;
+        }
+
+        try {
+            const parsed = new URL(trimmed, window.location.origin);
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                return false;
+            }
+            if (parsed.origin !== window.location.origin) {
+                return false;
+            }
+            imgElement.src = parsed.href;
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function getCurrentImageCount() {
+        return extraImages.length + activeUploads + uploadQueue.length;
+    }
+
     function isExtraImagesStepVisible() {
         const container = document.getElementById('extra-images-container');
         if (!container) return false;
         const step = container.closest('.sf-step-content[data-step="4"]');
         return !step || step.classList.contains('active');
+    }
+
+    function isEditableElement(element) {
+        if (!element || !(element instanceof HTMLElement)) return false;
+        if (element.isContentEditable) return true;
+        const tag = element.tagName;
+        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
     }
 
     function init() {
@@ -183,6 +229,7 @@
 
         document.addEventListener('paste', function (e) {
             if (!isExtraImagesStepVisible()) return;
+            if (isEditableElement(e.target)) return;
 
             const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
             const files = items
@@ -206,8 +253,8 @@
     function handleIncomingFiles(files) {
         if (!files || files.length === 0) return;
 
-        const queuedCount = extraImages.length + activeUploads + uploadQueue.length;
-        const availableSlots = MAX_EXTRA_IMAGES - queuedCount;
+        const currentImageCount = getCurrentImageCount();
+        const availableSlots = MAX_EXTRA_IMAGES - currentImageCount;
 
         if (availableSlots <= 0) {
             const msg = getTerm('extra_img_max_limit', 'Maksimimäärä lisäkuvia on {n}').replace('{n}', MAX_EXTRA_IMAGES);
@@ -221,18 +268,27 @@
             showUploadError(msg);
         }
 
+        let invalidTypeCount = 0;
+        let tooLargeCount = 0;
         const validFiles = [];
         limitedFiles.forEach(file => {
             if (!isAllowedImageFile(file)) {
-                showUploadError(getTerm('extra_img_invalid_type', 'Virheellinen tiedostomuoto. Sallitut: JPEG, PNG, GIF, WEBP, HEIC, HEIF'));
+                invalidTypeCount++;
                 return;
             }
             if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-                showUploadError(getTerm('extra_img_too_large', 'Tiedosto on liian suuri. Maksimikoko: 20MB'));
+                tooLargeCount++;
                 return;
             }
             validFiles.push(file);
         });
+
+        if (invalidTypeCount > 0) {
+            showUploadError(getTerm('extra_img_invalid_type', 'Virheellinen tiedostomuoto. Sallitut: JPEG, PNG, GIF, WEBP, HEIC, HEIF'));
+        }
+        if (tooLargeCount > 0) {
+            showUploadError(getTerm('extra_img_too_large', 'Tiedosto on liian suuri. Maksimikoko: 20MB'));
+        }
 
         if (validFiles.length === 0) return;
         queueUploads(validFiles);
@@ -265,7 +321,7 @@
                     // Error is already surfaced per file
                 })
                 .finally(() => {
-                    activeUploads = Math.max(0, activeUploads - 1);
+                    activeUploads--;
                     batchDone++;
                     updateBatchProgressUI();
                     updateUploadButtonState();
@@ -317,12 +373,12 @@
         text.textContent = progressTemplate.replace('{count}', String(batchDone)).replace('{total}', String(batchTotal));
     }
 
-    function sleep(ms) {
+    function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     function isTransientStatus(status) {
-        return status === 0 || (status >= 500 && status < 600);
+        return status === 0 || status === 408 || status === 429 || (status >= 500 && status < 600);
     }
 
     function uploadFile(file) {
@@ -359,8 +415,9 @@
 
             if (pendingItem && pendingItem.statusLabel) {
                 pendingItem.statusLabel.textContent = getTerm('upload_retrying', 'Yritetään uudelleen...');
+                pendingItem.isRetrying = true;
             }
-            await sleep(2000);
+            await delay(RETRY_DELAY_MS);
             return uploadTempWithXhr(file, pendingItem);
         });
     }
@@ -381,7 +438,9 @@
             xhr.withCredentials = true;
 
             if (pendingItem && pendingItem.statusLabel) {
-                pendingItem.statusLabel.textContent = getTerm('extra_img_processing', 'Prosessoidaan...');
+                pendingItem.statusLabel.textContent = pendingItem.isRetrying
+                    ? getTerm('upload_retrying', 'Yritetään uudelleen...')
+                    : getTerm('extra_img_processing', 'Prosessoidaan...');
             }
 
             xhr.upload.onprogress = function (event) {
@@ -403,6 +462,7 @@
 
                 if (xhr.status >= 200 && xhr.status < 300 && data && data.ok) {
                     if (pendingItem) {
+                        pendingItem.isRetrying = false;
                         pendingItem.progressFill.style.width = '100%';
                         pendingItem.progressText.textContent = '100%';
                     }
@@ -412,12 +472,14 @@
 
                 const error = new Error((data && data.error) || getTerm('extra_img_upload_failed', 'Lataus epäonnistui'));
                 error.status = xhr.status;
+                if (pendingItem) pendingItem.isRetrying = false;
                 reject(error);
             };
 
             xhr.onerror = function () {
                 const error = new Error(getTerm('extra_img_upload_failed', 'Lataus epäonnistui'));
                 error.status = 0;
+                if (pendingItem) pendingItem.isRetrying = false;
                 reject(error);
             };
 
@@ -432,7 +494,7 @@
         wrapper.className = 'extra-image-placeholder';
         const title = document.createElement('span');
         title.className = 'extra-image-placeholder-title';
-        title.textContent = 'HEIC/HEIF';
+        title.textContent = getTerm('extra_img_heic_placeholder', 'HEIC/HEIF');
         const detail = document.createElement('span');
         detail.textContent = filename || '';
         wrapper.appendChild(title);
@@ -450,15 +512,34 @@
 
         const imgContainer = document.createElement('div');
         imgContainer.className = 'extra-image-preview';
-        const previewImg = document.createElement('img');
-        const objectUrl = URL.createObjectURL(file);
-        item.dataset.objectUrl = objectUrl;
-        previewImg.src = objectUrl;
-        previewImg.alt = filename || 'Extra image';
-        previewImg.onerror = function () {
+        const canCreateObjectUrl = (typeof URL !== 'undefined')
+            && typeof URL.createObjectURL === 'function'
+            && file instanceof Blob;
+
+        if (canCreateObjectUrl) {
+            const objectUrl = URL.createObjectURL(file);
+            if (typeof objectUrl === 'string' && objectUrl.startsWith('blob:')) {
+                const previewImg = document.createElement('img');
+                if (setImageSource(previewImg, objectUrl, true)) {
+                    item.dataset.objectUrl = objectUrl;
+                    previewImg.alt = filename || 'Extra image';
+                    previewImg.onerror = function () {
+                        createPreviewFallback(imgContainer, filename);
+                    };
+                    imgContainer.appendChild(previewImg);
+                } else {
+                    URL.revokeObjectURL(objectUrl);
+                    createPreviewFallback(imgContainer, filename);
+                }
+            } else {
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                }
+                createPreviewFallback(imgContainer, filename);
+            }
+        } else {
             createPreviewFallback(imgContainer, filename);
-        };
-        imgContainer.appendChild(previewImg);
+        }
 
         const overlay = document.createElement('div');
         overlay.className = 'extra-image-overlay' + (isLoading ? '' : ' hidden');
@@ -545,12 +626,15 @@
 
             if (thumbUrl) {
                 const img = document.createElement('img');
-                img.src = thumbUrl;
-                img.alt = filename || 'Extra image';
-                img.onerror = function () {
+                if (setImageSource(img, thumbUrl, false)) {
+                    img.alt = filename || 'Extra image';
+                    img.onerror = function () {
+                        createPreviewFallback(imgContainer, filename || '');
+                    };
+                    imgContainer.appendChild(img);
+                } else {
                     createPreviewFallback(imgContainer, filename || '');
-                };
-                imgContainer.appendChild(img);
+                }
             } else {
                 createPreviewFallback(imgContainer, filename || '');
             }
@@ -590,8 +674,8 @@
         const uploadBtn = document.getElementById('extra-image-upload-btn');
         const cameraBtn = document.getElementById('extra-image-camera-btn');
         const count = document.getElementById('extra-images-count');
-        const queuedCount = extraImages.length + activeUploads + uploadQueue.length;
-        const maxReached = queuedCount >= MAX_EXTRA_IMAGES;
+        const currentImageCount = getCurrentImageCount();
+        const maxReached = currentImageCount >= MAX_EXTRA_IMAGES;
 
         if (count) {
             count.textContent = extraImages.length + '/' + MAX_EXTRA_IMAGES;

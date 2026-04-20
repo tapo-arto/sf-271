@@ -494,6 +494,13 @@ return [
     'it' => 'Rilascia le immagini qui',
     'el' => 'Αποθέστε τις εικόνες εδώ',
 ],
+'extra_img_heic_placeholder' => [
+    'fi' => 'HEIC/HEIF',
+    'sv' => 'HEIC/HEIF',
+    'en' => 'HEIC/HEIF',
+    'it' => 'HEIC/HEIF',
+    'el' => 'HEIC/HEIF',
+],
 'extra_img_max_reached' => [
     'fi' => 'Maksimimäärä saavutettu',
     'sv' => 'Maxgräns nådd',
