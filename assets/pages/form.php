@@ -1244,13 +1244,26 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
         <?= htmlspecialchars(sf_term('extra_images_description', $uiLang) ?: 'Lisää tähän muita kuvia, jotka eivät näy PDF-tiedotteessa mutta ovat saatavilla tiedotteen katselunäkymässä.', ENT_QUOTES, 'UTF-8') ?>
       </p>
       <div class="extra-images-upload">
-        <button type="button" id="extra-image-upload-btn" class="sf-btn sf-btn-primary">
+        <button type="button" id="extra-image-upload-btn" class="sf-btn sf-btn-primary" aria-label="<?= htmlspecialchars(sf_term('extra_images_add_button', $uiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>">
           <?= htmlspecialchars(sf_term('extra_images_add_button', $uiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>
         </button>
-        <input type="file" id="extra-image-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display: none;">
+        <button type="button" id="extra-image-camera-btn" class="sf-btn sf-btn-secondary extra-image-camera-trigger" aria-label="<?= htmlspecialchars(sf_term('upload_camera_btn', $uiLang) ?: 'Ota kuva', ENT_QUOTES, 'UTF-8') ?>">
+          <?= htmlspecialchars(sf_term('upload_camera_btn', $uiLang) ?: 'Ota kuva', ENT_QUOTES, 'UTF-8') ?>
+        </button>
+        <input type="file" id="extra-image-input" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" multiple style="display: none;">
+        <input type="file" id="extra-image-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
+      </div>
+      <div class="extra-images-progress" id="extra-images-progress" aria-live="polite" aria-atomic="true">
+        <div class="extra-images-progress-bar">
+          <div class="extra-images-progress-fill" id="extra-images-progress-fill"></div>
+        </div>
+        <div class="extra-images-progress-text" id="extra-images-progress-text"></div>
       </div>
       <div class="extra-images-grid" id="extra-images-grid">
         <!-- Images will be added here by JavaScript -->
+      </div>
+      <div class="extra-images-drop-overlay" id="extra-images-drop-overlay">
+        <?= htmlspecialchars(sf_term('extra_img_drop_here', $uiLang) ?: 'Pudota kuvat tähän', ENT_QUOTES, 'UTF-8') ?>
       </div>
     </div>
 

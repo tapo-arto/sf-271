@@ -487,6 +487,13 @@ return [
     'it' => 'Aggiungi immagini',
     'el' => 'Προσθήκη εικόνων',
 ],
+'extra_img_drop_here' => [
+    'fi' => 'Pudota kuvat tähän',
+    'sv' => 'Släpp bilderna här',
+    'en' => 'Drop images here',
+    'it' => 'Rilascia le immagini qui',
+    'el' => 'Αποθέστε τις εικόνες εδώ',
+],
 'extra_img_max_reached' => [
     'fi' => 'Maksimimäärä saavutettu',
     'sv' => 'Maxgräns nådd',
