@@ -930,7 +930,7 @@
 
         let completed = 0;
         const total = validFiles.length;
-        const failedFiles = [];
+        let failedCount = 0;
         let cursor = 0;
 
         if (progress) {
@@ -945,7 +945,7 @@
                 try {
                     await uploadImage(file, flashId, baseUrl, grid, noImages, pendingItem);
                 } catch (error) {
-                    failedFiles.push(file.name || getTerm('unknown_error', 'Tuntematon virhe'));
+                    failedCount++;
                     destroyPendingItem(pendingItem);
                 } finally {
                     completed++;
@@ -956,12 +956,12 @@
 
         await Promise.allSettled(workers);
 
-        if (failedFiles.length > 0) {
+        if (failedCount > 0) {
             const summaryTemplate = getTerm('images_upload_partial', '{failed} tiedostoa epäonnistui');
             const summaryMessage = summaryTemplate
-                .replace('{failed}', String(failedFiles.length))
+                .replace('{failed}', String(failedCount))
                 .replace('{total}', String(total));
-            showUploadError(`${summaryMessage}: ${failedFiles.join(', ')}`);
+            showUploadError(summaryMessage);
         }
 
         setTimeout(() => {
