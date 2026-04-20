@@ -139,6 +139,27 @@
 /* Extra Images Tab - View Page */
 .images-tab-content {
     padding: 1.5rem;
+    position: relative;
+}
+
+.images-drop-overlay {
+    position: absolute;
+    inset: 1.5rem;
+    border: 2px dashed #007bff;
+    border-radius: 10px;
+    background: rgba(0, 123, 255, 0.08);
+    color: #0b5ed7;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.images-drop-overlay.active {
+    display: flex;
 }
 
 .images-loading {
@@ -487,6 +508,50 @@
     box-shadow: none;
 }
 
+.sf-gallery-item-pending {
+    cursor: default;
+}
+
+.sf-gallery-item-pending:hover {
+    transform: none;
+}
+
+.sf-gallery-pending-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.15));
+    color: #fff;
+    z-index: 1;
+}
+
+.sf-gallery-pending-status {
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+}
+
+.sf-gallery-progress-line {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    overflow: hidden;
+}
+
+.sf-gallery-progress-line-fill {
+    height: 100%;
+    background: #00c8ff;
+    transition: width 0.2s ease;
+}
+
+.sf-gallery-pending-progress-text {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    text-align: right;
+}
+
 .sf-gallery-spinner {
     display: inline-block;
     width: 40px;
@@ -621,6 +686,10 @@
 
 .sf-upload-browse-btn {
     margin-top: 1rem;
+}
+
+.sf-upload-camera-btn {
+    margin-top: 0.5rem;
 }
 
 .sf-upload-progress {

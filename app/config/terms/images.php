@@ -439,11 +439,11 @@ return [
     'el' => 'Ο μέγιστος αριθμός επιπλέον εικόνων είναι {n}',
 ],
 'extra_img_invalid_type' => [
-    'fi' => 'Virheellinen tiedostomuoto. Sallitut: JPEG, PNG, GIF, WEBP',
-    'sv' => 'Ogiltigt filformat. Tillåtna: JPEG, PNG, GIF, WEBP',
-    'en' => 'Invalid file format. Allowed: JPEG, PNG, GIF, WEBP',
-    'it' => 'Formato file non valido. Consentiti: JPEG, PNG, GIF, WEBP',
-    'el' => 'Μη έγκυρη μορφή αρχείου. Επιτρέπονται: JPEG, PNG, GIF, WEBP',
+    'fi' => 'Virheellinen tiedostomuoto. Sallitut: JPEG, PNG, GIF, WEBP, HEIC, HEIF',
+    'sv' => 'Ogiltigt filformat. Tillåtna: JPEG, PNG, GIF, WEBP, HEIC, HEIF',
+    'en' => 'Invalid file format. Allowed: JPEG, PNG, GIF, WEBP, HEIC, HEIF',
+    'it' => 'Formato file non valido. Consentiti: JPEG, PNG, GIF, WEBP, HEIC, HEIF',
+    'el' => 'Μη έγκυρη μορφή αρχείου. Επιτρέπονται: JPEG, PNG, GIF, WEBP, HEIC, HEIF',
 ],
 'extra_img_too_large' => [
     'fi' => 'Tiedosto on liian suuri. Maksimikoko: 20MB',
@@ -593,12 +593,26 @@ return [
     'it' => 'Trascina e rilascia le immagini qui',
     'el' => 'Σύρετε και αποθέστε εικόνες εδώ',
 ],
+'upload_drop_here' => [
+    'fi' => 'Pudota tähän',
+    'sv' => 'Släpp här',
+    'en' => 'Drop here',
+    'it' => 'Rilascia qui',
+    'el' => 'Αποθέστε εδώ',
+],
 'upload_browse_btn' => [
     'fi' => 'Lataa koneelta',
     'sv' => 'Ladda från datorn',
     'en' => 'Upload from computer',
     'it' => 'Carica dal computer',
     'el' => 'Μεταφόρτωση από τον υπολογιστή',
+],
+'upload_camera_btn' => [
+    'fi' => 'Ota kuva',
+    'sv' => 'Ta bild',
+    'en' => 'Take photo',
+    'it' => 'Scatta foto',
+    'el' => 'Τραβήξτε φωτογραφία',
 ],
 'upload_success' => [
     'fi' => 'Kuva ladattu onnistuneesti',
@@ -613,6 +627,13 @@ return [
     'en' => 'Upload failed',
     'it' => 'Caricamento fallito',
     'el' => 'Η μεταφόρτωση απέτυχε',
+],
+'upload_retrying' => [
+    'fi' => 'Yritetään uudelleen...',
+    'sv' => 'Försöker igen...',
+    'en' => 'Retrying...',
+    'it' => 'Nuovo tentativo...',
+    'el' => 'Γίνεται νέα προσπάθεια...',
 ],
 'no_images' => [
     'fi' => 'Ei kuvia',
@@ -641,6 +662,13 @@ return [
     'en' => '{count} / {total} images uploaded',
     'it' => '{count} / {total} immagini caricate',
     'el' => '{count} / {total} εικόνες μεταφορτώθηκαν',
+],
+'images_upload_partial' => [
+    'fi' => '{failed} / {total} kuvan lataus epäonnistui',
+    'sv' => '{failed} / {total} bilduppladdningar misslyckades',
+    'en' => '{failed} / {total} image uploads failed',
+    'it' => '{failed} / {total} caricamenti immagine non riusciti',
+    'el' => '{failed} / {total} μεταφορτώσεις εικόνων απέτυχαν',
 ],
 'crop_guide_text' => [
     'fi' => 'Katkoviiva (1:1) näyttää neliökuvissa näkyvän alueen. Tummennettu reuna-alue näkyy 16:9-vaaka-asettelussa.',

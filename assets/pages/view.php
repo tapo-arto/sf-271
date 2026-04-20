@@ -1705,13 +1705,16 @@ $iconBase = $base .'/assets/img/icons/';
                 <div class="sf-tab-content" id="tabImages">
                     <div class="images-tab-content">
                         <div class="images-loading" id="imagesLoading">
-                            <div class="images-spinner"></div>
+                            <div class="images-spinner" role="status" aria-live="polite" aria-label="<?= htmlspecialchars(sf_term('images_loading', $currentUiLang) ?: 'Ladataan kuvia...', ENT_QUOTES, 'UTF-8') ?>"></div>
                             <p><?= htmlspecialchars(sf_term('images_loading', $currentUiLang) ?: 'Ladataan kuvia...', ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
-                        <div id="imagesUploadContainer" style="display: none; margin-bottom: 1rem;">
-                            <button type="button" id="imagesUploadBtn" class="sf-btn sf-btn-primary">
+                        <div id="imagesUploadContainer" style="display: <?= !empty($canAddExtraImages) ? 'block' : 'none' ?>; margin-bottom: 1rem;">
+                            <button type="button" id="imagesUploadBtn" class="sf-btn sf-btn-primary" aria-label="<?= htmlspecialchars(sf_term('add_images_btn', $currentUiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>">
                                 <?= htmlspecialchars(sf_term('add_images_btn', $currentUiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>
                             </button>
+                        </div>
+                        <div class="images-drop-overlay" id="imagesDropOverlay" aria-hidden="true">
+                            <span><?= htmlspecialchars(sf_term('upload_drop_here', $currentUiLang) ?: 'Pudota tähän', ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
                         <div class="images-grid" id="imagesGrid" style="display: none;">
                             <!-- Images will be loaded here by JavaScript -->
@@ -3367,10 +3370,18 @@ window.SF_TERMS = {
     select_image_files: <?php echo json_encode(sf_term('select_image_files', $currentUiLang)); ?>,
     images_loading_error: <?php echo json_encode(sf_term('images_loading_error', $currentUiLang)); ?>,
     images_uploading: <?php echo json_encode(sf_term('images_uploading', $currentUiLang)); ?>,
+    images_upload_partial: <?php echo json_encode(sf_term('images_upload_partial', $currentUiLang)); ?>,
     upload_success: <?php echo json_encode(sf_term('upload_success', $currentUiLang)); ?>,
     upload_error: <?php echo json_encode(sf_term('upload_error', $currentUiLang)); ?>,
+    upload_retrying: <?php echo json_encode(sf_term('upload_retrying', $currentUiLang)); ?>,
     upload_modal_title: <?php echo json_encode(sf_term('upload_modal_title', $currentUiLang)); ?>,
     upload_drag_text: <?php echo json_encode(sf_term('upload_drag_text', $currentUiLang)); ?>,
+    upload_drop_here: <?php echo json_encode(sf_term('upload_drop_here', $currentUiLang)); ?>,
+    upload_camera_btn: <?php echo json_encode(sf_term('upload_camera_btn', $currentUiLang)); ?>,
+    extra_img_invalid_type: <?php echo json_encode(sf_term('extra_img_invalid_type', $currentUiLang)); ?>,
+    extra_img_too_large: <?php echo json_encode(sf_term('extra_img_too_large', $currentUiLang)); ?>,
+    extra_img_processing: <?php echo json_encode(sf_term('extra_img_processing', $currentUiLang)); ?>,
+    extra_img_remove: <?php echo json_encode(sf_term('extra_img_remove', $currentUiLang)); ?>,
     btn_cancel: <?php echo json_encode(sf_term('btn_cancel', $currentUiLang)); ?>,
     btn_delete: <?php echo json_encode(sf_term('btn_delete', $currentUiLang)); ?>,
     // Translation confirmation modal terms
@@ -4056,19 +4067,31 @@ document.addEventListener('keydown', function(e) {
                 <button type="button" class="sf-btn sf-btn-primary sf-upload-browse-btn" id="uploadBrowseBtn">
                     <?= htmlspecialchars(sf_term('upload_browse_btn', $currentUiLang) ?: 'Lataa koneelta', ENT_QUOTES, 'UTF-8') ?>
                 </button>
-                <input type="file" id="uploadFileInput" accept="image/*" multiple style="display: none;">
+                <button type="button" class="sf-btn sf-btn-secondary sf-upload-camera-btn" id="uploadCameraBtn" aria-label="<?= htmlspecialchars(sf_term('upload_camera_btn', $currentUiLang) ?: 'Ota kuva', ENT_QUOTES, 'UTF-8') ?>">
+                    <?= htmlspecialchars(sf_term('upload_camera_btn', $currentUiLang) ?: 'Ota kuva', ENT_QUOTES, 'UTF-8') ?>
+                </button>
+                <input type="file" id="uploadFileInput" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" multiple style="display: none;">
+                <input type="file" id="uploadCameraInput" accept="image/*" capture="environment" style="display: none;">
             </div>
             <div class="sf-upload-progress" id="uploadProgress">
                 <div class="sf-upload-progress-bar">
                     <div class="sf-upload-progress-fill" id="uploadProgressFill">0%</div>
                 </div>
-                <div class="sf-upload-progress-text" id="uploadProgressText"></div>
+                <div class="sf-upload-progress-text" id="uploadProgressText" aria-live="polite"></div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Images Tab JavaScript -->
+<?php
+require_once __DIR__ . '/../../app/includes/csrf.php';
+$viewCsrfToken = sf_csrf_token();
+?>
+<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($viewCsrfToken, ENT_QUOTES, 'UTF-8') ?>" id="sfViewCsrfToken">
+<script>
+window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
+</script>
 <script src="<?= sf_asset_url('assets/js/modules/extra_images_view.js', $base) ?>"></script>
 <script>
 (function() {
