@@ -764,7 +764,7 @@
 
         const pendingImg = document.createElement('img');
         pendingImg.className = 'sf-gallery-img';
-        pendingImg.src = objectUrl;
+        pendingImg.src = (typeof objectUrl === 'string' && objectUrl.startsWith('blob:')) ? objectUrl : '';
         pendingImg.alt = file.name || 'Upload preview';
 
         const overlay = document.createElement('div');
@@ -864,13 +864,7 @@
             };
 
             xhr.onload = () => {
-                const responseData = xhr.response || (() => {
-                    try {
-                        return JSON.parse(xhr.responseText || '{}');
-                    } catch (parseError) {
-                        return {};
-                    }
-                })();
+                const responseData = xhr.response || {};
                 if (xhr.status >= 200 && xhr.status < 300 && responseData && responseData.ok) {
                     resolve(responseData);
                     return;
