@@ -5,6 +5,24 @@
 (function () {
     'use strict';
 
+    const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+    const CONCURRENT_UPLOADS = 3;
+    let uploadEnhancementsInitialized = false;
+
+    function getTerm(key, fallback) {
+        return (window.SF_TERMS && window.SF_TERMS[key]) || fallback;
+    }
+
+    function getCsrfToken() {
+        return window.SF_CSRF_TOKEN || document.querySelector('input[name="csrf_token"]')?.value || '';
+    }
+
+    function isImagesTabActive() {
+        const tabContent = document.getElementById('tabImages');
+        return !!tabContent && tabContent.classList.contains('active');
+    }
+
     window.initExtraImages = function (flashId, canEdit, mainImages, canAddExtraImages) {
         const grid = document.getElementById('imagesGrid');
         const loading = document.getElementById('imagesLoading');
@@ -21,6 +39,12 @@
 
         // Use canAddExtraImages if provided, otherwise fallback to canEdit for backward compatibility
         canAddExtraImages = (canAddExtraImages !== undefined) ? canAddExtraImages : canEdit;
+
+        // Show upload actions immediately for better UX (no need to wait API response)
+        if (canAddExtraImages && uploadContainer) {
+            uploadContainer.style.display = 'block';
+            initUploadModal(flashId, baseUrl, grid, noImages);
+        }
 
         // Fetch extra images from API
         fetch(`${baseUrl}/app/api/get_extra_images.php?id=${flashId}`, {
@@ -61,15 +85,10 @@
                     if (noImages) noImages.style.display = 'block';
                 }
 
-                // Show upload button if user can edit
-                if (canAddExtraImages && uploadContainer) {
-                    uploadContainer.style.display = 'block';
-                    initUploadModal(flashId, baseUrl, grid, noImages);
-                }
             })
             .catch(err => {
                 console.error('Failed to load extra images:', err);
-                const errorMsg = (window.SF_TERMS && window.SF_TERMS['images_loading_error']) || 'Kuvien lataus epäonnistui.';
+                const errorMsg = getTerm('images_loading_error', 'Kuvien lataus epäonnistui.');
                 if (loading) {
                     loading.style.display = 'none';
                 }
@@ -85,10 +104,8 @@
                     if (noImages) noImages.style.display = 'block';
                 }
 
-                // Show upload button if user can edit
-                if (canAddExtraImages && uploadContainer) {
-                    uploadContainer.style.display = 'block';
-                    initUploadModal(flashId, baseUrl, grid, noImages);
+                if (typeof window.sfToast === 'function') {
+                    window.sfToast('error', errorMsg);
                 }
             });
     };
@@ -151,6 +168,7 @@
             const delBtn = document.createElement('button');
             delBtn.className = 'sf-gallery-delete';
             delBtn.innerHTML = '&times;';
+            delBtn.setAttribute('aria-label', getTerm('extra_img_remove', 'Poista kuva'));
             delBtn.onclick = (e) => {
                 e.stopPropagation();
                 showDeleteConfirmModal(() => {
@@ -571,9 +589,14 @@
         const backdrop = modal ? modal.querySelector('.sf-modal-backdrop') : null;
         const dropZone = document.getElementById('uploadDropZone');
         const browseBtn = document.getElementById('uploadBrowseBtn');
+        const cameraBtn = document.getElementById('uploadCameraBtn');
         const fileInput = document.getElementById('uploadFileInput');
+        const cameraInput = document.getElementById('uploadCameraInput');
+        const tabContent = document.getElementById('tabImages');
 
         if (!uploadBtn || !modal || !dropZone || !browseBtn || !fileInput) return;
+        if (modal.dataset.sfUploadInit === '1') return;
+        modal.dataset.sfUploadInit = '1';
 
         // Open modal when upload button is clicked
         uploadBtn.onclick = () => {
@@ -591,6 +614,9 @@
 
         // Browse button
         browseBtn.onclick = () => fileInput.click();
+        if (cameraBtn && cameraInput) {
+            cameraBtn.onclick = () => cameraInput.click();
+        }
 
         // File input change
         fileInput.onchange = (e) => {
@@ -600,6 +626,14 @@
             handleFiles(files, flashId, baseUrl, grid, noImages, modal);
             fileInput.value = '';
         };
+        if (cameraInput) {
+            cameraInput.onchange = (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
+                handleFiles(files, flashId, baseUrl, grid, noImages, modal);
+                cameraInput.value = '';
+            };
+        }
 
         // Drag and drop
         dropZone.ondragover = (e) => {
@@ -616,27 +650,277 @@
             e.preventDefault();
             dropZone.classList.remove('drag-over');
 
-            const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+            const files = Array.from(e.dataTransfer.files || []);
             if (files.length === 0) {
-                const errorMsg = (window.SF_TERMS && window.SF_TERMS['select_image_files']) || 'Valitse kuvatiedostoja';
-                if (typeof window.sfToast === 'function') {
-                    window.sfToast('error', errorMsg);
-                }
+                showUploadError(getTerm('select_image_files', 'Valitse kuvatiedostoja'));
                 return;
             }
 
             handleFiles(files, flashId, baseUrl, grid, noImages, modal);
         };
+
+        if (!uploadEnhancementsInitialized && tabContent) {
+            uploadEnhancementsInitialized = true;
+            initUploadEnhancements(tabContent, grid, flashId, baseUrl, noImages);
+        }
     }
 
-    function handleFiles(files, flashId, baseUrl, grid, noImages, modal) {
-        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    function initUploadEnhancements(tabContent, grid, flashId, baseUrl, noImages) {
+        initGlobalDropTarget(tabContent, grid, flashId, baseUrl, noImages);
 
-        if (imageFiles.length === 0) {
-            const errorMsg = (window.SF_TERMS && window.SF_TERMS['select_image_files']) || 'Valitse kuvatiedostoja';
-            if (typeof window.sfToast === 'function') {
-                window.sfToast('error', errorMsg);
+        document.addEventListener('paste', (e) => {
+            if (!isImagesTabActive()) return;
+            const clipboardItems = Array.from((e.clipboardData && e.clipboardData.items) || []);
+            const files = clipboardItems
+                .filter(item => item.kind === 'file')
+                .map(item => item.getAsFile())
+                .filter(Boolean);
+
+            if (files.length === 0) return;
+            e.preventDefault();
+            handleFiles(files, flashId, baseUrl, grid, noImages, null);
+        });
+    }
+
+    function initGlobalDropTarget(tabContent, grid, flashId, baseUrl, noImages) {
+        const overlay = document.getElementById('imagesDropOverlay');
+        const targets = [tabContent, grid].filter(Boolean);
+        let dragDepth = 0;
+
+        const hasFiles = (event) => {
+            const types = event.dataTransfer && event.dataTransfer.types;
+            return !!types && Array.from(types).includes('Files');
+        };
+
+        const showOverlay = () => {
+            if (overlay) overlay.classList.add('active');
+        };
+
+        const hideOverlay = () => {
+            dragDepth = 0;
+            if (overlay) overlay.classList.remove('active');
+        };
+
+        targets.forEach((target) => {
+            target.addEventListener('dragenter', (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                dragDepth += 1;
+                showOverlay();
+            });
+
+            target.addEventListener('dragover', (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                showOverlay();
+            });
+
+            target.addEventListener('dragleave', (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                dragDepth = Math.max(0, dragDepth - 1);
+                if (dragDepth === 0) {
+                    hideOverlay();
+                }
+            });
+
+            target.addEventListener('drop', (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                hideOverlay();
+                const files = Array.from(e.dataTransfer.files || []);
+                handleFiles(files, flashId, baseUrl, grid, noImages, null);
+            });
+        });
+
+        document.addEventListener('dragend', hideOverlay);
+    }
+
+    function isAllowedImageFile(file) {
+        if (ALLOWED_MIME_TYPES.includes(file.type)) return true;
+        const name = (file.name || '').toLowerCase();
+        return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(name);
+    }
+
+    function showUploadError(message) {
+        if (typeof window.sfToast === 'function') {
+            window.sfToast('error', message);
+            return;
+        }
+        alert(message);
+    }
+
+    function updatePendingProgress(pendingItem, progressPercent) {
+        if (!pendingItem || !pendingItem.progressBar) return;
+        pendingItem.progressBar.style.width = `${progressPercent}%`;
+        pendingItem.progressText.textContent = `${progressPercent}%`;
+    }
+
+    function createPendingItem(file, grid, noImages) {
+        const objectUrl = URL.createObjectURL(file);
+        const pendingDiv = document.createElement('div');
+        pendingDiv.className = 'sf-gallery-item sf-gallery-item-pending';
+
+        const pendingImg = document.createElement('img');
+        pendingImg.className = 'sf-gallery-img';
+        pendingImg.src = objectUrl;
+        pendingImg.alt = file.name || 'Upload preview';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'sf-gallery-pending-overlay';
+
+        const status = document.createElement('div');
+        status.className = 'sf-gallery-pending-status';
+        status.setAttribute('role', 'status');
+        status.textContent = getTerm('extra_img_processing', 'Prosessoidaan...');
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'sf-gallery-progress-line';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'sf-gallery-progress-line-fill';
+        progressFill.style.width = '0%';
+        progressBar.appendChild(progressFill);
+
+        const progressText = document.createElement('div');
+        progressText.className = 'sf-gallery-pending-progress-text';
+        progressText.textContent = '0%';
+
+        overlay.appendChild(status);
+        overlay.appendChild(progressBar);
+        overlay.appendChild(progressText);
+        pendingDiv.appendChild(pendingImg);
+        pendingDiv.appendChild(overlay);
+
+        grid.appendChild(pendingDiv);
+        grid.style.display = 'grid';
+        if (noImages) noImages.style.display = 'none';
+
+        return {
+            element: pendingDiv,
+            objectUrl,
+            status,
+            progressBar: progressFill,
+            progressText
+        };
+    }
+
+    function destroyPendingItem(pendingItem) {
+        if (!pendingItem) return;
+        if (pendingItem.element && pendingItem.element.parentNode) {
+            pendingItem.element.remove();
+        }
+        if (pendingItem.objectUrl) {
+            URL.revokeObjectURL(pendingItem.objectUrl);
+        }
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function isTransientStatus(status) {
+        return status >= 500 && status < 600;
+    }
+
+    async function fetchWithRetry(url, options, pendingItem) {
+        try {
+            const firstResponse = await fetch(url, options);
+            if (!isTransientStatus(firstResponse.status)) {
+                return firstResponse;
             }
+            if (pendingItem && pendingItem.status) {
+                pendingItem.status.textContent = getTerm('upload_retrying', 'Yritetään uudelleen...');
+            }
+            await sleep(2000);
+            return fetch(url, options);
+        } catch (error) {
+            if (pendingItem && pendingItem.status) {
+                pendingItem.status.textContent = getTerm('upload_retrying', 'Yritetään uudelleen...');
+            }
+            await sleep(2000);
+            return fetch(url, options);
+        }
+    }
+
+    function uploadTempWithXhr(file, baseUrl, pendingItem) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('image', file);
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${baseUrl}/app/api/upload_extra_image.php`, true);
+            xhr.withCredentials = true;
+            xhr.responseType = 'json';
+
+            xhr.upload.onprogress = (event) => {
+                if (!event.lengthComputable) return;
+                const percent = Math.round((event.loaded / event.total) * 100);
+                updatePendingProgress(pendingItem, percent);
+            };
+
+            xhr.onload = () => {
+                const responseData = xhr.response || (() => {
+                    try {
+                        return JSON.parse(xhr.responseText || '{}');
+                    } catch (parseError) {
+                        return {};
+                    }
+                })();
+                if (xhr.status >= 200 && xhr.status < 300 && responseData && responseData.ok) {
+                    resolve(responseData);
+                    return;
+                }
+                const error = new Error((responseData && responseData.error) || getTerm('upload_error', 'Lataus epäonnistui'));
+                error.status = xhr.status;
+                reject(error);
+            };
+
+            xhr.onerror = () => {
+                const error = new Error(getTerm('upload_error', 'Lataus epäonnistui'));
+                error.status = 0;
+                reject(error);
+            };
+
+            xhr.send(formData);
+        });
+    }
+
+    async function uploadTempWithRetry(file, baseUrl, pendingItem) {
+        try {
+            return await uploadTempWithXhr(file, baseUrl, pendingItem);
+        } catch (error) {
+            if (!error || (error.status && !isTransientStatus(error.status))) {
+                throw error;
+            }
+            if (pendingItem && pendingItem.status) {
+                pendingItem.status.textContent = getTerm('upload_retrying', 'Yritetään uudelleen...');
+            }
+            await sleep(2000);
+            return uploadTempWithXhr(file, baseUrl, pendingItem);
+        }
+    }
+
+    async function handleFiles(files, flashId, baseUrl, grid, noImages, modal) {
+        const validFiles = [];
+
+        files.forEach((file) => {
+            if (!isAllowedImageFile(file)) {
+                showUploadError(getTerm('extra_img_invalid_type', 'Virheellinen tiedostomuoto. Sallitut: JPEG, PNG, GIF, WEBP, HEIC, HEIF'));
+                return;
+            }
+            if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+                showUploadError(getTerm('extra_img_too_large', 'Tiedosto on liian suuri. Maksimikoko: 20MB'));
+                return;
+            }
+            validFiles.push(file);
+        });
+
+        if (validFiles.length === 0) {
             return;
         }
 
@@ -645,31 +929,45 @@
         const progressText = document.getElementById('uploadProgressText');
 
         let completed = 0;
-        const total = imageFiles.length;
+        const total = validFiles.length;
+        const failedFiles = [];
+        let cursor = 0;
 
         if (progress) {
             progress.classList.add('active');
             updateProgress(0, total, progressFill, progressText);
         }
 
-        // Upload files sequentially
-        imageFiles.reduce((promise, file) => {
-            return promise.then(() => {
-                return uploadImage(file, flashId, baseUrl, grid, noImages).then(() => {
+        const workers = Array.from({ length: Math.min(CONCURRENT_UPLOADS, total) }, () => (async () => {
+            while (cursor < total) {
+                const file = validFiles[cursor++];
+                const pendingItem = createPendingItem(file, grid, noImages);
+                try {
+                    await uploadImage(file, flashId, baseUrl, grid, noImages, pendingItem);
+                } catch (error) {
+                    failedFiles.push(file.name || getTerm('unknown_error', 'Tuntematon virhe'));
+                    destroyPendingItem(pendingItem);
+                } finally {
                     completed++;
                     updateProgress(completed, total, progressFill, progressText);
-                });
-            });
-        }, Promise.resolve()).then(() => {
-            // All uploads complete
-            setTimeout(() => {
-                if (progress) progress.classList.remove('active');
-                modal.classList.add('hidden');
-            }, 1000);
-        }).catch(err => {
-            console.error('Upload batch error:', err);
+                }
+            }
+        })());
+
+        await Promise.allSettled(workers);
+
+        if (failedFiles.length > 0) {
+            const summaryTemplate = getTerm('images_upload_partial', '{failed} tiedostoa epäonnistui');
+            const summaryMessage = summaryTemplate
+                .replace('{failed}', String(failedFiles.length))
+                .replace('{total}', String(total));
+            showUploadError(`${summaryMessage}: ${failedFiles.join(', ')}`);
+        }
+
+        setTimeout(() => {
             if (progress) progress.classList.remove('active');
-        });
+            if (modal) modal.classList.add('hidden');
+        }, 1000);
     }
 
     function updateProgress(completed, total, progressFill, progressText) {
@@ -685,104 +983,59 @@
         }
     }
 
-    function uploadImage(file, flashId, baseUrl, grid, noImages) {
-        return new Promise((resolve, reject) => {
-            const formData = new FormData();
-            formData.append('image', file);
+    async function uploadImage(file, flashId, baseUrl, grid, noImages, pendingItem) {
+        if (pendingItem && pendingItem.status) {
+            pendingItem.status.textContent = getTerm('extra_img_processing', 'Prosessoidaan...');
+        }
 
-            // Add CSRF token - THIS IS THE FIX FOR THE 403 ERROR
-            const csrfToken = window.SF_CSRF_TOKEN || document.querySelector('input[name="csrf_token"]')?.value;
-            if (csrfToken) {
-                formData.append('csrf_token', csrfToken);
+        const uploadResult = await uploadTempWithRetry(file, baseUrl, pendingItem);
+        updatePendingProgress(pendingItem, 100);
+
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            throw new Error(getTerm('csrf_invalid_token', 'Virheellinen CSRF token'));
+        }
+
+        const addData = new URLSearchParams();
+        addData.append('flash_id', flashId);
+        addData.append('temp_filename', uploadResult.filename);
+        addData.append('original_filename', uploadResult.original_filename);
+        addData.append('csrf_token', csrfToken);
+
+        const addResponse = await fetchWithRetry(`${baseUrl}/app/api/add_extra_image.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: addData.toString(),
+            credentials: 'same-origin'
+        }, pendingItem);
+        const addResult = await addResponse.json();
+
+        if (!addResult.ok) {
+            throw new Error(addResult.error || 'Failed to save image');
+        }
+
+        const newImage = {
+            id: addResult.id,
+            url: addResult.url,
+            thumb_url: addResult.thumb_url,
+            filename: addResult.filename,
+            original_filename: addResult.original_filename
+        };
+
+        const item = createViewItem(newImage, true, baseUrl, () => {
+            if (grid.querySelectorAll('.sf-gallery-item').length === 0) {
+                grid.style.display = 'none';
+                if (noImages) noImages.style.display = 'block';
             }
-
-            // Show loading indicator
-            const loadingItem = document.createElement('div');
-            loadingItem.className = 'sf-gallery-item sf-gallery-item-loading';
-            loadingItem.innerHTML = '<div class="sf-gallery-spinner"></div>';
-            grid.appendChild(loadingItem);
-            grid.style.display = 'grid';
-            if (noImages) noImages.style.display = 'none';
-
-            // First, upload to temp
-            fetch(`${baseUrl}/app/api/upload_extra_image.php`, {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.ok) {
-                        throw new Error(data.error || 'Upload failed');
-                    }
-
-                    // Now associate the temp file with the flash
-                    const addCsrfToken = window.SF_CSRF_TOKEN || document.querySelector('input[name="csrf_token"]')?.value;
-
-                    if (!addCsrfToken) {
-                        throw new Error('CSRF token not found');
-                    }
-
-                    const addData = new URLSearchParams();
-                    addData.append('flash_id', flashId);
-                    addData.append('temp_filename', data.filename);
-                    addData.append('original_filename', data.original_filename);
-                    addData.append('csrf_token', addCsrfToken);
-
-                    return fetch(`${baseUrl}/app/api/add_extra_image.php`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: addData.toString(),
-                        credentials: 'same-origin'
-                    });
-                })
-                .then(res => res.json())
-                .then(addResult => {
-                    loadingItem.remove();
-
-                    if (addResult.ok) {
-                        // Add the new image to the grid dynamically
-                        const newImage = {
-                            id: addResult.id,
-                            url: addResult.url,
-                            thumb_url: addResult.thumb_url,
-                            filename: addResult.filename,
-                            original_filename: addResult.original_filename
-                        };
-
-                        // Create and append the new item (with delete button since it's an extra image)
-                        const item = createViewItem(newImage, true, baseUrl, () => {
-                            // Check if grid is empty after deletion
-                            if (grid.querySelectorAll('.sf-gallery-item').length === 0) {
-                                grid.style.display = 'none';
-                                if (noImages) noImages.style.display = 'block';
-                            }
-                        });
-                        grid.appendChild(item);
-
-                        // Show success notification
-                        const successMsg = (window.SF_TERMS && window.SF_TERMS['upload_success']) || 'Kuva ladattu onnistuneesti';
-                        if (typeof window.sfToast === 'function') {
-                            window.sfToast('success', successMsg);
-                        }
-
-                        resolve();
-                    } else {
-                        throw new Error(addResult.error || 'Failed to save image');
-                    }
-                })
-                .catch(err => {
-                    loadingItem.remove();
-                    const errorMsg = (window.SF_TERMS && window.SF_TERMS['upload_error']) || 'Lataus epäonnistui';
-                    const fullMsg = errorMsg + ': ' + err.message;
-                    if (typeof window.sfToast === 'function') {
-                        window.sfToast('error', fullMsg);
-                    } else {
-                        alert(fullMsg);
-                    }
-                    console.error('Upload error:', err);
-                    reject(err);
-                });
         });
+
+        if (pendingItem && pendingItem.element && pendingItem.element.parentNode) {
+            pendingItem.element.replaceWith(item);
+            if (pendingItem.objectUrl) {
+                URL.revokeObjectURL(pendingItem.objectUrl);
+            }
+        } else {
+            grid.appendChild(item);
+        }
     }
 })();

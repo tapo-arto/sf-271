@@ -79,7 +79,7 @@ try {
     $file = $_FILES['image'];
 
     // Validate file type
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     if ($finfo === false) {
         echo json_encode(['ok' => false, 'error' => 'Failed to initialize file type checker']);
@@ -95,7 +95,7 @@ try {
     }
 
     if (!in_array($mimeType, $allowedTypes, true)) {
-        echo json_encode(['ok' => false, 'error' => 'Invalid file type. Allowed: JPEG, PNG, GIF, WEBP']);
+        echo json_encode(['ok' => false, 'error' => 'Invalid file type. Allowed: JPEG, PNG, GIF, WEBP, HEIC, HEIF']);
         exit;
     }
 
@@ -111,7 +111,9 @@ try {
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/gif' => 'gif',
-        'image/webp' => 'webp'
+        'image/webp' => 'webp',
+        'image/heic' => 'heic',
+        'image/heif' => 'heif'
     ];
     $ext = $extensionMap[$mimeType] ?? 'jpg';
 
@@ -138,7 +140,11 @@ try {
             echo json_encode(['ok' => false, 'error' => 'Failed to process image']);
             exit;
         }
-        error_log("Failed to resize extra image, using original: $filename");
+        if ($mimeType === 'image/heic' || $mimeType === 'image/heif') {
+            error_log("HEIC/HEIF resize unavailable, using original extra image: $filename");
+        } else {
+            error_log("Failed to resize extra image, using original: $filename");
+        }
     } else {
         // Remove temporary file after successful processing
         @unlink($tempUploadPath);
