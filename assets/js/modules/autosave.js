@@ -16,7 +16,14 @@ export const autoSave = {
     init() {
         // Check if we're editing an existing flash
         const idInput = document.querySelector('input[name="id"]');
-        this.isEditing = idInput && idInput.value;
+        const relatedFlashElement = document.getElementById('sf-related-flash-id');
+        const hasNonEmptyValue = (element) => !!element?.value?.trim();
+        const hasId = hasNonEmptyValue(idInput);
+        const hasRelatedFlash = hasNonEmptyValue(relatedFlashElement);
+
+        // Investigation flash creation can include id in URL/context, but should still autosave
+        const isCreatingInvestigation = hasId && hasRelatedFlash;
+        this.isEditing = hasId && !isCreatingInvestigation;
 
         // Don't autosave when editing existing flashes
         if (this.isEditing) {
