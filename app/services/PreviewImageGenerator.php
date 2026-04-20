@@ -10,6 +10,7 @@
  */
 
 declare(strict_types=1);
+require_once __DIR__ . '/../includes/preview_thumbnail.php';
 
 class PreviewImageGenerator
 {
@@ -224,6 +225,7 @@ class PreviewImageGenerator
             if (!file_exists($outputPath1)) {
                 throw new RuntimeException('Output file was not created: ' . $outputPath1);
             }
+            sf_generate_preview_thumbnail($outputPath1);
             
             error_log("PreviewImageGenerator: Card 1 generated successfully: {$filename1}");
             
@@ -246,6 +248,7 @@ class PreviewImageGenerator
                     error_log("PreviewImageGenerator: Card 2 file was not created, returning only card 1");
                     return $filename1;
                 }
+                sf_generate_preview_thumbnail($outputPath2);
                 
                 error_log("PreviewImageGenerator: Card 2 generated successfully: {$filename2}");
                 

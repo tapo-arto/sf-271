@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../includes/protect.php';   // auth + CSRF
 require_once __DIR__ . '/../includes/log_app.php';
+require_once __DIR__ . '/../includes/preview_thumbnail.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -160,6 +161,7 @@ if (@file_put_contents($path, $jpegBinary, LOCK_EX) === false) {
     sf_json(['ok' => false, 'error' => 'Failed to save preview'], 500);
 }
 @chmod($path, 0640);
+sf_generate_preview_thumbnail($path);
 
 // Return URL (relative)
 $base = rtrim((string)($config['base_url'] ?? ''), '/');
