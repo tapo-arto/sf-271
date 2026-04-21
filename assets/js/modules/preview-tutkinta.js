@@ -78,6 +78,7 @@ class PreviewTutkintaClass extends PreviewCore {
             min: 14,      // Minimum base size for auto mode
             step: 1       // Step size when searching for optimal size
         };
+        this.FONT_SIZE_UNIT = 'pt';
 
         // Layout constraint constants for card fitting calculations
         this.CARD_LAYOUT = {
@@ -1080,7 +1081,7 @@ class PreviewTutkintaClass extends PreviewCore {
             } else {
                 const clamped = Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, baseSize));
                 hiddenInput.value = String(clamped);
-                valueElement.textContent = `${clamped} pt`;
+                valueElement.textContent = `${clamped} ${this.FONT_SIZE_UNIT}`;
                 autoButton.classList.remove('selected');
             }
         };

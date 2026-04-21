@@ -79,7 +79,7 @@ $lang_val = $flash['lang'] ?? 'fi';
                         <?= htmlspecialchars(sf_term('font_size_auto', $uiLang) ?? 'Auto', ENT_QUOTES, 'UTF-8') ?>
                     </button>
                     <button type="button" class="sf-font-size-btn sf-font-size-step-btn" id="sfFontSizeDecreaseBtn" aria-label="<?= htmlspecialchars(sf_term('font_size_decrease', $uiLang) ?? 'Decrease text size', ENT_QUOTES, 'UTF-8') ?>">−</button>
-                    <span class="sf-font-size-value" id="sfFontSizeValue">Auto</span>
+                    <span class="sf-font-size-value" id="sfFontSizeValue"><?= htmlspecialchars(sf_term('font_size_auto', $uiLang) ?? 'Auto', ENT_QUOTES, 'UTF-8') ?></span>
                     <button type="button" class="sf-font-size-btn sf-font-size-step-btn" id="sfFontSizeIncreaseBtn" aria-label="<?= htmlspecialchars(sf_term('font_size_increase', $uiLang) ?? 'Increase text size', ENT_QUOTES, 'UTF-8') ?>">+</button>
                 </div>
                 <input type="hidden" name="font_size_override" id="sfFontSizeOverride" value="">

@@ -34,6 +34,7 @@ export class ServerPreview {
             min: 14,
             step: 1
         };
+        this.FONT_SIZE_UNIT = 'pt';
 
         this.CARD_LAYOUT = {
             card1DescMaxHeight: 420,
@@ -778,7 +779,7 @@ export class ServerPreview {
             } else {
                 const clamped = Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, baseSize));
                 hiddenInput.value = String(clamped);
-                valueElement.textContent = `${clamped} pt`;
+                valueElement.textContent = `${clamped} ${this.FONT_SIZE_UNIT}`;
                 autoButton.classList.remove('selected');
             }
         };
