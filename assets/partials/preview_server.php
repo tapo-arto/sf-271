@@ -657,7 +657,7 @@ $lang_val = $flash['lang'] ?? 'fi';
             const fontSizeInput = document.getElementById('sfFontSizeOverride');
             const hiddenValue = fontSizeInput ? (fontSizeInput.value || '') : '';
             const value = hiddenValue.trim();
-            const legacyPresets = { S: 16, M: 18, L: 20, XL: 22, XS: 14 };
+            const legacyPresets = { S: 16, M: 18, L: 20, XL: 22 };
 
             if (!value || value.toLowerCase() === 'auto') {
                 return '';

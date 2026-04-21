@@ -1091,8 +1091,7 @@ class PreviewTutkintaClass extends PreviewCore {
             let baseSize = getCurrentManualBase();
 
             if (baseSize === null) {
-                const autoSizes = this._resolveRenderDecision().sizes;
-                baseSize = autoSizes.description;
+                baseSize = this._calculateOptimalBaseSizeFrom(this.FONT_SIZE_AUTO.max);
             }
 
             const next = Math.max(
