@@ -1288,7 +1288,7 @@ $iconBase = $base .'/assets/img/icons/';
                                     'sent_to_supervisor' => 'supervisor_icon.svg',
                                     'sent_to_review' => 'supervisor_icon.svg',
                                     'sent_to_comms' => 'supervisor_icon.svg',
-                                    'supervisor_approved' => 'publish.svg',
+                                    'supervisor_approved' => 'forward_icon.svg',
 
                                     // Saateviesti / kommentit
                                     'submission_comment' => 'comment.svg',
@@ -1320,7 +1320,7 @@ $iconBase = $base .'/assets/img/icons/';
 
                                     // Ulkoasu / asettelu (UUDET IKONIT)
                                     'grid_layout_changed' => 'layout.svg',
-                                    'appearance_changed' => 'appearance.svg',
+                                    'appearance_changed' => 'edit.svg',
                                     'annotations_changed' => 'annotation.svg',
                                     'original_type_changed' => 'type-change.svg',
 
@@ -1332,7 +1332,7 @@ $iconBase = $base .'/assets/img/icons/';
                                     'display_targets_preselected' => 'display.svg',
                                     'distribution_sent' => 'distribution.svg',
                                 ];
-                                $iconFile = $eventIcons[$eventType] ?? 'info.svg';
+                                $iconFile = $eventIcons[$eventType] ?? 'edit.svg';
                                 
                                 $timeAgo = sf_time_ago($event['created_at'], $currentUiLang);
 
