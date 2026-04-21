@@ -1326,7 +1326,9 @@ $iconBase = $base .'/assets/img/icons/';
 
                                     // Kieliversiot
                                     'translation_saved' => 'globe.svg',
+                                    'translation_created' => 'globe.svg',
                                     'language_version_created' => 'globe.svg',
+                                    'flash_language_version_created' => 'globe.svg',
 
                                     // Jakelu / infonäytöt
                                     'display_targets_preselected' => 'display.svg',
