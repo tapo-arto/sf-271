@@ -60,8 +60,8 @@ class PreviewRenderer
     const HEADERS_SPACING = 100;         // Header boxes + gaps
     const SINGLE_CARD_MAX_HEIGHT = 850;
     const CHAR_WIDTH_RATIO = 0.48;       // Open Sans actual average
-    const FONT_SIZE_AUTO_MAX = 22;
-    const FONT_SIZE_AUTO_MIN = 16;
+    const FONT_SIZE_AUTO_MAX = 24;
+    const FONT_SIZE_AUTO_MIN = 14;
     const FONT_SIZE_AUTO_STEP = 1;
     
     private string $basePath;
@@ -1484,14 +1484,29 @@ class PreviewRenderer
 
     private function getFontSizes(array $data): array
     {
-        $override = $data['font_size_override'] ?? null;
+        $overrideRaw = $data['font_size_override'] ?? null;
+        $override = is_string($overrideRaw) ? trim($overrideRaw) : $overrideRaw;
+        $overrideUpper = is_string($override) ? strtoupper($override) : $override;
+        $overrideLower = is_string($override) ? strtolower($override) : $override;
         $layoutMode = $this->normalizeLayoutMode($data['layout_mode'] ?? 'auto');
         $type = $data['type'] ?? 'yellow';
 
+        $numericOverride = is_numeric($override)
+            ? max(self::FONT_SIZE_AUTO_MIN, min(self::FONT_SIZE_AUTO_MAX, (int) $override))
+            : null;
+
+        $legacyOverride = (is_string($overrideUpper) && isset(self::FONT_PRESETS[$overrideUpper]))
+            ? self::FONT_PRESETS[$overrideUpper]
+            : null;
+
         if ($type === 'green') {
             if ($layoutMode === 'force_double') {
-                if ($override && isset(self::FONT_PRESETS[$override])) {
-                    return $this->calculateAllFontSizes(self::FONT_PRESETS[$override]);
+                if ($numericOverride !== null) {
+                    return $this->calculateAllFontSizes($numericOverride);
+                }
+
+                if ($legacyOverride !== null) {
+                    return $this->calculateAllFontSizes($legacyOverride);
                 }
 
                 return $this->calculateAllFontSizes(self::FONT_SIZE_AUTO_MAX);
@@ -1500,29 +1515,39 @@ class PreviewRenderer
             if ($layoutMode === 'force_single') {
                 $maxBase = self::FONT_SIZE_AUTO_MAX;
 
-                if ($override && isset(self::FONT_PRESETS[$override])) {
-                    $maxBase = self::FONT_PRESETS[$override];
+                if ($numericOverride !== null) {
+                    $maxBase = $numericOverride;
+                } elseif ($legacyOverride !== null) {
+                    $maxBase = $legacyOverride;
                 }
 
                 $baseSize = $this->calculateOptimalBaseSizeFrom($data, $maxBase);
                 return $this->calculateAllFontSizes($baseSize);
             }
 
-            if (!$override || $override === 'auto') {
+            if ($override === null || $override === '' || $overrideLower === 'auto') {
                 $baseSize = $this->calculateOptimalBaseSizeFrom($data, self::FONT_SIZE_AUTO_MAX);
                 return $this->calculateAllFontSizes($baseSize);
             }
 
-            if (isset(self::FONT_PRESETS[$override])) {
-                return $this->calculateAllFontSizes(self::FONT_PRESETS[$override]);
+            if ($numericOverride !== null) {
+                return $this->calculateAllFontSizes($numericOverride);
+            }
+
+            if ($legacyOverride !== null) {
+                return $this->calculateAllFontSizes($legacyOverride);
             }
 
             $baseSize = $this->calculateOptimalBaseSizeFrom($data, self::FONT_SIZE_AUTO_MAX);
             return $this->calculateAllFontSizes($baseSize);
         }
 
-        if ($override && isset(self::FONT_PRESETS[$override])) {
-            return $this->calculateAllFontSizes(self::FONT_PRESETS[$override]);
+        if ($numericOverride !== null) {
+            return $this->calculateAllFontSizes($numericOverride);
+        }
+
+        if ($legacyOverride !== null) {
+            return $this->calculateAllFontSizes($legacyOverride);
         }
 
         return $this->calculateAllFontSizes(self::FONT_SIZE_AUTO_MAX);
