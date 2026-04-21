@@ -193,6 +193,20 @@ try {
         }
     }
 
+    $existingTranslationStmt = $pdo->prepare('
+        SELECT id
+        FROM sf_flashes
+        WHERE (id = :gid OR translation_group_id = :gid2)
+          AND lang = :lang
+        LIMIT 1
+    ');
+    $existingTranslationStmt->execute([
+        ':gid' => $groupId,
+        ':gid2' => $groupId,
+        ':lang' => $newLang,
+    ]);
+    $hadExistingTranslation = (bool) $existingTranslationStmt->fetchColumn();
+
     // Insert new language version
     $ins = $pdo->prepare('
         INSERT INTO sf_flashes
@@ -267,25 +281,31 @@ try {
 
     if ($newId) {
         $logFlashId = (int) $groupId;
+        $batchId = sf_log_generate_batch_id();
         $statusLabel = function_exists('sf_status_label') ? sf_status_label($state, $currentUiLang) : $state;
-
-        $descTemplate = sf_term('log_translation_saved', $currentUiLang);
+        $eventType = $hadExistingTranslation ? 'translation_saved' : 'translation_created';
+        $descTemplate = sf_term($hadExistingTranslation ? 'log_translation_saved' : 'log_translation_created', $currentUiLang);
         $statusPrefix = sf_term('log_status_prefix', $currentUiLang);
-        $desc = str_replace('{lang}', $newLang, $descTemplate) . ". {$statusPrefix}: {$statusLabel}.";
+        $desc = str_replace('{lang}', $newLang, $descTemplate);
+        if ($desc === $descTemplate) {
+            $desc .= ': ' . $newLang;
+        }
+        $desc .= ". {$statusPrefix}: {$statusLabel}.";
 
         if (function_exists('sf_log_event')) {
-            sf_log_event($logFlashId, 'translation_saved', $desc);
+            sf_log_event($logFlashId, $eventType, $desc, $batchId);
         } else {
             $log = $pdo->prepare("
-                INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
-                VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+                INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+                VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
             ");
             $userId = $_SESSION['user_id'] ?? null;
             $log->execute([
                 ':flash_id'   => $logFlashId,
                 ':user_id'    => $userId,
-                ':event_type' => 'translation_saved',
+                ':event_type' => $eventType,
                 ':description'=> $desc,
+                ':batch_id'   => $batchId,
             ]);
         }
 

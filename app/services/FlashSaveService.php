@@ -73,6 +73,10 @@ class FlashSaveService
         // 4. Detect changes
         $changes = $this->detectChanges($flash, $data);
         
+        $logFlashId = !empty($flash['translation_group_id'])
+            ? (int)$flash['translation_group_id']
+            : $flashId;
+
         // 5. Update database (state NEVER changes in inline edit)
         $resolvedGridBitmap = $this->updateFlash($flashId, $data, $flash);
 
@@ -121,13 +125,13 @@ class FlashSaveService
 
         // Per-image: detect image swap – store term key, view.php translates at render time
         if ((string)($flash['image_main'] ?? '') !== $newImageMain) {
-            sf_log_event($flashId, 'image_1_changed', 'log_image_1_changed', $batchId);
+            sf_log_event($logFlashId, 'image_1_changed', 'log_image_1_changed', $batchId);
         }
         if ((string)($flash['image_2'] ?? '') !== $newImage2) {
-            sf_log_event($flashId, 'image_2_changed', 'log_image_2_changed', $batchId);
+            sf_log_event($logFlashId, 'image_2_changed', 'log_image_2_changed', $batchId);
         }
         if ((string)($flash['image_3'] ?? '') !== $newImage3) {
-            sf_log_event($flashId, 'image_3_changed', 'log_image_3_changed', $batchId);
+            sf_log_event($logFlashId, 'image_3_changed', 'log_image_3_changed', $batchId);
         }
 
         // Per-image: detect transform (repositioning) changes
@@ -140,7 +144,7 @@ class FlashSaveService
             $oldVal = (string)($flash[$dbField] ?? '');
             $newVal = trim((string)($data[$dbField] ?? ''));
             if ($oldVal !== $newVal) {
-                sf_log_event($flashId, $eventType, $termKey, $batchId);
+                sf_log_event($logFlashId, $eventType, $termKey, $batchId);
             }
         }
 
@@ -154,7 +158,7 @@ class FlashSaveService
             $oldVal = (string)($flash[$dbField] ?? '');
             $newVal = trim((string)($data[$dbField] ?? ''));
             if ($oldVal !== $newVal) {
-                sf_log_event($flashId, $eventType, $termKey, $batchId);
+                sf_log_event($logFlashId, $eventType, $termKey, $batchId);
             }
         }
 
@@ -162,7 +166,7 @@ class FlashSaveService
         $oldAnnotations = (string)($flash['annotations_data'] ?? '');
         $newAnnotations = trim((string)($data['annotations_data'] ?? '[]'));
         if ($oldAnnotations !== $newAnnotations) {
-            sf_log_event($flashId, 'annotations_changed', 'log_annotations_changed', $batchId);
+            sf_log_event($logFlashId, 'annotations_changed', 'log_annotations_changed', $batchId);
         }
 
         // Grid layout / bitmap changes
@@ -170,7 +174,7 @@ class FlashSaveService
         $newGridLayout = trim((string)($data['grid_layout'] ?? 'grid-1'));
         $oldGridBitmap = (string)($flash['grid_bitmap'] ?? '');
         if ($oldGridLayout !== $newGridLayout || ($resolvedGridBitmap !== '' && $oldGridBitmap !== $resolvedGridBitmap)) {
-            sf_log_event($flashId, 'grid_layout_changed', 'log_grid_layout_changed', $batchId);
+            sf_log_event($logFlashId, 'grid_layout_changed', 'log_grid_layout_changed', $batchId);
         }
 
         // Appearance settings (font size, layout mode)
@@ -179,7 +183,7 @@ class FlashSaveService
         $oldLayoutMode = (string)($flash['layout_mode'] ?? '');
         $newLayoutMode = !empty($data['layout_mode']) ? trim((string)$data['layout_mode']) : 'auto';
         if ($oldFontSize !== $newFontSize || $oldLayoutMode !== $newLayoutMode) {
-            sf_log_event($flashId, 'appearance_changed', 'log_appearance_changed', $batchId);
+            sf_log_event($logFlashId, 'appearance_changed', 'log_appearance_changed', $batchId);
         }
         
         // 7. Create worker job for image generation
@@ -247,7 +251,7 @@ class FlashSaveService
         ];
         
         foreach ($trackFields as $field) {
-            if (isset($data[$field]) && isset($original[$field])) {
+            if (array_key_exists($field, $data) && array_key_exists($field, $original)) {
                 $oldValue = (string)$original[$field];
                 $newValue = (string)$data[$field];
                 
