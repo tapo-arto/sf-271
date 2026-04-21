@@ -1063,6 +1063,10 @@ class PreviewTutkintaClass extends PreviewCore {
      * Bind font size selector events
      */
     _bindFontSizeSelector() {
+        if (document.getElementById('sfServerPreviewSection')) {
+            return;
+        }
+
         const hiddenInput = document.getElementById('sfFontSizeOverride');
         const autoButton = document.getElementById('sfFontSizeAutoBtn');
         const decreaseButton = document.getElementById('sfFontSizeDecreaseBtn');
@@ -1076,7 +1080,7 @@ class PreviewTutkintaClass extends PreviewCore {
         const renderState = (baseSize) => {
             if (baseSize === null) {
                 hiddenInput.value = '';
-                valueElement.textContent = autoButton.textContent.trim() || 'Auto';
+                valueElement.textContent = '';
                 autoButton.classList.add('selected');
             } else {
                 const clamped = Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, baseSize));
@@ -1118,6 +1122,10 @@ class PreviewTutkintaClass extends PreviewCore {
     }
 
     _bindLayoutModeSelector() {
+        if (document.getElementById('sfServerPreviewSection')) {
+            return;
+        }
+
         const options = document.querySelectorAll('.sf-font-size-option[data-layout-mode]');
 
         options.forEach(option => {
