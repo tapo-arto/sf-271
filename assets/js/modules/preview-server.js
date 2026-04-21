@@ -30,8 +30,8 @@ export class ServerPreview {
         };
 
         this.FONT_SIZE_AUTO = {
-            max: 22,
-            min: 16,
+            max: 24,
+            min: 14,
             step: 1
         };
 
@@ -89,34 +89,49 @@ export class ServerPreview {
      * Get current font sizes based on selector
      */
     _getCurrentFontSizes() {
-        const selectedOption = document.querySelector('.sf-font-size-option.selected[data-size]');
-        const selectedOptionValue = selectedOption?.dataset.size || '';
-
         const fontSizeInput = document.getElementById('sfFontSizeOverride');
-        const hiddenValue = fontSizeInput?.value || '';
-
-        const radioValue = document.querySelector('input[name="font_size"]:checked')?.value || '';
-        const selectedRaw = (selectedOptionValue || hiddenValue || radioValue || 'auto').trim();
-        const selected = selectedRaw.toLowerCase() === 'auto' ? 'auto' : selectedRaw.toUpperCase();
+        const selected = this._parseFontSizeOverride(fontSizeInput?.value || '');
 
         const layoutMode = this._getCurrentLayoutMode();
 
         if (layoutMode === 'force_double') {
-            if (selected !== 'auto' && this.FONT_PRESETS[selected]) {
-                return this._calculateFontSizes(this.FONT_PRESETS[selected]);
+            if (selected !== null) {
+                return this._calculateFontSizes(selected);
             }
             return this._calculateFontSizes(this.FONT_SIZE_AUTO.max);
         }
 
-        let maxBase;
-        if (selected === 'auto') {
-            maxBase = this.FONT_SIZE_AUTO.max;
-        } else {
-            maxBase = this.FONT_PRESETS[selected] || this.FONT_SIZE_AUTO.max;
+        if (layoutMode === 'force_single') {
+            const baseSize = this._calculateOptimalBaseSizeFrom(selected ?? this.FONT_SIZE_AUTO.max);
+            return this._calculateFontSizes(baseSize);
         }
 
+        if (selected !== null) {
+            return this._calculateFontSizes(selected);
+        }
+
+        const maxBase = this.FONT_SIZE_AUTO.max;
         const baseSize = this._calculateOptimalBaseSizeFrom(maxBase);
         return this._calculateFontSizes(baseSize);
+    }
+
+    _parseFontSizeOverride(rawValue) {
+        const value = String(rawValue || '').trim();
+
+        if (!value || value.toLowerCase() === 'auto') {
+            return null;
+        }
+
+        const presetKey = value.toUpperCase();
+        if (this.FONT_PRESETS[presetKey]) {
+            return this.FONT_PRESETS[presetKey];
+        }
+
+        if (Number.isFinite(Number(value))) {
+            return Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, parseInt(value, 10)));
+        }
+
+        return null;
     }
 
     /**
@@ -445,7 +460,7 @@ export class ServerPreview {
             data.set('card_number', String(cardNumber));
 
             const fontSizeInput = document.getElementById('sfFontSizeOverride');
-            const selectedFontSize = fontSizeInput?.value || 'auto';
+            const selectedFontSize = this._parseFontSizeOverride(fontSizeInput?.value || '');
 
             // Also send bitmap overlays if available (grid bitmap is set programmatically in step "Kuvat")
             const gridBitmapInput = document.getElementById('sf-grid-bitmap');
@@ -460,8 +475,8 @@ export class ServerPreview {
             }
 
             // Send font size override if set
-            if (selectedFontSize && selectedFontSize !== 'auto') {
-                data.set('font_size_override', selectedFontSize);
+            if (selectedFontSize !== null) {
+                data.set('font_size_override', String(selectedFontSize));
             }
 
             // Force a fresh render (avoids proxy/browser caching) when requested
@@ -745,30 +760,56 @@ export class ServerPreview {
     }
 
     _bindFontSizeSelector() {
-        const options = document.querySelectorAll('.sf-font-size-option[data-size]');
+        const hiddenInput = document.getElementById('sfFontSizeOverride');
+        const autoButton = document.getElementById('sfFontSizeAutoBtn');
+        const decreaseButton = document.getElementById('sfFontSizeDecreaseBtn');
+        const increaseButton = document.getElementById('sfFontSizeIncreaseBtn');
+        const valueElement = document.getElementById('sfFontSizeValue');
 
-        options.forEach(option => {
-            option.addEventListener('click', () => {
-                const rawValue = option.dataset.size || 'auto';
-                const value = rawValue.toLowerCase() === 'auto' ? 'auto' : rawValue.toUpperCase();
+        if (!hiddenInput || !autoButton || !decreaseButton || !increaseButton || !valueElement) {
+            return;
+        }
 
-                options.forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
+        const renderState = (baseSize) => {
+            if (baseSize === null) {
+                hiddenInput.value = '';
+                valueElement.textContent = autoButton.textContent.trim() || 'Auto';
+                autoButton.classList.add('selected');
+            } else {
+                const clamped = Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, baseSize));
+                hiddenInput.value = String(clamped);
+                valueElement.textContent = `${clamped} pt`;
+                autoButton.classList.remove('selected');
+            }
+        };
 
-                const radio = option.querySelector('input[name="font_size"]');
-                if (radio) {
-                    radio.checked = true;
-                    radio.value = value;
-                }
+        const getCurrentManualBase = () => this._parseFontSizeOverride(hiddenInput.value);
 
-                const hiddenInput = document.getElementById('sfFontSizeOverride');
-                if (hiddenInput) {
-                    hiddenInput.value = value === 'auto' ? '' : value;
-                }
+        const adjust = (delta) => {
+            let baseSize = getCurrentManualBase();
 
-                this.scheduleUpdate();
-            });
+            if (baseSize === null) {
+                baseSize = this._calculateOptimalBaseSizeFrom(this.FONT_SIZE_AUTO.max);
+            }
+
+            const next = Math.max(
+                this.FONT_SIZE_AUTO.min,
+                Math.min(this.FONT_SIZE_AUTO.max, baseSize + delta)
+            );
+
+            renderState(next);
+            this.scheduleUpdate();
+        };
+
+        renderState(getCurrentManualBase());
+
+        autoButton.addEventListener('click', () => {
+            renderState(null);
+            this.scheduleUpdate();
         });
+
+        decreaseButton.addEventListener('click', () => adjust(-1));
+        increaseButton.addEventListener('click', () => adjust(1));
     }
 
     _bindLayoutModeSelector() {

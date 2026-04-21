@@ -838,6 +838,20 @@ return [
     'it' => 'Auto',
     'el' => 'Auto',
 ],
+'font_size_decrease' => [
+    'fi' => 'Pienennä tekstiä',
+    'sv' => 'Minska textstorleken',
+    'en' => 'Decrease text size',
+    'it' => 'Riduci dimensione testo',
+    'el' => 'Μείωση μεγέθους κειμένου',
+],
+'font_size_increase' => [
+    'fi' => 'Suurenna tekstiä',
+    'sv' => 'Öka textstorleken',
+    'en' => 'Increase text size',
+    'it' => 'Aumenta dimensione testo',
+    'el' => 'Αύξηση μεγέθους κειμένου',
+],
 'layout_mode_label' => [
     'fi' => 'Korttijako',
     'sv' => 'Kortlayout',

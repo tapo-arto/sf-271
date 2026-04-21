@@ -70,17 +70,30 @@ function sf_estimate_lines($text, $charsPerLine = SF_GREEN_CHARS_PER_LINE) {
 /**
  * Get font size multiplier based on font_size_override
  * Same multipliers as frontend (preview-server.js)
- * @param string|null $fontSizeOverride Font size override value (S, M, L, XL, auto, or null)
+ * @param mixed $fontSizeOverride Font size override value (numeric, S/M/L/XL, auto, or null)
  * @return float Multiplier to apply to character limits
  */
-function sf_get_font_size_multiplier(?string $fontSizeOverride): float {
-    $multipliers = [
+function sf_get_font_size_multiplier($fontSizeOverride): float {
+    $legacyMultipliers = [
         'S' => 1.4,   // Small font = 140% of base limit (40% more text fits)
         'M' => 1.2,   // Medium font = 120% of base limit (20% more text fits)
         'L' => 1.0,   // Large font = 100% of base limit
         'XL' => 0.85, // XL font = 85% of base limit (15% less text fits)
     ];
-    return $multipliers[$fontSizeOverride] ?? 1.0; // Default to 1.0 for auto/null
+
+    if (is_string($fontSizeOverride)) {
+        $normalized = strtoupper(trim($fontSizeOverride));
+        if (isset($legacyMultipliers[$normalized])) {
+            return $legacyMultipliers[$normalized];
+        }
+    }
+
+    if (is_numeric($fontSizeOverride)) {
+        $size = max(14, min(24, (int) $fontSizeOverride));
+        return 20.0 / $size;
+    }
+
+    return 1.0; // auto/null
 }
 
 /**

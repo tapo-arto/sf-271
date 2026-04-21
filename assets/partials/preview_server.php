@@ -74,27 +74,13 @@ $lang_val = $flash['lang'] ?? 'fi';
             <!-- Font Size Selector - Available for all types -->
             <div id="sfFontSizeSelector" class="sf-font-size-selector">
                 <label class="sf-label"><?= htmlspecialchars(sf_term('font_size_label', $uiLang) ?? 'Text size', ENT_QUOTES, 'UTF-8') ?></label>
-                <div class="sf-font-size-options">
-                    <label class="sf-font-size-option selected" data-size="auto">
-                        <input type="radio" name="font_size" value="auto" checked>
-                        <span class="sf-font-size-btn"><?= htmlspecialchars(sf_term('font_size_auto', $uiLang) ?? 'Auto', ENT_QUOTES, 'UTF-8') ?></span>
-                    </label>
-                    <label class="sf-font-size-option" data-size="S">
-                        <input type="radio" name="font_size" value="S">
-                        <span class="sf-font-size-btn">S</span>
-                    </label>
-                    <label class="sf-font-size-option" data-size="M">
-                        <input type="radio" name="font_size" value="M">
-                        <span class="sf-font-size-btn">M</span>
-                    </label>
-                    <label class="sf-font-size-option" data-size="L">
-                        <input type="radio" name="font_size" value="L">
-                        <span class="sf-font-size-btn">L</span>
-                    </label>
-                    <label class="sf-font-size-option" data-size="XL">
-                        <input type="radio" name="font_size" value="XL">
-                        <span class="sf-font-size-btn">XL</span>
-                    </label>
+                <div class="sf-font-size-stepper" id="sfFontSizeStepper">
+                    <button type="button" class="sf-font-size-btn sf-font-size-auto-btn selected" id="sfFontSizeAutoBtn">
+                        <?= htmlspecialchars(sf_term('font_size_auto', $uiLang) ?? 'Auto', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                    <button type="button" class="sf-font-size-btn sf-font-size-step-btn" id="sfFontSizeDecreaseBtn" aria-label="<?= htmlspecialchars(sf_term('font_size_decrease', $uiLang) ?? 'Decrease text size', ENT_QUOTES, 'UTF-8') ?>">−</button>
+                    <span class="sf-font-size-value" id="sfFontSizeValue">Auto</span>
+                    <button type="button" class="sf-font-size-btn sf-font-size-step-btn" id="sfFontSizeIncreaseBtn" aria-label="<?= htmlspecialchars(sf_term('font_size_increase', $uiLang) ?? 'Increase text size', ENT_QUOTES, 'UTF-8') ?>">+</button>
                 </div>
                 <input type="hidden" name="font_size_override" id="sfFontSizeOverride" value="">
             </div>
@@ -668,20 +654,26 @@ $lang_val = $flash['lang'] ?? 'fi';
         }
 
         function getSelectedFontSize() {
-            const selectedOption = document.querySelector('.sf-font-size-option.selected[data-size]');
-            const selectedOptionValue = selectedOption?.dataset.size || '';
-
             const fontSizeInput = document.getElementById('sfFontSizeOverride');
             const hiddenValue = fontSizeInput ? (fontSizeInput.value || '') : '';
-
-            const radioValue = document.querySelector('input[name="font_size"]:checked')?.value || '';
-            const value = (selectedOptionValue || hiddenValue || radioValue || '').trim();
+            const value = hiddenValue.trim();
+            const legacyPresets = { S: 16, M: 18, L: 20, XL: 22, XS: 14 };
 
             if (!value || value.toLowerCase() === 'auto') {
                 return '';
             }
 
-            return value.toUpperCase();
+            const presetKey = value.toUpperCase();
+            if (legacyPresets[presetKey]) {
+                return String(legacyPresets[presetKey]);
+            }
+
+            if (!Number.isNaN(Number(value))) {
+                const clamped = Math.max(14, Math.min(24, parseInt(value, 10)));
+                return String(clamped);
+            }
+
+            return '';
         }
 
         function getSelectedLayoutMode() {
@@ -956,7 +948,6 @@ $lang_val = $flash['lang'] ?? 'fi';
                 '#sfLayoutMode',
                 'input[name="type"]',
                 'input[name="lang"]',
-                'input[name="font_size"]',
                 'input[name="layout_mode_choice"]'
             ];
 
@@ -970,6 +961,13 @@ $lang_val = $flash['lang'] ?? 'fi';
 
             document.querySelectorAll('.sf-font-size-option[data-layout-mode]').forEach(function(element) {
                 element.addEventListener('click', clearHighResolutionCache);
+            });
+
+            ['#sfFontSizeAutoBtn', '#sfFontSizeDecreaseBtn', '#sfFontSizeIncreaseBtn'].forEach(function(selector) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.addEventListener('click', clearHighResolutionCache);
+                }
             });
 
             const refreshButton = document.getElementById('sfRefreshPreviewBtn');

@@ -135,8 +135,8 @@ class PreviewImageGenerator
     ];
 
     // Font size calculation constants - same as JavaScript
-    private const FONT_SIZE_AUTO_MAX = 22;  // Maximum base size for auto mode
-    private const FONT_SIZE_AUTO_MIN = 12;  // Minimum base size for auto mode
+    private const FONT_SIZE_AUTO_MAX = 24;  // Maximum base size for auto mode
+    private const FONT_SIZE_AUTO_MIN = 14;  // Minimum base size for auto mode
     private const FONT_SIZE_AUTO_STEP = 1;  // Step size when searching for optimal size
 
     // Layout constraint constants for card fitting calculations - same as JavaScript
@@ -376,19 +376,27 @@ class PreviewImageGenerator
      */
     private function getFontSizes(array $flashData): array
     {
-        $override = $flashData['font_size_override'] ?? null;
+        $overrideRaw = $flashData['font_size_override'] ?? null;
+        $override = is_string($overrideRaw) ? trim($overrideRaw) : $overrideRaw;
+        $overrideUpper = is_string($override) ? strtoupper($override) : $override;
+        $overrideLower = is_string($override) ? strtolower($override) : $override;
         $type = $flashData['type'] ?? 'yellow';
 
         if ($type === 'green') {
             // Auto = laske optimaalinen koko yhdelle kortille
-            if (!$override || $override === 'auto') {
+            if ($override === null || $override === '' || $overrideLower === 'auto') {
                 $baseSize = $this->calculateOptimalBaseSizeFrom($flashData, self::FONT_SIZE_AUTO_MAX);
                 return $this->calculateFontSizes($baseSize);
             }
 
+            if (is_numeric($override)) {
+                $size = max(self::FONT_SIZE_AUTO_MIN, min(self::FONT_SIZE_AUTO_MAX, (int) $override));
+                return $this->calculateFontSizes($size);
+            }
+
             // Manuaalinen valinta = käytä täsmälleen käyttäjän valitsemaa kokoa
-            if (isset(self::FONT_PRESETS[$override])) {
-                return $this->calculateFontSizes(self::FONT_PRESETS[$override]);
+            if (is_string($overrideUpper) && isset(self::FONT_PRESETS[$overrideUpper])) {
+                return $this->calculateFontSizes(self::FONT_PRESETS[$overrideUpper]);
             }
 
             // Fallback
@@ -396,8 +404,13 @@ class PreviewImageGenerator
             return $this->calculateFontSizes($baseSize);
         }
 
-        if ($override && isset(self::FONT_PRESETS[$override])) {
-            return $this->calculateFontSizes(self::FONT_PRESETS[$override]);
+        if (is_numeric($override)) {
+            $size = max(self::FONT_SIZE_AUTO_MIN, min(self::FONT_SIZE_AUTO_MAX, (int) $override));
+            return $this->calculateFontSizes($size);
+        }
+
+        if (is_string($overrideUpper) && isset(self::FONT_PRESETS[$overrideUpper])) {
+            return $this->calculateFontSizes(self::FONT_PRESETS[$overrideUpper]);
         }
 
         return $this->calculateFontSizes(self::FONT_SIZE_AUTO_MAX);

@@ -6696,6 +6696,12 @@ input[type="time"]:hover {
     flex-wrap: wrap;
 }
 
+.sf-font-size-stepper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .sf-font-size-option {
     cursor: pointer;
 }
@@ -6721,6 +6727,10 @@ input[type="time"]:hover {
     white-space: nowrap;
 }
 
+.sf-font-size-stepper .sf-font-size-btn {
+    min-height: 41px;
+}
+
 .sf-font-size-btn:hover {
     border-color: #94a3b8;
     background: #f1f5f9;
@@ -6734,9 +6744,38 @@ input[type="time"]:hover {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
-/* Auto button slightly wider */
-.sf-font-size-option[data-size="auto"] .sf-font-size-btn {
+.sf-font-size-auto-btn {
     min-width: 72px;
+}
+
+.sf-font-size-auto-btn.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+
+.sf-font-size-step-btn {
+    min-width: 41px;
+    padding: 0.55rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.sf-font-size-value {
+    min-width: 78px;
+    min-height: 41px;
+    padding: 0.55rem 0.75rem;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .sf-layout-mode-selector {
