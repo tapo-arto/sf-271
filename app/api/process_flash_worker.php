@@ -90,6 +90,7 @@ function sf_get_font_size_multiplier($fontSizeOverride): float {
 
     if (is_numeric($fontSizeOverride)) {
         $size = max(14, min(24, (int) $fontSizeOverride));
+        // Base reference size: 20pt corresponds to legacy L preset multiplier 1.0
         return 20.0 / $size;
     }
 

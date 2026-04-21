@@ -134,7 +134,7 @@ class PreviewImageGenerator
         'XL' => 22,
     ];
 
-    // Font size calculation constants - same as JavaScript
+    // Font size calculation constants - aligned with PreviewRenderer and frontend JS
     private const FONT_SIZE_AUTO_MAX = 24;  // Maximum base size for auto mode
     private const FONT_SIZE_AUTO_MIN = 14;  // Minimum base size for auto mode
     private const FONT_SIZE_AUTO_STEP = 1;  // Step size when searching for optimal size
