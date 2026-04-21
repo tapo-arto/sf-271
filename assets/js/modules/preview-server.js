@@ -771,10 +771,15 @@ export class ServerPreview {
             return;
         }
 
+        if (hiddenInput.dataset.serverFontSizeBound === '1') {
+            return;
+        }
+        hiddenInput.dataset.serverFontSizeBound = '1';
+
         const renderState = (baseSize) => {
             if (baseSize === null) {
                 hiddenInput.value = '';
-                valueElement.textContent = autoButton.textContent.trim() || 'Auto';
+                valueElement.textContent = '';
                 autoButton.classList.add('selected');
             } else {
                 const clamped = Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, baseSize));

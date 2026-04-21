@@ -921,18 +921,24 @@ export function initFormPage() {
     try {
         const serverPreviewSection = document.getElementById('sfServerPreviewSection');
         if (serverPreviewSection) {
-            const form = document.getElementById('sfForm');
-            const previewContainer = document.getElementById('sfServerPreviewWrapper');
+            if (!(window.sfServerPreview && window.sfServerPreview.__sf_inited)) {
+                const form = document.getElementById('sf-form')
+                    || document.getElementById('sfForm')
+                    || document.querySelector('form.sf-form');
+                const previewContainer = document.getElementById('sfServerPreviewWrapper');
 
-            if (form && previewContainer) {
-                const serverPreview = new ServerPreview({
-                    endpoint: '/api/preview.php',
-                    debounce: 500,
-                    container: previewContainer,
-                    form: form
-                });
-                serverPreview.init();
-                console.log('[Bootstrap] Server-side preview initialized');
+                if (form && previewContainer) {
+                    const serverPreview = new ServerPreview({
+                        endpoint: '/api/preview.php',
+                        debounce: 500,
+                        container: previewContainer,
+                        form: form
+                    });
+                    serverPreview.init();
+                    serverPreview.__sf_inited = true;
+                    window.sfServerPreview = serverPreview;
+                    console.log('[Bootstrap] Server-side preview initialized');
+                }
             }
         }
     } catch (e) {
