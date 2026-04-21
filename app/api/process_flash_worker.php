@@ -37,6 +37,9 @@ define('SF_GREEN_MAX_ROOT_CAUSES_ACTIONS_COMBINED_LENGTH', 800);
 // Line-based calculation constants for better accuracy
 define('SF_GREEN_MAX_COLUMN_LINES', 14);  // Max lines that fit in a column on single-slide layout
 define('SF_GREEN_CHARS_PER_LINE', 45);    // Average characters per line
+define('SF_FONT_SIZE_OVERRIDE_MIN', 14);
+define('SF_FONT_SIZE_OVERRIDE_MAX', 24);
+define('SF_FONT_SIZE_REFERENCE', 20.0);   // Legacy L preset base size for multiplier 1.0
 
 /**
  * Estimate the number of lines needed to display text
@@ -89,9 +92,8 @@ function sf_get_font_size_multiplier($fontSizeOverride): float {
     }
 
     if (is_numeric($fontSizeOverride)) {
-        $size = max(14, min(24, (int) $fontSizeOverride));
-        // Base reference size: 20pt corresponds to legacy L preset multiplier 1.0
-        return 20.0 / $size;
+        $size = max(SF_FONT_SIZE_OVERRIDE_MIN, min(SF_FONT_SIZE_OVERRIDE_MAX, (int) $fontSizeOverride));
+        return SF_FONT_SIZE_REFERENCE / $size;
     }
 
     return 1.0; // auto/null
