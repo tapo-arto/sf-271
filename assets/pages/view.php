@@ -1287,7 +1287,7 @@ $iconBase = $base .'/assets/img/icons/';
                                     // Työmaavastaava-flow (käytetään supervisor_icon.svg)
                                     'sent_to_supervisor' => 'supervisor_icon.svg',
                                     'sent_to_review' => 'supervisor_icon.svg',
-                                    'sent_to_comms' => 'supervisor_icon.svg',
+                                    'sent_to_comms' => 'send_forward_icon.svg',
                                     'supervisor_approved' => 'forward_icon.svg',
 
                                     // Saateviesti / kommentit
