@@ -1276,16 +1276,61 @@ $iconBase = $base .'/assets/img/icons/';
                                 
                                 // Määritä ikoni event_type:n perusteella
                                 $eventIcons = [
+                                    // Luonti ja muokkaus
                                     'created' => 'create.svg',
+                                    'investigation_created' => 'type-green.svg',
                                     'updated' => 'edit.svg',
+
+                                    // Tila
                                     'state_changed' => 'status-change.svg',
-                                    'sent_to_review' => 'send.svg',
-                                    'sent_to_comms' => 'send.svg',
+
+                                    // Työmaavastaava-flow (käytetään supervisor_icon.svg)
+                                    'sent_to_supervisor' => 'supervisor_icon.svg',
+                                    'sent_to_review' => 'supervisor_icon.svg',
+                                    'sent_to_comms' => 'supervisor_icon.svg',
+                                    'supervisor_approved' => 'publish.svg',
+
+                                    // Saateviesti / kommentit
+                                    'submission_comment' => 'comment.svg',
+                                    'comment_added' => 'comment.svg',
+
+                                    // Palautus / tietopyyntö (UUSI IKONI – request-info.svg)
+                                    'info_requested' => 'request-info.svg',
+                                    'request_info' => 'request-info.svg',
+
+                                    // Julkaisu ja hyväksyntä
                                     'published' => 'publish.svg',
                                     'approved' => 'approve.svg',
                                     'rejected' => 'reject.svg',
+
+                                    // Arkistointi
                                     'archived' => 'archive.svg',
+                                    'original_archived' => 'archive_icon.svg',
                                     'deleted' => 'delete.svg',
+
+                                    // Kuvat (image.svg kaikille kuvamuutoksille)
+                                    'image_2_changed' => 'image.svg',
+                                    'image_3_changed' => 'image.svg',
+                                    'image_1_repositioned' => 'image.svg',
+                                    'image_2_repositioned' => 'image.svg',
+                                    'image_3_repositioned' => 'image.svg',
+                                    'image_caption_1_changed' => 'image.svg',
+                                    'image_caption_2_changed' => 'image.svg',
+                                    'image_caption_3_changed' => 'image.svg',
+
+                                    // Ulkoasu / asettelu (UUDET IKONIT)
+                                    'grid_layout_changed' => 'layout.svg',
+                                    'appearance_changed' => 'appearance.svg',
+                                    'annotations_changed' => 'annotation.svg',
+                                    'original_type_changed' => 'type-change.svg',
+
+                                    // Kieliversiot
+                                    'translation_saved' => 'globe.svg',
+                                    'language_version_created' => 'globe.svg',
+
+                                    // Jakelu / infonäytöt
+                                    'display_targets_preselected' => 'display.svg',
+                                    'distribution_sent' => 'distribution.svg',
                                 ];
                                 $iconFile = $eventIcons[$eventType] ?? 'info.svg';
                                 
