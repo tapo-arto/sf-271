@@ -128,7 +128,7 @@ export class ServerPreview {
             return this.FONT_PRESETS[presetKey];
         }
 
-        if (Number.isFinite(Number(value))) {
+        if (/^\d+$/.test(value)) {
             return Math.max(this.FONT_SIZE_AUTO.min, Math.min(this.FONT_SIZE_AUTO.max, parseInt(value, 10)));
         }
 

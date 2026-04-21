@@ -93,6 +93,9 @@ function sf_get_font_size_multiplier($fontSizeOverride): float {
 
     if (is_numeric($fontSizeOverride)) {
         $size = max(SF_FONT_SIZE_OVERRIDE_MIN, min(SF_FONT_SIZE_OVERRIDE_MAX, (int) $fontSizeOverride));
+        if ($size <= 0) {
+            return 1.0;
+        }
         return SF_FONT_SIZE_REFERENCE / $size;
     }
 
