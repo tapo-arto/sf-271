@@ -4,7 +4,7 @@
  *
  * Updates the injured body parts for any flash report type.
  * Requires user authentication and CSRF validation.
- * Only the report owner, admin, or safety team member may update.
+ * Uses body-part-specific permission rules so factual injury data can be corrected later too.
  */
 
 declare(strict_types=1);
@@ -71,9 +71,9 @@ try {
         exit;
     }
 
-    // Permission via centralized role/state hierarchy
+    // Permission via body-part-specific role/state hierarchy
     $permissionService = new FlashPermissionService();
-    if (!$permissionService->canEdit($user, $flash)) {
+    if (!$permissionService->canEditBodyParts($user, $flash)) {
         http_response_code(403);
         echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
         exit;

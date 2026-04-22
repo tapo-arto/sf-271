@@ -10,6 +10,7 @@ ini_set('error_log', __DIR__ . '/../../assets/logs/php_errors.log');
 require_once __DIR__ . '/../../app/includes/protect.php';
 require_once __DIR__ .'/../../app/includes/statuses.php';
 require_once __DIR__ . '/../../app/actions/helpers.php';
+require_once __DIR__ . '/../../app/services/FlashPermissionService.php';
 
 $base = rtrim($config['base_url'] ?? '', '/');
 
@@ -632,6 +633,10 @@ $canAddExtraImages = $isOwner || $isAdmin || $isSafety;
 
 // Determine if current user can access report settings (Settings modal, body map for all types)
 $canAccessSettings = !$isArchived && ($isAdmin || $isSafety || $isOwner);
+
+// Body parts can be edited with broader permission rules than other inline settings
+$permissionService = new FlashPermissionService();
+$canEditBodyParts = !$isArchived && $permissionService->canEditBodyParts($currentUser ?: [], $flash);
 
 // Merge existing original flash into investigation report
 // original_type can already be set manually from settings, so the merge button
@@ -1523,7 +1528,7 @@ $iconBase = $base .'/assets/img/icons/';
                             ($flash['original_type'] ?? '') === 'red'
                         );
                         ?>
-                        <?php if ($showBodyMapInTab && $canAccessSettings): ?>
+                        <?php if ($showBodyMapInTab && $canEditBodyParts): ?>
                         <div class="sf-additional-info-bodymap" style="margin-bottom: 1.25rem;">
                             <button type="button" id="sfTabBodyMapBtn"
                                     class="sf-btn sf-btn-secondary"
@@ -4694,7 +4699,7 @@ function closePublishSingleModal() {
 <?php endif; ?>
 
 <!-- Body map button in Lisätiedot tab -->
-<?php if ($canAccessSettings && $showBodyMapInTab): ?>
+<?php if ($canEditBodyParts && $showBodyMapInTab): ?>
 <script>
 (function () {
     'use strict';
