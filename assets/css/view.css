@@ -4360,3 +4360,217 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
     outline: none;
     box-shadow: none;
 }
+
+.sf-language-review-manage-btn {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+}
+
+.sf-language-reviewer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sf-language-reviewer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.sf-language-reviewer-value {
+    color: #374151;
+    font-size: 0.92rem;
+}
+
+.sf-language-reviewer-badge {
+    margin-top: 10px;
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.sf-language-reviews-modal {
+    max-width: 860px;
+}
+
+.sf-language-reviews-info {
+    padding: 10px 12px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1e3a8a;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.sf-language-reviews-persist-info {
+    margin-bottom: 12px;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.sf-language-review-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.sf-language-review-row {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff;
+}
+
+.sf-language-review-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sf-language-review-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.sf-language-review-flag {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sf-language-review-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9ca3af;
+}
+
+.sf-language-review-status-dot.is-ready {
+    background: #16a34a;
+}
+
+.sf-language-review-row-main {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.sf-language-review-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sf-language-review-user-wrap {
+    position: relative;
+}
+
+.sf-language-review-user-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.sf-language-review-user-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    z-index: 60;
+    max-height: 220px;
+    overflow: auto;
+}
+
+.sf-language-review-user-option {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: #fff;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.sf-language-review-user-option:hover {
+    background: #f3f4f6;
+}
+
+.sf-language-review-user-empty {
+    padding: 8px 10px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.sf-language-review-row-foot {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sf-language-review-existing {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.sf-language-review-suggested {
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sf-language-review-inline-btn {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.sf-language-review-inline-btn:hover {
+    background: #f3f4f6;
+}
+
+.sf-language-review-counter {
+    margin-top: 6px;
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+.sf-user-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+}

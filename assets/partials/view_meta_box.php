@@ -153,6 +153,133 @@ $statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash[
     <hr class="meta-separator">
     <?php endif; ?>
 
+    <?php
+    $showLanguageReviewers = in_array((string)($flash['state'] ?? ''), ['to_comms', 'published'], true) && empty($flash['is_archived']);
+    $canManageLanguageReviewers = !empty($isComms) || !empty($isAdmin);
+    $languageReviewerRows = [];
+    $youAreLanguageReviewer = false;
+
+    if ($showLanguageReviewers) {
+        try {
+            $bundleRootId = !empty($flash['translation_group_id'])
+                ? (int)$flash['translation_group_id']
+                : (int)$flash['id'];
+
+            $bundleStmt = $pdo->prepare("
+                SELECT id, lang
+                FROM sf_flashes
+                WHERE id = :gid OR translation_group_id = :gid2
+                ORDER BY FIELD(lang, 'fi', 'sv', 'en', 'it', 'el'), id ASC
+            ");
+            $bundleStmt->execute([':gid' => $bundleRootId, ':gid2' => $bundleRootId]);
+            $bundleRows = $bundleStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $langMeta = [
+                'fi' => ['label' => 'Suomi', 'flag' => '🇫🇮'],
+                'sv' => ['label' => 'Svenska', 'flag' => '🇸🇪'],
+                'en' => ['label' => 'English', 'flag' => '🇬🇧'],
+                'it' => ['label' => 'Italiano', 'flag' => '🇮🇹'],
+                'el' => ['label' => 'Ελληνικά', 'flag' => '🇬🇷'],
+            ];
+
+            foreach ($bundleRows as $bundleRow) {
+                $languageFlashId = (int)$bundleRow['id'];
+                $langCode = (string)($bundleRow['lang'] ?? '');
+
+                $reviewerStmt = $pdo->prepare("
+                    SELECT lr.user_id, lr.assigned_at, u.first_name, u.last_name
+                    FROM sf_flash_language_reviewers lr
+                    LEFT JOIN sf_users u ON u.id = lr.user_id
+                    WHERE lr.flash_id = ?
+                    ORDER BY lr.assigned_at DESC, lr.id DESC
+                    LIMIT 1
+                ");
+                $reviewerStmt->execute([$languageFlashId]);
+                $reviewer = $reviewerStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+                if ($reviewer && (int)($currentUser['id'] ?? 0) === (int)$reviewer['user_id']) {
+                    $youAreLanguageReviewer = ((int)$flash['id'] === $languageFlashId);
+                }
+
+                $languageReviewerRows[] = [
+                    'flash_id' => $languageFlashId,
+                    'lang_code' => $langCode,
+                    'lang_label' => $langMeta[$langCode]['label'] ?? strtoupper($langCode),
+                    'flag' => $langMeta[$langCode]['flag'] ?? '🏳️',
+                    'reviewer' => $reviewer,
+                ];
+            }
+        } catch (Throwable $e) {
+            error_log('view_meta_box.php language reviewers: ' . $e->getMessage());
+        }
+    }
+    ?>
+
+    <?php if ($showLanguageReviewers): ?>
+    <h2 class="section-heading reviewer-section-heading">
+        <span class="section-heading-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+                <circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="section-heading-text">
+            <?= htmlspecialchars(sf_term('language_reviewers_heading', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+        </span>
+        <?php if ($canManageLanguageReviewers): ?>
+            <span class="reviewer-actions">
+                <button
+                    type="button"
+                    class="sf-btn sf-btn-secondary sf-language-review-manage-btn"
+                    id="btnManageLanguageReviews"
+                    data-flash-id="<?= (int)$flash['id'] ?>"
+                >
+                    <?= htmlspecialchars(sf_term('language_reviewers_manage', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                </button>
+            </span>
+        <?php endif; ?>
+    </h2>
+
+    <div class="meta-item">
+        <div class="sf-language-reviewer-list">
+            <?php foreach ($languageReviewerRows as $row): ?>
+                <?php
+                $reviewer = $row['reviewer'];
+                $reviewerName = '';
+                $assignedDate = '';
+                if ($reviewer) {
+                    $reviewerName = trim((string)($reviewer['first_name'] ?? '') . ' ' . (string)($reviewer['last_name'] ?? ''));
+                    $assignedDate = !empty($reviewer['assigned_at']) ? date('d.m.Y', strtotime((string)$reviewer['assigned_at'])) : '';
+                }
+                ?>
+                <div class="sf-language-reviewer-row">
+                    <div>
+                        <strong><?= htmlspecialchars($row['flag'] . ' ' . strtoupper($row['lang_code']), ENT_QUOTES, 'UTF-8') ?></strong>
+                        — <?= htmlspecialchars($row['lang_label'], ENT_QUOTES, 'UTF-8') ?>
+                    </div>
+                    <div class="sf-language-reviewer-value">
+                        <?php if ($reviewer): ?>
+                            <?= htmlspecialchars($reviewerName !== '' ? $reviewerName : ('ID ' . (int)$reviewer['user_id']), ENT_QUOTES, 'UTF-8') ?>
+                            <?php if ($assignedDate !== ''): ?>
+                                (<?= htmlspecialchars($assignedDate, ENT_QUOTES, 'UTF-8') ?>)
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?= htmlspecialchars(sf_term('language_reviews_no_reviewer', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php if ($youAreLanguageReviewer): ?>
+            <div class="sf-language-reviewer-badge">
+                <?= htmlspecialchars(sf_term('language_reviews_you_are_reviewer', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <hr class="meta-separator">
+    <?php endif; ?>
+
     <!-- SISÄLTÖ: Safetyflashin tiedot -->
     <h2 class="section-heading">
         <span class="section-heading-icon" aria-hidden="true">
