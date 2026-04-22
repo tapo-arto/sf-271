@@ -58,6 +58,30 @@ class FlashPermissionService
                 return true;
             }
         }
+
+        // Language reviewer: assigned to a specific language version (by flash_id).
+        // Right persists in to_comms AND published so that typo fixes remain possible
+        // after the flash has been published. Archived flashes are blocked elsewhere
+        // (all calling APIs check is_archived separately).
+        if (in_array($state, ['to_comms', 'published'], true)) {
+            try {
+                $pdo = Database::getInstance();
+                $stmt = $pdo->prepare(
+                    "SELECT 1 FROM sf_flash_language_reviewers
+                     WHERE flash_id = ? AND user_id = ? LIMIT 1"
+                );
+                $stmt->execute([
+                    (int)($flash['id'] ?? 0),
+                    (int)($user['id'] ?? 0),
+                ]);
+                if ($stmt->fetchColumn()) {
+                    return true;
+                }
+            } catch (Throwable $e) {
+                // Table may not exist yet on first run — fall through.
+                error_log('FlashPermissionService language reviewer check failed: ' . $e->getMessage());
+            }
+        }
         
         return false;
     }

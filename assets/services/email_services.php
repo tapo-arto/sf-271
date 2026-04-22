@@ -822,6 +822,89 @@ function sf_mail_to_safety_team(PDO $pdo, int $flashId, string $stateBefore): vo
 }
 
 /**
+ * Send a language review request email to one reviewer for one language version.
+ */
+function sf_mail_to_language_reviewer(
+    PDO $pdo,
+    int $flashId,
+    int $reviewerUserId,
+    string $message,
+    int $fromUserId
+): void {
+    require_once __DIR__ . '/../../assets/lib/sf_terms.php';
+
+    $reviewerStmt = $pdo->prepare("
+        SELECT id, first_name, last_name, email, ui_lang
+        FROM sf_users
+        WHERE id = ? AND is_active = 1
+        LIMIT 1
+    ");
+    $reviewerStmt->execute([$reviewerUserId]);
+    $reviewer = $reviewerStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$reviewer || empty($reviewer['email'])) {
+        return;
+    }
+
+    $flashStmt = $pdo->prepare("
+        SELECT id, title, site, lang
+        FROM sf_flashes
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $flashStmt->execute([$flashId]);
+    $flash = $flashStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$flash) {
+        return;
+    }
+
+    $fromStmt = $pdo->prepare("
+        SELECT first_name, last_name
+        FROM sf_users
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $fromStmt->execute([$fromUserId]);
+    $fromUser = $fromStmt->fetch(PDO::FETCH_ASSOC);
+    $fromName = trim((string)($fromUser['first_name'] ?? '') . ' ' . (string)($fromUser['last_name'] ?? ''));
+    if ($fromName === '') {
+        $fromName = 'SafetyFlash';
+    }
+
+    $lang = (string)($reviewer['ui_lang'] ?? 'fi');
+    if (!in_array($lang, ['fi', 'sv', 'en', 'it', 'el'], true)) {
+        $lang = 'fi';
+    }
+
+    $subject = sf_term('mail_language_review_subject', $lang) . " (ID: {$flashId})";
+    $bodyBase = sf_term('mail_language_review_body', $lang);
+    $persistInfo = sf_term('language_reviews_persists_info', $lang);
+    $flashUrl = sf_build_flash_url($flashId);
+
+    $cleanMessage = trim($message);
+    if ($cleanMessage !== '') {
+        $cleanMessage = mb_substr($cleanMessage, 0, 2000);
+    }
+
+    $bodyParts = [];
+    $bodyParts[] = $bodyBase;
+    $bodyParts[] = sf_term('email_flash_label', $lang) . ': ' . (string)($flash['title'] ?? '');
+    $bodyParts[] = sf_term('meta_site', $lang) . ': ' . (string)($flash['site'] ?? '');
+    $bodyParts[] = sf_term('meta_language', $lang) . ': ' . strtoupper((string)($flash['lang'] ?? ''));
+    $bodyParts[] = sf_term('email_open_flash_label', $lang) . ': ' . $flashUrl;
+    $bodyParts[] = sf_term('email_message_from_safety_team', $lang) . ': ' . $fromName;
+    if ($cleanMessage !== '') {
+        $bodyParts[] = sf_term('email_comment_label', $lang) . ': ' . $cleanMessage;
+    }
+    $bodyParts[] = $persistInfo;
+
+    $textBody = implode("\n\n", array_filter($bodyParts, static fn($part) => trim((string)$part) !== ''));
+
+    $htmlBody = nl2br(htmlspecialchars($textBody, ENT_QUOTES, 'UTF-8'));
+
+    sf_send_email($subject, $htmlBody, $textBody, [(string)$reviewer['email']], [], $flashId);
+}
+
+/**
  * Tekijälle: turvatiimi pyytää lisätietoja (request_info).
  * Tämä EI mene rooliryhmille, vaan vain Safetyflashin luojalle.
  */

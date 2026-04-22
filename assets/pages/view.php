@@ -136,6 +136,25 @@ try {
     error_log('view.php: Failed to load additional info: ' . $e->getMessage());
 }
 
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS sf_flash_language_reviewers (
+            id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            flash_id    INT UNSIGNED NOT NULL COMMENT 'Target language version id (not group_id)',
+            user_id     INT UNSIGNED NOT NULL,
+            assigned_by INT UNSIGNED NOT NULL,
+            assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            message     TEXT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_flash_user (flash_id, user_id),
+            KEY idx_flash (flash_id),
+            KEY idx_user  (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+} catch (Throwable $e) {
+    error_log('view.php: Failed to ensure sf_flash_language_reviewers table: ' . $e->getMessage());
+}
+
 // Check if user can manage reviewers (admin, safety team, or original creator)
 $canManageReviewers = false;
 if ($currentUser) {
@@ -1088,9 +1107,43 @@ $iconBase = $base .'/assets/img/icons/';
                                     $topLevelComments[] = $comment;
                                 }
                             }
+
+                            $renderUserTagsInComment = function (string $text) use ($pdo, $currentUiLang): string {
+                                $nameCache = [];
+                                $fallbackUserLabel = sf_term('audit_col_user', $currentUiLang);
+                                $result = '';
+                                $cursor = 0;
+                                if (preg_match_all('/@\[user:(\d+)\]/', $text, $matches, PREG_OFFSET_CAPTURE)) {
+                                    foreach ($matches[0] as $index => $fullMatch) {
+                                        $token = (string)$fullMatch[0];
+                                        $offset = (int)$fullMatch[1];
+                                        $uid = (int)($matches[1][$index][0] ?? 0);
+
+                                        $result .= htmlspecialchars(substr($text, $cursor, $offset - $cursor), ENT_QUOTES, 'UTF-8');
+
+                                        if (!isset($nameCache[$uid])) {
+                                            $userStmt = $pdo->prepare("SELECT first_name, last_name FROM sf_users WHERE id = ? LIMIT 1");
+                                            $userStmt->execute([$uid]);
+                                            $row = $userStmt->fetch(PDO::FETCH_ASSOC);
+                                            if ($row) {
+                                                $name = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+                                                $nameCache[$uid] = $name !== '' ? $name : ($fallbackUserLabel . ' #' . $uid);
+                                            } else {
+                                                $nameCache[$uid] = $fallbackUserLabel . ' #' . $uid;
+                                            }
+                                        }
+
+                                        $result .= '<span class="sf-user-tag">@' . htmlspecialchars($nameCache[$uid], ENT_QUOTES, 'UTF-8') . '</span>';
+                                        $cursor = $offset + strlen($token);
+                                    }
+                                }
+
+                                $result .= htmlspecialchars(substr($text, $cursor), ENT_QUOTES, 'UTF-8');
+                                return nl2br($result);
+                            };
                             
                             // Function to render a single comment
-                            function renderComment($comment, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, $isReply = false) {
+                            function renderComment($comment, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, callable $renderUserTagsInComment, $isReply = false) {
                                 $first = trim((string)($comment['first_name'] ?? ''));
                                 $last = trim((string)($comment['last_name'] ?? ''));
                                 $fullName = trim($first . ' ' . $last);
@@ -1122,6 +1175,7 @@ $iconBase = $base .'/assets/img/icons/';
                                 
                                 // Relatiivinen aika
                                 $timeAgo = sf_time_ago($comment['created_at'], $currentUiLang);
+                                $commentHtml = $renderUserTagsInComment($commentText);
                                 
                                 $isOwnComment = ($comment['user_id'] ?? 0) == ($currentUserId ?? 0);
                                 $replyClass = $isReply ? 'sf-comment-reply' : '';
@@ -1145,7 +1199,7 @@ $iconBase = $base .'/assets/img/icons/';
                                             </span>
                                         </div>
                                         <div class="sf-comment-body">
-                                            <?= nl2br(htmlspecialchars($commentText, ENT_QUOTES, 'UTF-8')) ?>
+                                            <?= $commentHtml ?>
                                         </div>
                                         <?php if (!$isSubmissionComment): ?>
                                         <div class="sf-comment-actions">
@@ -1171,7 +1225,7 @@ $iconBase = $base .'/assets/img/icons/';
                                 // Render replies recursively
                                 if (isset($repliesByParent[$comment['id']])) {
                                     foreach ($repliesByParent[$comment['id']] as $reply) {
-                                        renderComment($reply, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, true);
+                                        renderComment($reply, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, $renderUserTagsInComment, true);
                                     }
                                 }
                             }
@@ -1180,7 +1234,7 @@ $iconBase = $base .'/assets/img/icons/';
                                 <?php
                                 // Render all top-level comments with their replies
                                 foreach ($topLevelComments as $topComment) {
-                                    renderComment($topComment, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, false);
+                                    renderComment($topComment, $repliesByParent, $currentUserId, $isAdmin, $currentUiLang, $base, $renderUserTagsInComment, false);
                                 }
                                 ?>
                             </div>
@@ -1293,6 +1347,7 @@ $iconBase = $base .'/assets/img/icons/';
                                     // Saateviesti / kommentit
                                     'submission_comment' => 'comment.svg',
                                     'comment_added' => 'comment.svg',
+                                    'language_review_requested' => 'comment.svg',
 
                                     // Palautus / tietopyyntö (UUSI IKONI – request-info.svg)
                                     'info_requested' => 'request-info.svg',
@@ -3329,6 +3384,7 @@ function updateDeleteModalContent() {
 <?php if ($canAccessSettings): ?>
 <?php require __DIR__ . '/../partials/report_settings_modal.php'; ?>
 <?php endif; ?>
+<?php require __DIR__ . '/../partials/language_reviews_manage_modal.php'; ?>
 
 
 <?php /* Footer action bar siirretty ylös (näkyy heti sivun latautuessa). */ ?>
@@ -3349,6 +3405,7 @@ function updateDeleteModalContent() {
 <script src="<?= sf_asset_url('assets/js/translation.js', $base) ?>"></script>
 <script src="<?= sf_asset_url('assets/js/display-playlist.js', $base) ?>"></script>
 <script src="<?= sf_asset_url('assets/js/comms-modal.js', $base) ?>"></script>
+<script src="<?= sf_asset_url('assets/js/language-reviews.js', $base) ?>"></script>
 <?php if (in_array('display_targets', $actions ?? [])): ?>
 <script src="<?= sf_asset_url('assets/js/display-targets-modal.js', $base) ?>"></script>
 <?php endif; ?>
@@ -3436,6 +3493,26 @@ window.SF_TERMS = {
     confirm_creating_translation: <?php echo json_encode(sf_term('confirm_creating_translation', $currentUiLang)); ?>,
     // Publish summary terms
     publish_yes: <?php echo json_encode(sf_term('publish_yes', $currentUiLang) ?? '✅ Kyllä'); ?>
+};
+window.SF_LANGUAGE_REVIEWS_TERMS = {
+    requestToggle: <?php echo json_encode(sf_term('language_reviews_request_toggle', $currentUiLang)); ?>,
+    suggestedBadge: <?php echo json_encode(sf_term('language_reviews_suggested_badge', $currentUiLang)); ?>,
+    noReviewer: <?php echo json_encode(sf_term('language_reviews_no_reviewer', $currentUiLang)); ?>,
+    noMatches: <?php echo json_encode(sf_term('language_reviews_no_matches', $currentUiLang)); ?>,
+    change: <?php echo json_encode(sf_term('language_reviews_change', $currentUiLang)); ?>,
+    remove: <?php echo json_encode(sf_term('language_reviews_remove', $currentUiLang)); ?>,
+    submitDefault: <?php echo json_encode(sf_term('language_reviews_submit', $currentUiLang)); ?>,
+    submitRequests: <?php echo json_encode(sf_term('language_reviews_submit_requests', $currentUiLang)); ?>,
+    submitUpdates: <?php echo json_encode(sf_term('language_reviews_submit_updates', $currentUiLang)); ?>,
+    reasonUiLangMatch: <?php echo json_encode(sf_term('language_reviews_reason_ui_lang_match', $currentUiLang)); ?>,
+    reasonUiLangMatchHistory: <?php echo json_encode(sf_term('language_reviews_reason_ui_lang_match_history', $currentUiLang)); ?>,
+    reasonUiLangMatchReviewer: <?php echo json_encode(sf_term('language_reviews_reason_ui_lang_match_reviewer', $currentUiLang)); ?>,
+    reasonOther: <?php echo json_encode(sf_term('language_reviews_reason_other', $currentUiLang)); ?>,
+    toastSent: <?php echo json_encode(sf_term('toast_reviews_sent_n', $currentUiLang)); ?>,
+    toastUpdated: <?php echo json_encode(sf_term('toast_reviews_updated', $currentUiLang)); ?>,
+    errorNetwork: <?php echo json_encode(sf_term('error_network', $currentUiLang)); ?>,
+    reviewerRequired: <?php echo json_encode(sf_term('reviewer_select_user', $currentUiLang)); ?>,
+    loading: <?php echo json_encode(sf_term('loading', $currentUiLang) ?: 'Ladataan...'); ?>
 };
 window.SF_FLASH_DATA      = <?php echo json_encode($flashDataForJs); ?>;
 window.SF_SUPPORTED_LANGS = <?php echo json_encode($supportedLangs); ?>;
