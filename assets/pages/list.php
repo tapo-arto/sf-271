@@ -132,38 +132,8 @@ if ($state !== '') {
 }
 
 if ($site !== '') {
-    // Bypass site filter for flashes where the current user has participated
-    // as selected approver (any state) or via safetyflash_logs.
-    $where[] = "(
-        f.site = :site
-        OR (
-            f.selected_approvers IS NOT NULL
-            AND JSON_VALID(f.selected_approvers)
-            AND (
-                JSON_CONTAINS(f.selected_approvers, :site_bypass_uid_json)
-                OR JSON_CONTAINS(f.selected_approvers, :site_bypass_uid_json_str)
-                OR (
-                    JSON_TYPE(JSON_EXTRACT(f.selected_approvers, '$.approver_ids')) = 'ARRAY'
-                    AND (
-                        JSON_CONTAINS(JSON_EXTRACT(f.selected_approvers, '$.approver_ids'), :site_bypass_uid_json2)
-                        OR JSON_CONTAINS(JSON_EXTRACT(f.selected_approvers, '$.approver_ids'), :site_bypass_uid_json_str2)
-                    )
-                )
-            )
-        )
-        OR EXISTS (
-            SELECT 1
-            FROM safetyflash_logs sl
-            WHERE sl.flash_id = COALESCE(f.translation_group_id, f.id)
-              AND sl.user_id = :site_bypass_uid_logs
-        )
-    )";
-    $params[':site']                       = $site;
-    $params[':site_bypass_uid_json']       = (string)$currentUserId;
-    $params[':site_bypass_uid_json_str']   = json_encode((string)$currentUserId);
-    $params[':site_bypass_uid_json2']      = (string)$currentUserId;
-    $params[':site_bypass_uid_json_str2']  = json_encode((string)$currentUserId);
-    $params[':site_bypass_uid_logs']       = $currentUserId;
+    $where[]         = "f.site = :site";
+    $params[':site'] = $site;
 }
 
 if ($q !== '') {
