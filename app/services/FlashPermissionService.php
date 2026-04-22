@@ -61,6 +61,32 @@ class FlashPermissionService
         
         return false;
     }
+
+    /**
+     * Check if user can edit injured body parts with looser rules than generic inline edit.
+     *
+     * Body parts are factual data that may need correction after the report has progressed
+     * in workflow. This keeps normal field editing behind canEdit() while allowing body-part
+     * fixes for creator/selected approvers in non-archived reports (archive gate is enforced
+     * by the API endpoint).
+     *
+     * @param array $user User data with role_id and id
+     * @param array $flash Flash data with state, created_by, and id
+     * @return bool True if user can edit injured body parts
+     */
+    public function canEditBodyParts(array $user, array $flash): bool
+    {
+        if ($this->canEdit($user, $flash)) {
+            return true;
+        }
+
+        if (((int)($flash['created_by'] ?? 0)) === ((int)($user['id'] ?? 0))) {
+            return true;
+        }
+
+        $pdo = Database::getInstance();
+        return ApprovalRouting::isUserSelectedApprover($pdo, (int)($flash['id'] ?? 0), (int)($user['id'] ?? 0));
+    }
     
     /**
      * Check if user can change flash type (red/yellow/green)
