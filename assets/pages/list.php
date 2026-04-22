@@ -132,13 +132,12 @@ if ($state !== '') {
 }
 
 if ($site !== '') {
-    // Bypass site filter for pending_supervisor flashes where the current user is a selected approver,
-    // so that supervisors can see flashes assigned to them regardless of which worksite they belong to.
+    // Bypass site filter for flashes where the current user has participated
+    // as selected approver (any state) or via safetyflash_logs.
     $where[] = "(
         f.site = :site
         OR (
-            f.state = 'pending_supervisor'
-            AND f.selected_approvers IS NOT NULL
+            f.selected_approvers IS NOT NULL
             AND JSON_VALID(f.selected_approvers)
             AND (
                 JSON_CONTAINS(f.selected_approvers, :site_bypass_uid_json)
@@ -152,12 +151,19 @@ if ($site !== '') {
                 )
             )
         )
+        OR EXISTS (
+            SELECT 1
+            FROM safetyflash_logs sl
+            WHERE sl.flash_id = COALESCE(f.translation_group_id, f.id)
+              AND sl.user_id = :site_bypass_uid_logs
+        )
     )";
     $params[':site']                       = $site;
     $params[':site_bypass_uid_json']       = (string)$currentUserId;
     $params[':site_bypass_uid_json_str']   = json_encode((string)$currentUserId);
     $params[':site_bypass_uid_json2']      = (string)$currentUserId;
     $params[':site_bypass_uid_json_str2']  = json_encode((string)$currentUserId);
+    $params[':site_bypass_uid_logs']       = $currentUserId;
 }
 
 if ($q !== '') {
@@ -234,8 +240,7 @@ if (!$isAdmin) {
         OR ({$isSafetyInt} = 1 AND f.state != 'draft')
         OR ({$isCommsInt} = 1 AND f.state = 'to_comms')
         OR (
-            f.state = 'pending_supervisor'
-            AND f.selected_approvers IS NOT NULL
+            f.selected_approvers IS NOT NULL
             AND JSON_VALID(f.selected_approvers)
             AND (
                 JSON_CONTAINS(f.selected_approvers, :vis_uid_json)
@@ -249,6 +254,12 @@ if (!$isAdmin) {
                 )
             )
         )
+        OR EXISTS (
+            SELECT 1
+            FROM safetyflash_logs sl
+            WHERE sl.flash_id = COALESCE(f.translation_group_id, f.id)
+              AND sl.user_id = :vis_uid_logs
+        )
     )";
 
     $params[':vis_uid']              = $currentUserId;
@@ -256,6 +267,7 @@ if (!$isAdmin) {
     $params[':vis_uid_json_str']     = json_encode((string)$currentUserId);
     $params[':vis_uid_json2']        = (string)$currentUserId;
     $params[':vis_uid_json_str2']    = json_encode((string)$currentUserId);
+    $params[':vis_uid_logs']         = $currentUserId;
 }
 
 // --- Sort field mapping ---
