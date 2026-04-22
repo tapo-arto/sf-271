@@ -172,7 +172,7 @@
             const filtered = users.filter((u) => fullName(u).toLowerCase().includes(q)).slice(0, 20);
             dropdown.innerHTML = filtered.length
                 ? filtered.map((u) => `<button type="button" class="sf-language-review-user-option" data-user-id="${Number(u.id)}">${fullName(u)}</button>`).join('')
-                : `<div class="sf-language-review-user-empty">${t('noReviewer', 'Ei osumia')}</div>`;
+                : `<div class="sf-language-review-user-empty">${t('noMatches', 'Ei osumia')}</div>`;
             dropdown.classList.remove('hidden');
 
             qsa('.sf-language-review-user-option', dropdown).forEach((btn) => {

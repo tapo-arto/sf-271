@@ -528,6 +528,13 @@ return [
     'it' => '(nessun revisore)',
     'el' => '(χωρίς ελεγκτή)',
 ],
+'language_reviews_no_matches' => [
+    'fi' => 'Ei osumia',
+    'sv' => 'Inga träffar',
+    'en' => 'No matches',
+    'it' => 'Nessuna corrispondenza',
+    'el' => 'Δεν βρέθηκαν αποτελέσματα',
+],
 'language_reviews_change' => [
     'fi' => 'Vaihda',
     'sv' => 'Byt',

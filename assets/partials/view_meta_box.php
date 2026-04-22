@@ -198,7 +198,7 @@ $statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash[
                 $reviewer = $reviewerStmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
                 if ($reviewer && (int)($currentUser['id'] ?? 0) === (int)$reviewer['user_id']) {
-                    $youAreLanguageReviewer = ((int)$flash['id'] === $languageFlashId);
+                    $youAreLanguageReviewer = $youAreLanguageReviewer || ((int)$flash['id'] === $languageFlashId);
                 }
 
                 $languageReviewerRows[] = [

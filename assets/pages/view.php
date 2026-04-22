@@ -1108,25 +1108,38 @@ $iconBase = $base .'/assets/img/icons/';
                                 }
                             }
 
-                            $renderUserTagsInComment = function (string $text) use ($pdo): string {
+                            $renderUserTagsInComment = function (string $text) use ($pdo, $currentUiLang): string {
                                 $nameCache = [];
-                                $escapedText = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-                                $withTags = preg_replace_callback('/@\[user:(\d+)\]/', function ($m) use ($pdo, &$nameCache) {
-                                    $uid = (int)$m[1];
-                                    if (!isset($nameCache[$uid])) {
-                                        $userStmt = $pdo->prepare("SELECT first_name, last_name FROM sf_users WHERE id = ? LIMIT 1");
-                                        $userStmt->execute([$uid]);
-                                        $row = $userStmt->fetch(PDO::FETCH_ASSOC);
-                                        if ($row) {
-                                            $name = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
-                                            $nameCache[$uid] = $name !== '' ? $name : ('Käyttäjä #' . $uid);
-                                        } else {
-                                            $nameCache[$uid] = 'Käyttäjä #' . $uid;
+                                $fallbackUserLabel = sf_term('audit_col_user', $currentUiLang);
+                                $result = '';
+                                $cursor = 0;
+                                if (preg_match_all('/@\[user:(\d+)\]/', $text, $matches, PREG_OFFSET_CAPTURE)) {
+                                    foreach ($matches[0] as $index => $fullMatch) {
+                                        $token = (string)$fullMatch[0];
+                                        $offset = (int)$fullMatch[1];
+                                        $uid = (int)($matches[1][$index][0] ?? 0);
+
+                                        $result .= htmlspecialchars(substr($text, $cursor, $offset - $cursor), ENT_QUOTES, 'UTF-8');
+
+                                        if (!isset($nameCache[$uid])) {
+                                            $userStmt = $pdo->prepare("SELECT first_name, last_name FROM sf_users WHERE id = ? LIMIT 1");
+                                            $userStmt->execute([$uid]);
+                                            $row = $userStmt->fetch(PDO::FETCH_ASSOC);
+                                            if ($row) {
+                                                $name = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+                                                $nameCache[$uid] = $name !== '' ? $name : ($fallbackUserLabel . ' #' . $uid);
+                                            } else {
+                                                $nameCache[$uid] = $fallbackUserLabel . ' #' . $uid;
+                                            }
                                         }
+
+                                        $result .= '<span class="sf-user-tag">@' . htmlspecialchars($nameCache[$uid], ENT_QUOTES, 'UTF-8') . '</span>';
+                                        $cursor = $offset + strlen($token);
                                     }
-                                    return '<span class="sf-user-tag">@' . htmlspecialchars($nameCache[$uid], ENT_QUOTES, 'UTF-8') . '</span>';
-                                }, $escapedText);
-                                return nl2br($withTags ?: $escapedText);
+                                }
+
+                                $result .= htmlspecialchars(substr($text, $cursor), ENT_QUOTES, 'UTF-8');
+                                return nl2br($result);
                             };
                             
                             // Function to render a single comment
@@ -3485,6 +3498,7 @@ window.SF_LANGUAGE_REVIEWS_TERMS = {
     requestToggle: <?php echo json_encode(sf_term('language_reviews_request_toggle', $currentUiLang)); ?>,
     suggestedBadge: <?php echo json_encode(sf_term('language_reviews_suggested_badge', $currentUiLang)); ?>,
     noReviewer: <?php echo json_encode(sf_term('language_reviews_no_reviewer', $currentUiLang)); ?>,
+    noMatches: <?php echo json_encode(sf_term('language_reviews_no_matches', $currentUiLang)); ?>,
     change: <?php echo json_encode(sf_term('language_reviews_change', $currentUiLang)); ?>,
     remove: <?php echo json_encode(sf_term('language_reviews_remove', $currentUiLang)); ?>,
     submitDefault: <?php echo json_encode(sf_term('language_reviews_submit', $currentUiLang)); ?>,
