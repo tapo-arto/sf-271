@@ -62,6 +62,15 @@
     const filtersForm = document.querySelector('.filters');
     const submitBtn = document.getElementById('filter-submit-btn');
     const clearBtn = document.getElementById('filter-clear-btn');
+    const formType = filtersForm ? filtersForm.querySelector('select[name="type"]') : null;
+    const formOriginalType = filtersForm ? filtersForm.querySelector('select[name="original_type"]') : null;
+    const formState = filtersForm ? filtersForm.querySelector('select[name="state"]') : null;
+    const formSite = filtersForm ? filtersForm.querySelector('select[name="site"]') : null;
+    const formSearch = filtersForm ? filtersForm.querySelector('input[name="q"]') : null;
+    const formDateFrom = filtersForm ? filtersForm.querySelector('input[name="date_from"]') : null;
+    const formDateTo = filtersForm ? filtersForm.querySelector('input[name="date_to"]') : null;
+    const formArchived = filtersForm ? filtersForm.querySelector('select[name="archived"]') : null;
+    const formOnlyOriginals = filtersForm ? filtersForm.querySelector('input[name="only_originals"]') : null;
 
     // New elements for the chip-based filtering
     const searchInput = document.getElementById('sf-search-input');
@@ -77,6 +86,18 @@
     // Optional controls (if missing, we disable only those parts gracefully)
     const hasDateControls = !!(filterDateFrom && filterDateTo);
     const hasArchivedControl = !!filterArchived;
+
+    function syncHiddenFiltersFromForm() {
+        if (formType) filterType.value = formType.value;
+        if (formOriginalType && filterOriginalType) filterOriginalType.value = formOriginalType.value;
+        if (formState) filterState.value = formState.value;
+        if (formSite) filterSite.value = formSite.value;
+        if (formSearch) filterSearch.value = formSearch.value;
+        if (formDateFrom && filterDateFrom) filterDateFrom.value = formDateFrom.value;
+        if (formDateTo && filterDateTo) filterDateTo.value = formDateTo.value;
+        if (formArchived && filterArchived) filterArchived.value = formArchived.value;
+        if (formOnlyOriginals && filterOnlyOriginals) filterOnlyOriginals.checked = formOnlyOriginals.checked;
+    }
 
     // Hide the submit button since filtering is now real-time
     if (submitBtn) {
@@ -1070,8 +1091,11 @@
             url.searchParams.delete('q');
             url.searchParams.delete('date_from');
             url.searchParams.delete('date_to');
-            // Keep 'archived' parameter if user wants to keep that selection
-            // url.searchParams.delete('archived');
+            url.searchParams.delete('only_originals');
+            url.searchParams.delete('archived');
+            url.searchParams.delete('sort');
+            url.searchParams.delete('order');
+            url.searchParams.delete('p');
 
             // Reload page with clean URL to fetch all cards from server
             window.location.href = url.toString();
@@ -1365,6 +1389,7 @@
     if (filtersForm) {
         filtersForm.addEventListener('submit', function (e) {
             e.preventDefault();
+            syncHiddenFiltersFromForm();
             applyListFilters();
         });
     }
@@ -1401,19 +1426,89 @@
         filterOnlyOriginals.addEventListener('change', applyListFilters);
     }
 
+    if (formType) {
+        formType.addEventListener('change', () => {
+            filterType.value = formType.value;
+            applyListFilters();
+        });
+    }
+    if (formOriginalType && filterOriginalType) {
+        formOriginalType.addEventListener('change', () => {
+            filterOriginalType.value = formOriginalType.value;
+            applyListFilters();
+        });
+    }
+    if (formState) {
+        formState.addEventListener('change', () => {
+            filterState.value = formState.value;
+            applyListFilters();
+        });
+    }
+    if (formSite) {
+        formSite.addEventListener('change', () => {
+            filterSite.value = formSite.value;
+            applyListFilters();
+        });
+    }
+    if (formDateFrom && filterDateFrom) {
+        formDateFrom.addEventListener('change', () => {
+            filterDateFrom.value = formDateFrom.value;
+            applyListFilters();
+        });
+    }
+    if (formDateTo && filterDateTo) {
+        formDateTo.addEventListener('change', () => {
+            filterDateTo.value = formDateTo.value;
+            applyListFilters();
+        });
+    }
+    if (formArchived && filterArchived) {
+        formArchived.addEventListener('change', () => {
+            filterArchived.value = formArchived.value;
+            applyListFilters();
+        });
+    }
+    if (formOnlyOriginals && filterOnlyOriginals && formOnlyOriginals !== filterOnlyOriginals) {
+        formOnlyOriginals.addEventListener('change', () => {
+            filterOnlyOriginals.checked = formOnlyOriginals.checked;
+            applyListFilters();
+        });
+    }
+    if (formSearch) {
+        formSearch.addEventListener('input', function () {
+            filterSearch.value = formSearch.value;
+            if (searchInput && searchInput.value !== formSearch.value) {
+                searchInput.value = formSearch.value;
+            }
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(applyListFilters, SEARCH_DEBOUNCE_MS);
+        });
+    }
+
     // ===== CLEAR FILTERS =====
     if (clearBtn) {
         clearBtn.addEventListener('click', function (e) {
             e.preventDefault();
 
             filterType.value = '';
+            if (filterOriginalType) { filterOriginalType.value = ''; }
             filterState.value = '';
             filterSite.value = '';
             filterSearch.value = '';
-            filterDateFrom.value = '';
-            filterDateTo.value = '';
-            filterArchived.value = '';
+            if (filterDateFrom) { filterDateFrom.value = ''; }
+            if (filterDateTo) { filterDateTo.value = ''; }
+            if (filterArchived) { filterArchived.value = ''; }
             if (filterOnlyOriginals) { filterOnlyOriginals.checked = false; }
+            if (searchInput) { searchInput.value = ''; }
+            if (formType) { formType.value = ''; }
+            if (formOriginalType) { formOriginalType.value = ''; }
+            if (formState) { formState.value = ''; }
+            if (formSite) { formSite.value = ''; }
+            if (formSearch) { formSearch.value = ''; }
+            if (formDateFrom) { formDateFrom.value = ''; }
+            if (formDateTo) { formDateTo.value = ''; }
+            if (formArchived) { formArchived.value = ''; }
+            if (formOnlyOriginals) { formOnlyOriginals.checked = false; }
 
             // Reset archived toggle
             toggleBtns.forEach(btn => {
@@ -1445,7 +1540,10 @@
             url.searchParams.delete('date_from');
             url.searchParams.delete('date_to');
             url.searchParams.delete('only_originals');
-            // Keep 'archived' parameter
+            url.searchParams.delete('archived');
+            url.searchParams.delete('sort');
+            url.searchParams.delete('order');
+            url.searchParams.delete('p');
 
             // Reload page
             window.location.href = url.toString();
