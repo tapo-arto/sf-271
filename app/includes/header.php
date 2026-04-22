@@ -308,6 +308,9 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
     <span><?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
 </a>
 
+<?php endif; ?>
+
+<?php if (function_exists('sf_is_admin_or_safety') && sf_is_admin_or_safety()): ?>
 <a href="<?= htmlspecialchars($xiboSummaryUrl, ENT_QUOTES, 'UTF-8') ?>"
    class="sf-nav-link"
    data-tooltip="Xibo Koonti">
