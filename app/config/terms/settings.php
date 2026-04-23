@@ -178,6 +178,13 @@ return [
     'it' => 'Mostra sugli schermi informativi',
     'el' => 'Εμφάνιση στις οθόνες ενημέρωσης',
 ],
+'settings_worksites_default_display_label' => [
+    'fi' => 'Valittu oletuksena infonäytöissä',
+    'sv' => 'Vald som standard på informationsskärmar',
+    'en' => 'Selected by default on info displays',
+    'it' => 'Selezionato per impostazione predefinita sugli schermi informativi',
+    'el' => 'Επιλεγμένο ως προεπιλογή στις οθόνες ενημέρωσης',
+],
 'settings_worksites_action_toggle_lists' => [
     'fi' => 'Työmaalistat',
     'sv' => 'Arbetsplatslistor',
@@ -401,6 +408,13 @@ return [
     'en' => 'Appears in display target selections during publishing (Xibo / Intra / other target).',
     'it' => 'Compare nelle selezioni display target in pubblicazione (Xibo / Intra / altro target).',
     'el' => 'Εμφανίζεται στις επιλογές στόχων οθόνης κατά τη δημοσίευση (Xibo / Intra / άλλος στόχος).',
+],
+'settings_worksites_default_display_desc' => [
+    'fi' => 'Valitaan oletuksena infonäyttökohteeksi safetyflashin julkaisussa.',
+    'sv' => 'Förväljs som informationsskärmsmål när safetyflash publiceras.',
+    'en' => 'Preselected as an info display target when publishing a safetyflash.',
+    'it' => 'Preselezionato come destinazione schermo informativo durante la pubblicazione del safetyflash.',
+    'el' => 'Προεπιλέγεται ως στόχος οθόνης ενημέρωσης κατά τη δημοσίευση safetyflash.',
 ],
 'settings_worksites_visibility_tip' => [
     'fi' => 'Vinkki: Jos työmaa on pelkkä infonäyttökohde (esim. Intra tai aula), laita "Näytä työmaalistoissa" pois päältä ja pidä "Näytä infonäytöissä" päällä.',

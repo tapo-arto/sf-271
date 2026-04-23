@@ -23,12 +23,14 @@
 // Flashin oma kieliversiokohtainen ID (EI translation_group_id)
 $flashId = (int)($flash['id'] ?? 0);
 
-// Hae KAIKKI aktiiviset näytöt (join worksites for site_type)
+// Hae KAIKKI aktiiviset näytöt (join worksites for site_type + visibility/default flags)
 $availableDisplays = [];
 try {
     $stmtDisplays = $pdo->prepare("
         SELECT k.id, k.site, k.site_group, k.label, k.lang, k.sort_order,
-               COALESCE(w.site_type, '') AS site_type
+               COALESCE(w.site_type, '') AS site_type,
+               COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
+               COALESCE(w.is_default_display, 0) AS is_default_display
         FROM sf_display_api_keys k
         LEFT JOIN sf_worksites w ON w.id = k.worksite_id
         WHERE k.is_active = 1
@@ -59,6 +61,21 @@ if (!isset($preselectedIds)) {
 }
 $preselectedIds = array_map('intval', $preselectedIds);
 
+if (($context ?? '') === 'publish') {
+    $defaultDisplayIds = array_map(
+        'intval',
+        array_column(
+            array_filter($availableDisplays, static function (array $display): bool {
+                return (int)($display['is_default_display'] ?? 0) === 1;
+            }),
+            'id'
+        )
+    );
+    if (!empty($defaultDisplayIds)) {
+        $preselectedIds = array_values(array_unique(array_merge($preselectedIds, $defaultDisplayIds)));
+    }
+}
+
 // Maa/kielikartta
 $dtLangMap = [
     'fi' => ['flag' => '🇫🇮', 'name' => sf_term('country_finland', $currentUiLang)],
@@ -73,6 +90,19 @@ $dtByLang = [];
 foreach ($availableDisplays as $dtDisp) {
     $dtLang = $dtDisp['lang'] ?: 'fi';
     $dtByLang[$dtLang][] = $dtDisp;
+}
+
+$priorityDisplays = [];
+$searchOnlyDisplays = [];
+foreach ($availableDisplays as $dtDisp) {
+    $isDisplayOnly = (int)($dtDisp['show_in_worksite_lists'] ?? 1) !== 1;
+    $isUncategorized = trim((string)($dtDisp['site_type'] ?? '')) === '';
+    $isDefaultDisplay = (int)($dtDisp['is_default_display'] ?? 0) === 1;
+    if ($isDisplayOnly || $isUncategorized || $isDefaultDisplay) {
+        $priorityDisplays[] = $dtDisp;
+    } else {
+        $searchOnlyDisplays[] = $dtDisp;
+    }
 }
 ?>
 
@@ -102,11 +132,17 @@ foreach ($availableDisplays as $dtDisp) {
             $dtTunnelIds   = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => ($d['site_type'] ?? '') === 'tunnel'),   'id'));
             $dtOpencastIds = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => ($d['site_type'] ?? '') === 'opencast'), 'id'));
             $dtOtherIds    = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => ($d['site_type'] ?? '') === 'other'),    'id'));
+            $dtDisplayOnlyIds = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => (int)($d['show_in_worksite_lists'] ?? 1) !== 1), 'id'));
+            $dtUncategorizedIds = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => trim((string)($d['site_type'] ?? '')) === ''), 'id'));
+            $dtDefaultIds = array_map('intval', array_column(array_filter($availableDisplays, fn($d) => (int)($d['is_default_display'] ?? 0) === 1), 'id'));
             $dtAllIds      = array_map('intval', array_column($availableDisplays, 'id'));
             $dtAllChipActive      = !empty($dtAllIds)      && empty(array_diff($dtAllIds,      $preselectedIds));
             $dtTunnelChipActive   = !empty($dtTunnelIds)   && empty(array_diff($dtTunnelIds,   $preselectedIds));
             $dtOpencastChipActive = !empty($dtOpencastIds) && empty(array_diff($dtOpencastIds, $preselectedIds));
             $dtOtherChipActive    = !empty($dtOtherIds)    && empty(array_diff($dtOtherIds,    $preselectedIds));
+            $dtDisplayOnlyChipActive = !empty($dtDisplayOnlyIds) && empty(array_diff($dtDisplayOnlyIds, $preselectedIds));
+            $dtUncategorizedChipActive = !empty($dtUncategorizedIds) && empty(array_diff($dtUncategorizedIds, $preselectedIds));
+            $dtDefaultChipActive = !empty($dtDefaultIds) && empty(array_diff($dtDefaultIds, $preselectedIds));
             ?>
             <button type="button"
                     class="sf-dt-special-chip<?= $dtAllChipActive ? ' sf-dt-lang-chip-active' : '' ?>"
@@ -138,6 +174,30 @@ foreach ($availableDisplays as $dtDisp) {
                 <span class="sf-dt-lang-count">(<?= count($dtOtherIds) ?>)</span>
             </button>
             <?php endif; ?>
+            <?php if (!empty($dtDisplayOnlyIds)): ?>
+            <button type="button"
+                    class="sf-dt-special-chip<?= $dtDisplayOnlyChipActive ? ' sf-dt-lang-chip-active' : '' ?>"
+                    data-select="display-only">
+                <?= htmlspecialchars(sf_term('display_targets_display_only_chip', $currentUiLang) ?? 'Vain infonäytöissä', ENT_QUOTES, 'UTF-8') ?>
+                <span class="sf-dt-lang-count">(<?= count($dtDisplayOnlyIds) ?>)</span>
+            </button>
+            <?php endif; ?>
+            <?php if (!empty($dtUncategorizedIds)): ?>
+            <button type="button"
+                    class="sf-dt-special-chip<?= $dtUncategorizedChipActive ? ' sf-dt-lang-chip-active' : '' ?>"
+                    data-select="uncategorized">
+                <?= htmlspecialchars(sf_term('display_targets_uncategorized_chip', $currentUiLang) ?? 'Kategorisoimattomat', ENT_QUOTES, 'UTF-8') ?>
+                <span class="sf-dt-lang-count">(<?= count($dtUncategorizedIds) ?>)</span>
+            </button>
+            <?php endif; ?>
+            <?php if (!empty($dtDefaultIds)): ?>
+            <button type="button"
+                    class="sf-dt-special-chip<?= $dtDefaultChipActive ? ' sf-dt-lang-chip-active' : '' ?>"
+                    data-select="default">
+                <?= htmlspecialchars(sf_term('display_targets_default_chip', $currentUiLang) ?? 'Oletuksena valitut', ENT_QUOTES, 'UTF-8') ?>
+                <span class="sf-dt-lang-count">(<?= count($dtDefaultIds) ?>)</span>
+            </button>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -150,10 +210,48 @@ foreach ($availableDisplays as $dtDisp) {
             <p class="sf-dt-search-hint"><?= htmlspecialchars(sf_term('comms_search_hint', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></p>
         </div>
 
+        <?php if (!empty($priorityDisplays)): ?>
+        <div class="sf-dt-priority-group">
+            <p class="sf-dt-selection-label"><?= htmlspecialchars(sf_term('display_targets_priority_group', $currentUiLang) ?? 'Aina näkyvät näyttökohteet', ENT_QUOTES, 'UTF-8') ?></p>
+            <div class="sf-dt-priority-items">
+                <?php foreach ($priorityDisplays as $dtDisplay): ?>
+                    <?php
+                    $dtIsChecked = in_array((int)$dtDisplay['id'], $preselectedIds, true);
+                    $dtIsDisplayOnly = (int)($dtDisplay['show_in_worksite_lists'] ?? 1) !== 1;
+                    $dtIsUncategorized = trim((string)($dtDisplay['site_type'] ?? '')) === '';
+                    $dtIsDefaultDisplay = (int)($dtDisplay['is_default_display'] ?? 0) === 1;
+                    ?>
+                    <label class="sf-dt-result-item"
+                           data-search="<?= htmlspecialchars(strtolower($dtDisplay['label'] ?? $dtDisplay['site']), ENT_QUOTES, 'UTF-8') ?>"
+                           data-lang="<?= htmlspecialchars($dtDisplay['lang'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                           data-type="<?= htmlspecialchars($dtDisplay['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="checkbox"
+                               class="sf-display-chip-input dt-display-chip-cb"
+                               name="display_targets[<?= $flashId ?>][]"
+                               value="<?= (int)$dtDisplay['id'] ?>"
+                               data-label="<?= htmlspecialchars($dtDisplay['label'] ?? $dtDisplay['site'], ENT_QUOTES, 'UTF-8') ?>"
+                               data-lang="<?= htmlspecialchars($dtDisplay['lang'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                               data-type="<?= htmlspecialchars($dtDisplay['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                               data-display-only="<?= $dtIsDisplayOnly ? '1' : '0' ?>"
+                               data-uncategorized="<?= $dtIsUncategorized ? '1' : '0' ?>"
+                               data-default-display="<?= $dtIsDefaultDisplay ? '1' : '0' ?>"
+                               <?= $dtIsChecked ? 'checked' : '' ?>>
+                        <span class="sf-ws-name"><?= htmlspecialchars($dtDisplay['label'] ?? $dtDisplay['site'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Hakutulokset (piilotettu oletuksena) -->
         <div class="sf-dt-search-results hidden">
-            <?php foreach ($availableDisplays as $dtDisplay): ?>
+            <?php foreach ($searchOnlyDisplays as $dtDisplay): ?>
                 <?php $dtIsChecked = in_array((int)$dtDisplay['id'], $preselectedIds, true); ?>
+                <?php
+                $dtIsDisplayOnly = (int)($dtDisplay['show_in_worksite_lists'] ?? 1) !== 1;
+                $dtIsUncategorized = trim((string)($dtDisplay['site_type'] ?? '')) === '';
+                $dtIsDefaultDisplay = (int)($dtDisplay['is_default_display'] ?? 0) === 1;
+                ?>
                 <label class="sf-dt-result-item hidden"
                        data-search="<?= htmlspecialchars(strtolower($dtDisplay['label'] ?? $dtDisplay['site']), ENT_QUOTES, 'UTF-8') ?>"
                        data-lang="<?= htmlspecialchars($dtDisplay['lang'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
@@ -165,6 +263,9 @@ foreach ($availableDisplays as $dtDisp) {
                            data-label="<?= htmlspecialchars($dtDisplay['label'] ?? $dtDisplay['site'], ENT_QUOTES, 'UTF-8') ?>"
                            data-lang="<?= htmlspecialchars($dtDisplay['lang'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                            data-type="<?= htmlspecialchars($dtDisplay['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                           data-display-only="<?= $dtIsDisplayOnly ? '1' : '0' ?>"
+                           data-uncategorized="<?= $dtIsUncategorized ? '1' : '0' ?>"
+                           data-default-display="<?= $dtIsDefaultDisplay ? '1' : '0' ?>"
                            <?= $dtIsChecked ? 'checked' : '' ?>>
                     <span class="sf-ws-name"><?= htmlspecialchars($dtDisplay['label'] ?? $dtDisplay['site'], ENT_QUOTES, 'UTF-8') ?></span>
                 </label>
