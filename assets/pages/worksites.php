@@ -68,15 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'toggle_visibility' && isset($_POST['id'], $_POST['field'])) {
         $id = (int)$_POST['id'];
         $field = (string)$_POST['field'];
+        $allowedFields = ['show_in_worksite_lists', 'show_in_display_targets'];
 
-        $allowedFields = [
-            'show_in_worksite_lists' => 'show_in_worksite_lists',
-            'show_in_display_targets' => 'show_in_display_targets',
-        ];
+        if (!in_array($field, $allowedFields, true)) {
+            header('Location: ' . $baseUrl . '/index.php?page=worksites');
+            exit;
+        }
 
-        if (isset($allowedFields[$field])) {
-            $column = $allowedFields[$field];
-            $stmt = $pdo->prepare("UPDATE sf_worksites SET {$column} = 1 - {$column} WHERE id = :id");
+        if ($field === 'show_in_worksite_lists') {
+            $stmt = $pdo->prepare("UPDATE sf_worksites SET show_in_worksite_lists = 1 - show_in_worksite_lists WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+        } elseif ($field === 'show_in_display_targets') {
+            $stmt = $pdo->prepare("UPDATE sf_worksites SET show_in_display_targets = 1 - show_in_display_targets WHERE id = :id");
             $stmt->execute([':id' => $id]);
         }
     }
