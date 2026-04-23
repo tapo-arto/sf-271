@@ -192,7 +192,13 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
     try {
         $allActiveDisplayIds = [];
         if ($screensOption === 'all') {
-            $stmtAllDisplays = $pdo->prepare("SELECT id FROM sf_display_api_keys WHERE is_active = 1");
+            $stmtAllDisplays = $pdo->prepare("
+                SELECT k.id
+                FROM sf_display_api_keys k
+                LEFT JOIN sf_worksites w ON w.id = k.worksite_id
+                WHERE k.is_active = 1
+                  AND (w.id IS NULL OR w.show_in_display_targets = 1)
+            ");
             $stmtAllDisplays->execute();
             $allActiveDisplayIds = array_map('intval', $stmtAllDisplays->fetchAll(PDO::FETCH_COLUMN));
         }
