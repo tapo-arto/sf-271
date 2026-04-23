@@ -68,12 +68,12 @@ if ($action === 'add') {
     $siteType = in_array($siteTypeRaw, $allowedSiteTypes, true) ? $siteTypeRaw : null;
 
     $hasVisibilityFields = (string)($_POST['has_visibility_fields'] ?? '') === '1';
-    $showInWorksiteLists = $hasVisibilityFields
-        ? (isset($_POST['show_in_worksite_lists']) ? 1 : 0)
-        : 1;
-    $showInDisplayTargets = $hasVisibilityFields
-        ? (isset($_POST['show_in_display_targets']) ? 1 : 0)
-        : 1;
+    $showInWorksiteLists = 1;
+    $showInDisplayTargets = 1;
+    if ($hasVisibilityFields) {
+        $showInWorksiteLists = array_key_exists('show_in_worksite_lists', $_POST) ? 1 : 0;
+        $showInDisplayTargets = array_key_exists('show_in_display_targets', $_POST) ? 1 : 0;
+    }
 
     // Insert name, is_active, and optional site_type.
     $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active, show_in_worksite_lists, show_in_display_targets) VALUES (?, ?, 1, ?, ?)");
@@ -257,6 +257,93 @@ if (sf_is_fetch()) {
 header("Location: {$base}/index.php?page=settings&tab=worksites&notice={$notice}");
 exit;
     }  
+
+    if ($action === 'toggle_worksite_visibility') {
+        $id = (int)($_POST['worksite_id'] ?? ($_POST['id'] ?? 0));
+        $field = (string)($_POST['field'] ?? '');
+        $allowedFields = ['show_in_worksite_lists', 'show_in_display_targets'];
+        if ($id <= 0 || !in_array($field, $allowedFields, true)) {
+            if (sf_is_fetch()) sf_json(['ok' => false, 'error' => 'Invalid payload'], 400);
+            header("Location: {$base}/index.php?page=settings&tab=worksites&notice=error");
+            exit;
+        }
+
+        $hasExplicitValue = array_key_exists('value', $_POST);
+        if ($hasExplicitValue) {
+            $value = ((int)($_POST['value'] ?? 0) === 1) ? 1 : 0;
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = ? WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('ii', $value, $id);
+        } else {
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = 1 - {$field} WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('i', $id);
+        }
+        $ok = $stmt->execute();
+        $stmt->close();
+
+        $newValue = null;
+        $worksiteName = null;
+        $stmtState = $mysqli->prepare("SELECT name, {$field} FROM sf_worksites WHERE id = ? LIMIT 1");
+        if ($stmtState) {
+            $stmtState->bind_param('i', $id);
+            $stmtState->execute();
+            if (method_exists($stmtState, 'get_result')) {
+                $resState = $stmtState->get_result();
+                $rowState = $resState ? $resState->fetch_assoc() : null;
+                $worksiteName = $rowState ? ($rowState['name'] ?? null) : null;
+                $newValue = $rowState ? (int)($rowState[$field] ?? 0) : null;
+            } else {
+                $nameVal = null;
+                $fieldVal = null;
+                $stmtState->bind_result($nameVal, $fieldVal);
+                if ($stmtState->fetch()) {
+                    $worksiteName = $nameVal;
+                    $newValue = (int)$fieldVal;
+                }
+            }
+            $stmtState->close();
+        }
+
+        if ($ok) {
+            sf_audit_log(
+                'worksite_updated',
+                'worksite',
+                $id,
+                [
+                    'name' => $worksiteName,
+                    'action' => 'toggle_worksite_visibility',
+                    $field => $newValue,
+                ],
+                $currentUser ? (int)$currentUser['id'] : null
+            );
+        }
+
+        $notice = $ok ? 'worksite_saved' : 'error';
+        $uiLang = $_SESSION['ui_lang'] ?? 'fi';
+        $msg = $ok
+            ? (sf_term('worksite_saved', $uiLang) ?: 'Työmaa tallennettu.')
+            : (sf_term('error', $uiLang) ?: 'Toiminto epäonnistui.');
+
+        if (sf_is_fetch()) {
+            sf_json([
+                'ok' => (bool)$ok,
+                'success' => (bool)$ok,
+                'notice' => $notice,
+                'message' => $msg,
+                'id' => $id,
+                'field' => $field,
+                'value' => $newValue,
+            ], $ok ? 200 : 500);
+        }
+
+        header("Location: {$base}/index.php?page=settings&tab=worksites&notice={$notice}");
+        exit;
+    }
 
     if ($action === 'toggle_show_in_lists' || $action === 'toggle_show_in_displays') {
         $id = (int)($_POST['id'] ?? 0);

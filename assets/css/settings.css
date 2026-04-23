@@ -3717,6 +3717,251 @@
         width: 100%;
     }
 }
+
+/* ===== WORKSITES CARD REDESIGN ===== */
+.sf-worksites-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.sf-worksites-toolbar h2 {
+    margin: 0;
+}
+
+.sf-worksites-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.sf-export-menu {
+    position: relative;
+}
+
+.sf-export-menu summary {
+    list-style: none;
+}
+
+.sf-export-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.sf-export-menu-items {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    min-width: 180px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #dbe3ee;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+}
+
+.sf-worksites-filters {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.sf-worksites-filters .sf-input {
+    width: 100%;
+    max-width: 420px;
+}
+
+.sf-worksites-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.sf-filter-chip {
+    border: 1px solid #d1d8e3;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sf-filter-chip:hover {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+}
+
+.sf-filter-chip:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.sf-filter-chip.is-active {
+    color: #ffffff;
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.sf-worksite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.sf-worksite-card {
+    background: #ffffff;
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sf-worksite-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.sf-worksite-card.is-inactive {
+    opacity: 0.82;
+}
+
+.sf-worksite-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.sf-worksite-card-title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.35;
+    color: #0f172a;
+}
+
+.sf-status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.sf-status-badge.is-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sf-status-badge.is-inactive {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.sf-worksite-meta {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+.sf-worksite-section {
+    margin: 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid #edf2f7;
+}
+
+.sf-worksite-section strong {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.sf-worksite-visibility-toggles {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.sf-toggle-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.sf-toggle-row input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #2563eb;
+}
+
+.sf-toggle-row input[type="checkbox"]:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+}
+
+.sf-worksite-card-actions {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid #edf2f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.sf-worksite-primary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.sf-worksite-card-actions .sf-inline-form {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.sf-worksite-modal-visibility {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+@media (max-width: 900px) {
+    .sf-worksites-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 767px) {
+    .sf-worksite-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-worksite-card-actions {
+        align-items: stretch;
+    }
+}
+
 .sf-audit-target-link {
     color: #0f62fe;
     text-decoration: underline;
