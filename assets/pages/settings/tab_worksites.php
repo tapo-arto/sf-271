@@ -47,7 +47,7 @@ $worksitesRes = $mysqli->query(
 if (!$worksitesRes) {
     error_log('tab_worksites: primary query failed: ' . $mysqli->error);
     // Fallback if all columns are not yet migrated
-    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS created_at, NULL AS updated_at, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
+    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS created_at, NULL AS updated_at, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, NULL AS display_api_key, NULL AS display_key_id, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
 }
 if ($worksitesRes) {
     while ($w = $worksitesRes->fetch_assoc()) {
@@ -55,6 +55,9 @@ if ($worksitesRes) {
     }
     $worksitesRes->free();
 }
+
+$visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
+$visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Tulee display-targets -valintoihin julkaisussa (Xibo / Intra / muu kohde).');
 ?>
 
 <div class="sf-settings-section" style="margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0;">
@@ -208,6 +211,14 @@ if ($worksitesRes) {
     </div>
 </div>
 
+<p class="sf-notice sf-notice-info" style="margin:0 0 1rem;">
+    <?= htmlspecialchars(
+        sf_term('settings_worksites_display_only_hint', $currentUiLang) ?? 'Voit lisätä myös pelkkiä näyttökohteita (esim. Intra), jotka eivät näy työmaavalinnoissa safetyflashia luotaessa. Poista sellaiselta rasti kohdasta Näytä työmaalistoissa ja jätä Näytä infonäytöissä päälle.',
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>
+</p>
+
 <?php if (empty($worksites)): ?>
     <p class="sf-notice sf-notice-info">
         <?= htmlspecialchars(
@@ -240,35 +251,44 @@ if ($worksitesRes) {
 <div class="sf-worksites-list" id="sfWorksiteList" role="list">
     <?php foreach ($worksites as $ws): ?>
         <?php
-        $siteTypeKey = $ws['site_type'] ?? null;
-        if ($siteTypeKey === 'tunnel') {
-            $siteTypeLabel = sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa';
-        } elseif ($siteTypeKey === 'opencast') {
-            $siteTypeLabel = sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos';
-        } elseif ($siteTypeKey === 'other') {
-            $siteTypeLabel = sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet';
-        } else {
-            $siteTypeLabel = sf_term('site_type_unspecified', $currentUiLang) ?? 'Määrittämätön';
+        try {
+            $siteTypeKey = $ws['site_type'] ?? null;
+            if ($siteTypeKey === 'tunnel') {
+                $siteTypeLabel = sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa';
+            } elseif ($siteTypeKey === 'opencast') {
+                $siteTypeLabel = sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos';
+            } elseif ($siteTypeKey === 'other') {
+                $siteTypeLabel = sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet';
+            } else {
+                $siteTypeLabel = sf_term('site_type_unspecified', $currentUiLang) ?? 'Määrittämätön';
+            }
+            $flashCount = (int)($ws['active_flash_count'] ?? 0);
+            $isActive = (int)$ws['is_active'] === 1;
+            $showInLists = (int)($ws['show_in_worksite_lists'] ?? 1) === 1;
+            $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
+            $worksiteId = (int)$ws['id'];
+            $worksiteName = (string)($ws['name'] ?? '');
+            $worksiteNameLower = sf_worksite_strtolower($worksiteName);
+            $manageModalId = 'sfWorksiteManageModal' . $worksiteId;
+            $playlistUrl = !empty($ws['display_key_id'])
+                ? (($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'])
+                : '';
+            $slideshowUrl = !empty($ws['display_api_key'])
+                ? (rtrim((string)($baseUrl ?? ''), '/') . '/app/api/display_playlist.php?key=' . urlencode((string)$ws['display_api_key']) . '&format=slideshow')
+                : '';
+        } catch (Throwable $worksiteRenderError) {
+            sf_app_log(
+                'tab_worksites: row render failed for worksite id ' . (int)($ws['id'] ?? 0) . ': ' . $worksiteRenderError->getMessage(),
+                LOG_LEVEL_ERROR
+            );
+            continue;
         }
-        $flashCount = (int)($ws['active_flash_count'] ?? 0);
-        $isActive = (int)$ws['is_active'] === 1;
-        $showInLists = (int)($ws['show_in_worksite_lists'] ?? 1) === 1;
-        $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
-        $worksiteId = (int)$ws['id'];
-        $worksiteName = (string)($ws['name'] ?? '');
-        $manageModalId = 'sfWorksiteManageModal' . $worksiteId;
-        $playlistUrl = !empty($ws['display_key_id'])
-            ? (($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'])
-            : '';
-        $slideshowUrl = !empty($ws['display_api_key'])
-            ? (rtrim((string)($baseUrl ?? ''), '/') . '/app/api/display_playlist.php?key=' . urlencode((string)$ws['display_api_key']) . '&format=slideshow')
-            : '';
         ?>
         <div class="sf-worksite-row"
              role="listitem"
              tabindex="0"
              data-worksite-id="<?= $worksiteId ?>"
-             data-name="<?= htmlspecialchars(sf_worksite_strtolower($worksiteName), ENT_QUOTES, 'UTF-8') ?>"
+             data-name="<?= htmlspecialchars($worksiteNameLower, ENT_QUOTES, 'UTF-8') ?>"
              data-active="<?= $isActive ? '1' : '0' ?>"
              data-lists="<?= $showInLists ? '1' : '0' ?>"
              data-displays="<?= $showInDisplays ? '1' : '0' ?>"
@@ -285,7 +305,7 @@ if ($worksitesRes) {
                 </div>
             </div>
             <div class="sf-worksite-row-toggles" data-no-row-click>
-                <label class="sf-toggle-compact" for="ws-row-lists-<?= $worksiteId ?>">
+                <label class="sf-toggle-compact" for="ws-row-lists-<?= $worksiteId ?>" title="<?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="checkbox"
                            id="ws-row-lists-<?= $worksiteId ?>"
                            class="sf-worksite-visibility-toggle"
@@ -295,7 +315,7 @@ if ($worksitesRes) {
                     <span class="sf-toggle-slider"></span>
                     <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
                 </label>
-                <label class="sf-toggle-compact" for="ws-row-displays-<?= $worksiteId ?>">
+                <label class="sf-toggle-compact" for="ws-row-displays-<?= $worksiteId ?>" title="<?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="checkbox"
                            id="ws-row-displays-<?= $worksiteId ?>"
                            class="sf-worksite-visibility-toggle"
@@ -354,7 +374,7 @@ if ($worksitesRes) {
                                 <span class="sf-toggle-slider"></span>
                                 <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
-                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Näkyy kotityömaan valinnassa, dashboardin suodattimissa, roolikategorioissa ja flashin luontilomakkeessa.', ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?></p>
                             <label class="sf-toggle-compact sf-toggle-compact-modal" for="ws-modal-displays-<?= $worksiteId ?>">
                                 <input type="checkbox"
                                        id="ws-modal-displays-<?= $worksiteId ?>"
@@ -365,7 +385,7 @@ if ($worksitesRes) {
                                 <span class="sf-toggle-slider"></span>
                                 <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
-                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Näkyy safetyflashin julkaisumodalin näyttövalinnoissa.', ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
                     </section>
 
@@ -656,10 +676,12 @@ if ($worksitesRes) {
                             <input type="checkbox" id="ws-show-in-lists" name="show_in_worksite_lists" value="1" checked>
                             <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?>
                         </label>
+                        <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?></p>
                         <label class="sf-checkbox-label" for="ws-show-in-displays">
                             <input type="checkbox" id="ws-show-in-displays" name="show_in_display_targets" value="1" checked>
                             <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
                         </label>
+                        <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
             </div>
