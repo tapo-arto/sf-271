@@ -32,6 +32,7 @@ if (!function_exists('sf_worksite_strtolower')) {
 
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
+$worksitesFallbackLevel = 0;
 try {
     $worksitesRes = $mysqli->query(
         'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
@@ -47,7 +48,8 @@ try {
     );
     if (!$worksitesRes) {
         error_log('tab_worksites: primary query failed: ' . $mysqli->error);
-        // Fallback if all columns are not yet migrated
+        $worksitesFallbackLevel = 1;
+        // Secondary fallback: keep API key join, but avoid optional sf_worksites columns.
         $worksitesRes = $mysqli->query(
             'SELECT w.id, w.name, NULL AS site_type, w.is_active,
                     NULL AS created_at, NULL AS updated_at,
@@ -58,9 +60,46 @@ try {
                LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
               ORDER BY w.name ASC'
         );
+        if (!$worksitesRes) {
+            error_log('tab_worksites: secondary fallback failed: ' . $mysqli->error);
+            $worksitesFallbackLevel = 2;
+            // Minimal fallback: only sf_worksites table, preserve expected shape for UI.
+            $worksitesRes = $mysqli->query(
+                'SELECT id, name, NULL AS site_type, is_active,
+                        NULL AS created_at, NULL AS updated_at,
+                        1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                        NULL AS display_api_key, NULL AS display_key_id,
+                        0 AS active_flash_count
+                   FROM sf_worksites
+                  ORDER BY name ASC'
+            );
+            if (!$worksitesRes) {
+                error_log('tab_worksites: minimal fallback failed: ' . $mysqli->error);
+                $worksitesFallbackLevel = 3;
+                // Ultra-minimal fallback: fill missing fields in PHP.
+                $worksitesRes = $mysqli->query(
+                    'SELECT id, name, is_active
+                       FROM sf_worksites
+                      ORDER BY name ASC'
+                );
+                if (!$worksitesRes) {
+                    error_log('tab_worksites: ultra-minimal fallback failed: ' . $mysqli->error);
+                }
+            }
+        }
     }
     if ($worksitesRes) {
         while ($w = $worksitesRes->fetch_assoc()) {
+            if ($worksitesFallbackLevel >= 3) {
+                $w['site_type'] = null;
+                $w['created_at'] = null;
+                $w['updated_at'] = null;
+                $w['show_in_worksite_lists'] = 1;
+                $w['show_in_display_targets'] = 1;
+                $w['display_api_key'] = null;
+                $w['display_key_id'] = null;
+                $w['active_flash_count'] = 0;
+            }
             $worksites[] = $w;
         }
         $worksitesRes->free();
@@ -68,6 +107,9 @@ try {
 } catch (Throwable $e) {
     error_log('tab_worksites: worksites data fetch failed: ' . $e->getMessage());
 }
+$worksitesFallbackUsed = $worksitesFallbackLevel > 0;
+$tabWorksitesUser = sf_current_user();
+$tabWorksitesIsAdmin = (int)($tabWorksitesUser['role_id'] ?? 0) === 1;
 
 $visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
 $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Tulee display-targets -valintoihin julkaisussa (Xibo / Intra / muu kohde).');
@@ -231,6 +273,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
         'UTF-8'
     ) ?>
 </p>
+
+<?php if ($worksitesFallbackUsed && $tabWorksitesIsAdmin): ?>
+    <p class="sf-notice sf-notice-warning" style="margin:0 0 1rem;color:#b45309;">
+        ⚠️ Huom: Käytössä on yksinkertaistettu työmaalista (admin-näkymä, vain kerran sivulataukseen). Syy: SQL-virhe — katso tuotannon PHP error log.
+    </p>
+<?php endif; ?>
 
 <?php if (empty($worksites)): ?>
     <p class="sf-notice sf-notice-info">

@@ -431,6 +431,7 @@ To apply the worksite visibility migration, run:
 
 ```sql
 source migrations/2026_04_worksite_visibility.sql;
+source migrations/2026_04_worksites_schema_backfill.sql;
 ```
 
 ---
