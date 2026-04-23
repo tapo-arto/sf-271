@@ -21,6 +21,15 @@ if (!function_exists('sf_worksite_format_datetime')) {
     }
 }
 
+if (!function_exists('sf_worksite_strtolower')) {
+    function sf_worksite_strtolower(string $value): string {
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($value, 'UTF-8');
+        }
+        return strtolower($value);
+    }
+}
+
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
 $worksitesRes = $mysqli->query(
@@ -36,6 +45,7 @@ $worksitesRes = $mysqli->query(
       ORDER BY w.name ASC'
 );
 if (!$worksitesRes) {
+    error_log('tab_worksites: primary query failed: ' . $mysqli->error);
     // Fallback if all columns are not yet migrated
     $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS created_at, NULL AS updated_at, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
 }
@@ -258,7 +268,7 @@ if ($worksitesRes) {
              role="listitem"
              tabindex="0"
              data-worksite-id="<?= $worksiteId ?>"
-             data-name="<?= htmlspecialchars(mb_strtolower($worksiteName), ENT_QUOTES, 'UTF-8') ?>"
+             data-name="<?= htmlspecialchars(sf_worksite_strtolower($worksiteName), ENT_QUOTES, 'UTF-8') ?>"
              data-active="<?= $isActive ? '1' : '0' ?>"
              data-lists="<?= $showInLists ? '1' : '0' ?>"
              data-displays="<?= $showInDisplays ? '1' : '0' ?>"
