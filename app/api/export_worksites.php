@@ -24,18 +24,21 @@ $date = date('Y-m-d');
 $pdo = Database::getInstance();
 $worksites = [];
 $stmt = $pdo->query(
-    'SELECT w.id, w.name, w.is_active, k.api_key AS display_api_key,
+    'SELECT w.id, w.name, w.is_active,
+            COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
+            COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
+            k.api_key AS display_api_key,
             COUNT(t.id) AS active_flash_count
      FROM sf_worksites w
      LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
      LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-     GROUP BY w.id, w.name, w.is_active, k.api_key
+     GROUP BY w.id, w.name, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key
      ORDER BY w.name ASC'
 );
 if ($stmt) {
     $worksites = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
-    $stmt2 = $pdo->query('SELECT id, name, is_active, NULL AS display_api_key, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
+    $stmt2 = $pdo->query('SELECT id, name, is_active, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, NULL AS display_api_key, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
     if ($stmt2) {
         $worksites = $stmt2->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -55,6 +58,8 @@ if ($format === 'json') {
             return [
                 'name' => $ws['name'],
                 'is_active' => (int)$ws['is_active'] === 1,
+                'show_in_worksite_lists' => (int)($ws['show_in_worksite_lists'] ?? 1) === 1,
+                'show_in_display_targets' => (int)($ws['show_in_display_targets'] ?? 1) === 1,
                 'api_key' => $ws['display_api_key'] ?? '',
                 'xibo_url' => $xiboUrl,
                 'active_flash_count' => (int)($ws['active_flash_count'] ?? 0),
@@ -76,7 +81,7 @@ echo "\xEF\xBB\xBF";
 $out = fopen('php://output', 'w');
 
 // Header row
-fputcsv($out, ['Työmaa', 'Aktiivinen', 'API-avain', 'Xibo URL', 'Aktiiviset flashit'], ';');
+fputcsv($out, ['Työmaa', 'Aktiivinen', 'Työmaalistoissa', 'Infonäyttövalinnoissa', 'API-avain', 'Xibo URL', 'Aktiiviset flashit'], ';');
 
 foreach ($worksites as $ws) {
     $xiboUrl = '';
@@ -87,6 +92,8 @@ foreach ($worksites as $ws) {
     fputcsv($out, [
         $ws['name'],
         (int)$ws['is_active'] === 1 ? 'Kyllä' : 'Ei',
+        (int)($ws['show_in_worksite_lists'] ?? 1) === 1 ? 'Kyllä' : 'Ei',
+        (int)($ws['show_in_display_targets'] ?? 1) === 1 ? 'Kyllä' : 'Ei',
         $ws['display_api_key'] ?? '',
         $xiboUrl,
         (int)($ws['active_flash_count'] ?? 0),
