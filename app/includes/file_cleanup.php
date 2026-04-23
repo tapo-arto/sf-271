@@ -1,6 +1,7 @@
 <?php
 // app/includes/file_cleanup.php
 declare(strict_types=1);
+require_once __DIR__ . '/preview_thumbnail.php';
 
 /**
  * File cleanup utilities for SafetyFlash images
@@ -43,6 +44,10 @@ function sf_cleanup_flash_files(PDO $pdo, int $flashId): void
             $path = $baseDir . 'previews/' . $flash[$field];
             if (file_exists($path)) {
                 @unlink($path);
+            }
+            $thumbPath = $baseDir . 'previews/' . sf_preview_thumbnail_filename((string)$flash[$field]);
+            if (file_exists($thumbPath)) {
+                @unlink($thumbPath);
             }
         }
     }

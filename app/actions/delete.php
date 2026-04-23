@@ -6,6 +6,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/../includes/statuses.php';
 require_once __DIR__ . '/../includes/audit_log.php';
+require_once __DIR__ . '/../includes/preview_thumbnail.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../includes/log.php';
 require_once __DIR__ . '/../../assets/lib/sf_terms.php';
@@ -244,11 +245,15 @@ $sel = $pdo->prepare("
             // Safe to delete - no other flash uses this file
             $p1 = $prevDirRel . $preview;
             $p2 = $imgDirAlt . $preview;
+            $p3 = $prevDirRel . sf_preview_thumbnail_filename((string)$preview);
             if (is_file($p1)) {
                 @unlink($p1);
             }
             if (is_file($p2)) {
                 @unlink($p2);
+            }
+            if (is_file($p3)) {
+                @unlink($p3);
             }
             unset($safeToDeletePreviews[$preview]);
         }
@@ -258,11 +263,15 @@ $sel = $pdo->prepare("
             // Safe to delete - no other flash uses this file
             $p1 = $prevDirRel . $preview2;
             $p2 = $imgDirAlt . $preview2;
+            $p3 = $prevDirRel . sf_preview_thumbnail_filename((string)$preview2);
             if (is_file($p1)) {
                 @unlink($p1);
             }
             if (is_file($p2)) {
                 @unlink($p2);
+            }
+            if (is_file($p3)) {
+                @unlink($p3);
             }
             unset($safeToDeletePreviews[$preview2]);
         }

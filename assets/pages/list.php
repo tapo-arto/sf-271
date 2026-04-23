@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../app/includes/protect.php';
 require_once __DIR__ . '/../../app/includes/statuses.php';
+require_once __DIR__ . '/../../app/includes/preview_thumbnail.php';
 
 $baseUrl = rtrim($config['base_url'] ?? '', '/');
 
@@ -1054,23 +1055,32 @@ if (!empty($rows)) {
         }
         return $url;
     };
-
     $thumb = "$baseUrl/assets/img/camera-placeholder.png";
     $thumbAbsPath = null;
 
     if (!empty($r['preview_filename'])) {
         $previewFilename = basename((string) $r['preview_filename']);
+        $previewThumbFilename = sf_preview_thumbnail_filename($previewFilename);
         $previewAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $previewFilename;
+        $previewThumbAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $previewThumbFilename;
 
-        if (is_file($previewAbsPathCandidate)) {
+        if (is_file($previewThumbAbsPathCandidate)) {
+            $thumb = "$baseUrl/uploads/previews/" . $previewThumbFilename;
+            $thumbAbsPath = $previewThumbAbsPathCandidate;
+        } elseif (is_file($previewAbsPathCandidate)) {
             $thumb = "$baseUrl/uploads/previews/" . $previewFilename;
             $thumbAbsPath = $previewAbsPathCandidate;
         }
     } elseif (!empty($r['display_snapshot_preview'])) {
         $snapshotFilename = basename((string) $r['display_snapshot_preview']);
+        $snapshotThumbFilename = sf_preview_thumbnail_filename($snapshotFilename);
         $snapshotAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $snapshotFilename;
+        $snapshotThumbAbsPathCandidate = __DIR__ . '/../../uploads/previews/' . $snapshotThumbFilename;
 
-        if (is_file($snapshotAbsPathCandidate)) {
+        if (is_file($snapshotThumbAbsPathCandidate)) {
+            $thumb = "$baseUrl/uploads/previews/" . $snapshotThumbFilename;
+            $thumbAbsPath = $snapshotThumbAbsPathCandidate;
+        } elseif (is_file($snapshotAbsPathCandidate)) {
             $thumb = "$baseUrl/uploads/previews/" . $snapshotFilename;
             $thumbAbsPath = $snapshotAbsPathCandidate;
         }
@@ -1087,6 +1097,7 @@ if (!empty($rows)) {
     }
 
     $siteText    = $r['site'] . (!empty($r['site_detail']) ? " – " . $r['site_detail'] : "");
+    $newCommentCount = max(0, (int)($r['new_comment_count'] ?? 0));
     $groupId     = !empty($r['translation_group_id']) ? (int)$r['translation_group_id'] : (int)$r['id'];
     $translations = $allTranslations[$groupId] ?? [];
     $baseLang    = $r['lang'] ?: 'fi';
@@ -1148,7 +1159,8 @@ if (!empty($rows)) {
      data-archived="<?= htmlspecialchars($cardArchived) ?>"
      data-created="<?= htmlspecialchars($r['created_at'] ?? '') ?>"
      data-occurred="<?= htmlspecialchars($r['occurred_at'] ?? '') ?>"
-     data-updated="<?= htmlspecialchars($r['updated_at'] ?? '') ?>">
+     data-updated="<?= htmlspecialchars($r['updated_at'] ?? '') ?>"
+     data-new-comment-count="<?= (int)$newCommentCount ?>">
 
 <div class="card-thumb-wrapper">
     <a href="<?= $baseUrl ?>/index.php?page=view&id=<?= (int)$r['id'] ?>" class="card-thumb">
@@ -1176,15 +1188,15 @@ if (!empty($rows)) {
         </label>
     <?php endif; ?>
 
-    <?php if (!empty($r['new_comment_count']) && (int)$r['new_comment_count'] > 0): ?>
         <span class="comment-badge"
-              title="<?= (int)$r['new_comment_count'] ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
+              data-role="comment-badge"
+              <?= $newCommentCount > 0 ? '' : 'hidden="hidden"' ?>
+              title="<?= (int)$newCommentCount ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
             <svg class="comment-badge-icon" viewBox="0 0 100 100" fill="currentColor">
                 <path d="M100 10.495v67.2c0 2.212-1.793 4.005-4.005 4.005H68.53c-1.063 0-2.082.422-2.833 1.174L51.412 97.167c-1.564 1.565-4.1 1.565-5.665 0L31.453 82.874c-.751-.751-1.77-1.173-2.833-1.173H4.005C1.793 81.7 0 79.907 0 77.695v-67.2C0 8.283 1.793 6.49 4.005 6.49h91.99C98.207 6.49 100 8.283 100 10.495z"/>
             </svg>
-            <span class="comment-badge-count"><?= (int)$r['new_comment_count'] ?></span>
+            <span class="comment-badge-count" data-role="comment-count"><?= (int)$newCommentCount ?></span>
         </span>
-    <?php endif; ?>
 </div>
 
 <!-- Checkbox #2: LIST/COMPACT-näkymää varten (kortin päätasolla) -->
@@ -1208,7 +1220,7 @@ if (!empty($rows)) {
                 <span class="badge <?= htmlspecialchars($badgeClass) ?>">
                     <?= htmlspecialchars($typeLabel) ?>
                 </span>
-                <span class="status <?= htmlspecialchars($stateClass) ?>">
+                <span class="status <?= htmlspecialchars($stateClass) ?>" data-role="state-badge">
                     <?= htmlspecialchars($stateText) ?>
                 </span>
                 <?php if (!empty($r['is_archived']) && (int)$r['is_archived'] === 1): ?>
@@ -1230,15 +1242,15 @@ if (!empty($rows)) {
                     </span>
                 <?php endif; ?>
 
-                <?php if (!empty($r['new_comment_count']) && (int)$r['new_comment_count'] > 0): ?>
                     <span class="comment-badge-mobile"
-                          title="<?= (int)$r['new_comment_count'] ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
+                          data-role="comment-badge-mobile"
+                          <?= $newCommentCount > 0 ? '' : 'hidden="hidden"' ?>
+                          title="<?= (int)$newCommentCount ?> <?= htmlspecialchars(sf_term('new_comments', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
                         <svg class="comment-badge-mobile-icon" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
                             <path d="M100 10.495v67.2c0 2.212-1.793 4.005-4.005 4.005H68.53c-1.063 0-2.082.422-2.833 1.174L51.412 97.167c-1.564 1.565-4.1 1.565-5.665 0L31.453 82.874c-.751-.751-1.77-1.173-2.833-1.173H4.005C1.793 81.7 0 79.907 0 77.695v-67.2C0 8.283 1.793 6.49 4.005 6.49h91.99C98.207 6.49 100 8.283 100 10.495z"/>
                         </svg>
-                        <span class="comment-badge-mobile-count"><?= (int)$r['new_comment_count'] ?></span>
+                        <span class="comment-badge-mobile-count" data-role="comment-count-mobile"><?= (int)$newCommentCount ?></span>
                     </span>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -1993,6 +2005,13 @@ window.SF_LIST_I18N = {
     sortOldest: <?= json_encode(sf_term('sort_oldest', $currentUiLang), JSON_UNESCAPED_UNICODE) ?>,
     editingIndicator: <?= json_encode(sf_term('editing_indicator', $currentUiLang), JSON_UNESCAPED_UNICODE) ?>
 };
+
+window.SF_LIST_LIVE_UPDATES_CONFIG = {
+    baseUrl: <?= json_encode($baseUrl) ?>,
+    endpoint: <?= json_encode($baseUrl . '/app/api/get_list_updates.php') ?>,
+    pollIntervalMs: 20000,
+    newCommentsLabel: <?= json_encode((string)sf_term('new_comments', $currentUiLang), JSON_UNESCAPED_UNICODE) ?>
+};
 </script>
 
 <!-- Editing indicator polling -->
@@ -2073,3 +2092,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- Preview Polling Module -->
 <script src="<?= sf_asset_url('assets/js/preview-polling.js', $baseUrl) ?>"></script>
+<script src="<?= sf_asset_url('assets/js/list-live-updates.js', $baseUrl) ?>"></script>
