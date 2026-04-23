@@ -266,8 +266,15 @@ exit;
             exit;
         }
 
-        $field = ($action === 'toggle_show_in_lists') ? 'show_in_worksite_lists' : 'show_in_display_targets';
-        $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = 1 - {$field} WHERE id = ?");
+        if ($action === 'toggle_show_in_lists') {
+            $field = 'show_in_worksite_lists';
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET show_in_worksite_lists = 1 - show_in_worksite_lists WHERE id = ?");
+            $stmtState = $mysqli->prepare("SELECT name, show_in_worksite_lists FROM sf_worksites WHERE id = ? LIMIT 1");
+        } else {
+            $field = 'show_in_display_targets';
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET show_in_display_targets = 1 - show_in_display_targets WHERE id = ?");
+            $stmtState = $mysqli->prepare("SELECT name, show_in_display_targets FROM sf_worksites WHERE id = ? LIMIT 1");
+        }
         if (!$stmt) {
             throw new Exception('Prepare failed: ' . $mysqli->error);
         }
@@ -277,7 +284,6 @@ exit;
 
         $newValue = null;
         $worksiteName = null;
-        $stmtState = $mysqli->prepare("SELECT name, {$field} FROM sf_worksites WHERE id = ? LIMIT 1");
         if ($stmtState) {
             $stmtState->bind_param('i', $id);
             $stmtState->execute();
