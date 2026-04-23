@@ -56,8 +56,8 @@ if ($worksitesRes) {
     $worksitesRes->free();
 }
 
-$visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Näkyy työmaavalinnoissa safetyflashia luotaessa sekä työmaasuodattimissa.');
-$visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Näkyy infonäyttöjen (display targets) valinnoissa julkaistaessa.');
+$visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
+$visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Tulee display-targets -valintoihin julkaisussa (Xibo / Intra / muu kohde).');
 ?>
 
 <div class="sf-settings-section" style="margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0;">
@@ -268,9 +268,7 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
             $worksiteId = (int)$ws['id'];
             $worksiteName = (string)($ws['name'] ?? '');
-            $worksiteNameLower = function_exists('mb_strtolower')
-                ? mb_strtolower($worksiteName, 'UTF-8')
-                : strtolower($worksiteName);
+            $worksiteNameLower = sf_worksite_strtolower($worksiteName);
             $manageModalId = 'sfWorksiteManageModal' . $worksiteId;
             $playlistUrl = !empty($ws['display_key_id'])
                 ? (($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'])
@@ -674,12 +672,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                         <?= htmlspecialchars(sf_term('settings_worksites_visibility_heading', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>
                     </p>
                     <div class="sf-worksite-modal-visibility">
-                        <label class="sf-checkbox-label" for="ws-show-in-lists" title="<?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?>">
+                        <label class="sf-checkbox-label" for="ws-show-in-lists">
                             <input type="checkbox" id="ws-show-in-lists" name="show_in_worksite_lists" value="1" checked>
                             <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?>
                         </label>
                         <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?></p>
-                        <label class="sf-checkbox-label" for="ws-show-in-displays" title="<?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?>">
+                        <label class="sf-checkbox-label" for="ws-show-in-displays">
                             <input type="checkbox" id="ws-show-in-displays" name="show_in_display_targets" value="1" checked>
                             <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
                         </label>
