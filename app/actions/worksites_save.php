@@ -261,8 +261,19 @@ exit;
     if ($action === 'toggle_worksite_visibility') {
         $id = (int)($_POST['worksite_id'] ?? ($_POST['id'] ?? 0));
         $field = (string)($_POST['field'] ?? '');
-        $allowedFields = ['show_in_worksite_lists', 'show_in_display_targets'];
-        if ($id <= 0 || !in_array($field, $allowedFields, true)) {
+        $fieldConfig = [
+            'show_in_worksite_lists' => [
+                'update_explicit' => 'UPDATE sf_worksites SET show_in_worksite_lists = ? WHERE id = ?',
+                'update_toggle' => 'UPDATE sf_worksites SET show_in_worksite_lists = 1 - show_in_worksite_lists WHERE id = ?',
+                'select_state' => 'SELECT name, show_in_worksite_lists FROM sf_worksites WHERE id = ? LIMIT 1',
+            ],
+            'show_in_display_targets' => [
+                'update_explicit' => 'UPDATE sf_worksites SET show_in_display_targets = ? WHERE id = ?',
+                'update_toggle' => 'UPDATE sf_worksites SET show_in_display_targets = 1 - show_in_display_targets WHERE id = ?',
+                'select_state' => 'SELECT name, show_in_display_targets FROM sf_worksites WHERE id = ? LIMIT 1',
+            ],
+        ];
+        if ($id <= 0 || !isset($fieldConfig[$field])) {
             if (sf_is_fetch()) sf_json(['ok' => false, 'error' => 'Invalid payload'], 400);
             header("Location: {$base}/index.php?page=settings&tab=worksites&notice=error");
             exit;
@@ -271,13 +282,13 @@ exit;
         $hasExplicitValue = array_key_exists('value', $_POST);
         if ($hasExplicitValue) {
             $value = ((int)($_POST['value'] ?? 0) === 1) ? 1 : 0;
-            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = ? WHERE id = ?");
+            $stmt = $mysqli->prepare($fieldConfig[$field]['update_explicit']);
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
             $stmt->bind_param('ii', $value, $id);
         } else {
-            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = 1 - {$field} WHERE id = ?");
+            $stmt = $mysqli->prepare($fieldConfig[$field]['update_toggle']);
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
@@ -288,7 +299,7 @@ exit;
 
         $newValue = null;
         $worksiteName = null;
-        $stmtState = $mysqli->prepare("SELECT name, {$field} FROM sf_worksites WHERE id = ? LIMIT 1");
+        $stmtState = $mysqli->prepare($fieldConfig[$field]['select_state']);
         if ($stmtState) {
             $stmtState->bind_param('i', $id);
             $stmtState->execute();

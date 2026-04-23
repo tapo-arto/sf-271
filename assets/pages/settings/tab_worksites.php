@@ -200,13 +200,14 @@ if ($worksitesRes) {
            class="sf-input"
            placeholder="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>"
            aria-label="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>">
-    <div class="sf-worksites-filter-chips" role="tablist">
+    <div class="sf-worksites-filter-chips" role="group" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
         <button type="button" class="sf-filter-chip is-active" data-filter="all"><?= htmlspecialchars(sf_term('settings_worksites_filter_all', $currentUiLang) ?? 'Kaikki', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="active"><?= htmlspecialchars(sf_term('settings_worksites_filter_active', $currentUiLang) ?? 'Aktiiviset', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="inactive"><?= htmlspecialchars(sf_term('settings_worksites_filter_inactive', $currentUiLang) ?? 'Passiiviset', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="lists"><?= htmlspecialchars(sf_term('settings_worksites_filter_lists', $currentUiLang) ?? 'Näytetään työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="displays"><?= htmlspecialchars(sf_term('settings_worksites_filter_displays', $currentUiLang) ?? 'Näytetään infonäytöissä', ENT_QUOTES, 'UTF-8') ?></button>
     </div>
+    <p id="sfWorksiteFilterStatus" class="sf-visually-hidden" aria-live="polite"></p>
 </div>
 
 <div class="sf-worksite-grid" id="sfWorksiteGrid">
@@ -258,16 +259,18 @@ if ($worksitesRes) {
             <section class="sf-worksite-section">
                 <strong><?= htmlspecialchars(sf_term('settings_worksites_visibility_heading', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>:</strong>
                 <div class="sf-worksite-visibility-toggles">
-                    <label class="sf-toggle-row">
+                    <label class="sf-toggle-row" for="ws-toggle-lists-<?= (int)$ws['id'] ?>">
                         <input type="checkbox"
+                               id="ws-toggle-lists-<?= (int)$ws['id'] ?>"
                                class="sf-worksite-visibility-toggle"
                                data-worksite-id="<?= (int)$ws['id'] ?>"
                                data-field="show_in_worksite_lists"
                                <?= $showInLists ? 'checked' : '' ?>>
                         <span><?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></span>
                     </label>
-                    <label class="sf-toggle-row">
+                    <label class="sf-toggle-row" for="ws-toggle-displays-<?= (int)$ws['id'] ?>">
                         <input type="checkbox"
+                               id="ws-toggle-displays-<?= (int)$ws['id'] ?>"
                                class="sf-worksite-visibility-toggle"
                                data-worksite-id="<?= (int)$ws['id'] ?>"
                                data-field="show_in_display_targets"
@@ -355,9 +358,9 @@ if ($worksitesRes) {
 (function () {
     'use strict';
 
-    var baseUrl = <?= json_encode(rtrim($baseUrl, '/'), JSON_UNESCAPED_SLASHES) ?>;
-    var csrfToken = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_UNESCAPED_SLASHES) ?>;
-    var saveError = <?= json_encode(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', JSON_UNESCAPED_UNICODE) ?>;
+    var baseUrl = <?= json_encode(rtrim($baseUrl, '/'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var csrfToken = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var saveError = <?= json_encode(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     function showError(message) {
         if (typeof window.sfToast === 'function') {
@@ -375,6 +378,8 @@ if ($worksitesRes) {
         var worksiteId = input.getAttribute('data-worksite-id');
         var field = input.getAttribute('data-field');
 
+        var card = input.closest('.sf-worksite-card');
+        if (card) card.setAttribute('aria-busy', 'true');
         input.disabled = true;
 
         var fd = new FormData();
@@ -401,24 +406,25 @@ if ($worksitesRes) {
                 throw new Error((result.data && (result.data.error || result.data.message)) || saveError);
             }
 
-            var normalizedValue = result.data.value === 1 || result.data.value === '1';
+            var normalizedValue = Number(result.data.value) === 1;
             input.checked = normalizedValue;
-
-            var card = input.closest('.sf-worksite-card');
             if (card) {
                 if (field === 'show_in_worksite_lists') card.setAttribute('data-lists', normalizedValue ? '1' : '0');
                 if (field === 'show_in_display_targets') card.setAttribute('data-displays', normalizedValue ? '1' : '0');
             }
+            applyFilters();
         }).catch(function (error) {
             input.checked = previousState;
             showError(error && error.message ? error.message : saveError);
         }).finally(function () {
+            if (card) card.removeAttribute('aria-busy');
             input.disabled = false;
         });
     });
 
     var searchInput = document.getElementById('sfWorksiteSearch');
     var grid = document.getElementById('sfWorksiteGrid');
+    var filterStatus = document.getElementById('sfWorksiteFilterStatus');
     if (!grid) return;
 
     var cards = Array.prototype.slice.call(grid.querySelectorAll('.sf-worksite-card'));
@@ -439,8 +445,16 @@ if ($worksitesRes) {
             var name = card.getAttribute('data-name') || '';
             var matchesSearch = term === '' || name.indexOf(term) !== -1;
             var matchesChip = matchesFilter(card, activeFilter);
-            card.hidden = !(matchesSearch && matchesChip);
+            var isVisible = matchesSearch && matchesChip;
+            card.style.display = isVisible ? '' : 'none';
+            card.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         });
+        if (filterStatus) {
+            var visibleCount = cards.filter(function (card) {
+                return card.style.display !== 'none';
+            }).length;
+            filterStatus.textContent = visibleCount + ' / ' + cards.length;
+        }
     }
 
     if (searchInput) {
