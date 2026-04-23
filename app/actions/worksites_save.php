@@ -75,17 +75,23 @@ if ($action === 'add') {
     $hasVisibilityFields = (string)($_POST['has_visibility_fields'] ?? '') === '1';
     $showInWorksiteLists = 1;
     $showInDisplayTargets = 1;
+    $isDefaultDisplay = 0;
     if ($hasVisibilityFields) {
         $showInWorksiteLists = array_key_exists('show_in_worksite_lists', $_POST) ? 1 : 0;
         $showInDisplayTargets = array_key_exists('show_in_display_targets', $_POST) ? 1 : 0;
+        $isDefaultDisplay = array_key_exists('is_default_display', $_POST) ? 1 : 0;
     }
 
     // Insert name, is_active, and optional site_type with backward-compatible fallbacks.
     $insertMode = 'full';
-    $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active, show_in_worksite_lists, show_in_display_targets) VALUES (?, ?, 1, ?, ?)");
+    $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active, show_in_worksite_lists, show_in_display_targets, is_default_display) VALUES (?, ?, 1, ?, ?, ?)");
     if (!$stmt) {
         $prepareError = $mysqli->error;
-        if (sf_is_unknown_column_error($prepareError, 'show_in_worksite_lists') || sf_is_unknown_column_error($prepareError, 'show_in_display_targets')) {
+        if (
+            sf_is_unknown_column_error($prepareError, 'show_in_worksite_lists')
+            || sf_is_unknown_column_error($prepareError, 'show_in_display_targets')
+            || sf_is_unknown_column_error($prepareError, 'is_default_display')
+        ) {
             $insertMode = 'site_type_only';
             $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active) VALUES (?, ?, 1)");
             if (!$stmt && sf_is_unknown_column_error($mysqli->error, 'site_type')) {
@@ -103,7 +109,7 @@ if ($action === 'add') {
         throw new Exception('Prepare failed: ' .  $mysqli->error);
     }
     if ($insertMode === 'full') {
-        $stmt->bind_param('ssii', $name, $siteType, $showInWorksiteLists, $showInDisplayTargets);
+        $stmt->bind_param('ssiii', $name, $siteType, $showInWorksiteLists, $showInDisplayTargets, $isDefaultDisplay);
     } elseif ($insertMode === 'site_type_only') {
         $stmt->bind_param('ss', $name, $siteType);
     } else {
@@ -162,6 +168,7 @@ if ($action === 'add') {
                     'is_active' => 1,
                     'show_in_worksite_lists' => $showInWorksiteLists,
                     'show_in_display_targets' => $showInDisplayTargets,
+                    'is_default_display' => $isDefaultDisplay,
                 ],
                 $currentUser ? (int)$currentUser['id'] : null
             );
@@ -299,6 +306,11 @@ exit;
                 'update_explicit' => 'UPDATE sf_worksites SET show_in_display_targets = ? WHERE id = ?',
                 'update_toggle' => 'UPDATE sf_worksites SET show_in_display_targets = 1 - show_in_display_targets WHERE id = ?',
                 'select_state' => 'SELECT name, show_in_display_targets FROM sf_worksites WHERE id = ? LIMIT 1',
+            ],
+            'is_default_display' => [
+                'update_explicit' => 'UPDATE sf_worksites SET is_default_display = ? WHERE id = ?',
+                'update_toggle' => 'UPDATE sf_worksites SET is_default_display = 1 - is_default_display WHERE id = ?',
+                'select_state' => 'SELECT name, is_default_display FROM sf_worksites WHERE id = ? LIMIT 1',
             ],
         ];
         if ($id <= 0 || !isset($fieldConfig[$field])) {
@@ -552,6 +564,7 @@ exit;
         $allowedSiteTypes = ['tunnel', 'opencast', 'other'];
         $siteTypeRaw = trim((string)($_POST['site_type'] ?? ''));
         $siteType = in_array($siteTypeRaw, $allowedSiteTypes, true) ? $siteTypeRaw : null;
+        $isDefaultDisplay = array_key_exists('is_default_display', $_POST) ? 1 : 0;
 
         $oldName = null;
         $stmtOld = $mysqli->prepare("SELECT name FROM sf_worksites WHERE id = ? LIMIT 1");
@@ -583,8 +596,14 @@ exit;
         }
 
         $siteTypeWasSaved = true;
-        $stmt = $mysqli->prepare("UPDATE sf_worksites SET name = ?, site_type = ? WHERE id = ?");
-        if (!$stmt && sf_is_unknown_column_error($mysqli->error, 'site_type')) {
+        $stmt = $mysqli->prepare("UPDATE sf_worksites SET name = ?, site_type = ?, is_default_display = ? WHERE id = ?");
+        if (
+            !$stmt
+            && (
+                sf_is_unknown_column_error($mysqli->error, 'site_type')
+                || sf_is_unknown_column_error($mysqli->error, 'is_default_display')
+            )
+        ) {
             $siteTypeWasSaved = false;
             $stmt = $mysqli->prepare("UPDATE sf_worksites SET name = ? WHERE id = ?");
             if (!$stmt) {
@@ -595,7 +614,7 @@ exit;
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $mysqli->error);
             }
-            $stmt->bind_param('ssi', $name, $siteType, $id);
+            $stmt->bind_param('ssii', $name, $siteType, $isDefaultDisplay, $id);
         }
         $ok = $stmt->execute();
         $stmt->close();
@@ -640,6 +659,7 @@ exit;
                     'name' => $name,
                     'old_name' => $oldName,
                     'site_type' => $siteTypeWasSaved ? $siteType : null,
+                    'is_default_display' => $siteTypeWasSaved ? $isDefaultDisplay : null,
                     'action' => 'edit',
                 ],
                 $currentUser ? (int)$currentUser['id'] : null

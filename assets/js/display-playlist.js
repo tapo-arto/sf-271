@@ -150,6 +150,22 @@
             display.classList.toggle('hidden', checked.length === 0);
         }
 
+        function getSpecialChipCheckboxes(selectType) {
+            if (selectType === 'all') {
+                return Array.from(container.querySelectorAll('.dt-display-chip-cb'));
+            }
+            if (selectType === 'display-only') {
+                return Array.from(container.querySelectorAll('.dt-display-chip-cb[data-display-only="1"]'));
+            }
+            if (selectType === 'uncategorized') {
+                return Array.from(container.querySelectorAll('.dt-display-chip-cb[data-uncategorized="1"]'));
+            }
+            if (selectType === 'default') {
+                return Array.from(container.querySelectorAll('.dt-display-chip-cb[data-default-display="1"]'));
+            }
+            return Array.from(container.querySelectorAll('.dt-display-chip-cb[data-type="' + selectType + '"]'));
+        }
+
         function updateLangChipStates() {
             langChips.forEach(function (chip) {
                 var lang = chip.getAttribute('data-lang');
@@ -162,12 +178,7 @@
             // Update special chip active states
             container.querySelectorAll('.sf-dt-special-chip').forEach(function (chip) {
                 var selectType = chip.getAttribute('data-select');
-                var cbs;
-                if (selectType === 'all') {
-                    cbs = Array.from(container.querySelectorAll('.dt-display-chip-cb'));
-                } else {
-                    cbs = Array.from(container.querySelectorAll('.dt-display-chip-cb[data-type="' + selectType + '"]'));
-                }
+                var cbs = getSpecialChipCheckboxes(selectType);
                 var checkedCount = cbs.filter(function (cb) { return cb.checked; }).length;
                 chip.classList.toggle('sf-dt-lang-chip-active', cbs.length > 0 && checkedCount === cbs.length);
             });
@@ -195,12 +206,7 @@
             chip.addEventListener('click', function () {
                 var selectType = this.getAttribute('data-select');
                 var isActive = this.classList.contains('sf-dt-lang-chip-active');
-                var cbs;
-                if (selectType === 'all') {
-                    cbs = container.querySelectorAll('.dt-display-chip-cb');
-                } else {
-                    cbs = container.querySelectorAll('.dt-display-chip-cb[data-type="' + selectType + '"]');
-                }
+                var cbs = getSpecialChipCheckboxes(selectType);
                 cbs.forEach(function (cb) { cb.checked = !isActive; });
                 updateLangChipStates();
                 updateSelectionDisplay();

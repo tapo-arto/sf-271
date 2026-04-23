@@ -38,12 +38,13 @@ try {
         'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
                 COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
                 COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
+                COALESCE(w.is_default_display, 0) AS is_default_display,
                 k.api_key AS display_api_key, k.id AS display_key_id,
                 COUNT(t.id) AS active_flash_count
           FROM sf_worksites w
           LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
           LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-          GROUP BY w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
+          GROUP BY w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at, w.show_in_worksite_lists, w.show_in_display_targets, w.is_default_display, k.api_key, k.id
           ORDER BY w.name ASC'
     );
     if (!$worksitesRes) {
@@ -53,7 +54,7 @@ try {
         $worksitesRes = $mysqli->query(
             'SELECT w.id, w.name, NULL AS site_type, w.is_active,
                     NULL AS created_at, NULL AS updated_at,
-                    1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                    1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS is_default_display,
                     k.api_key AS display_api_key, k.id AS display_key_id,
                     0 AS active_flash_count
                FROM sf_worksites w
@@ -67,7 +68,7 @@ try {
             $worksitesRes = $mysqli->query(
                 'SELECT id, name, NULL AS site_type, is_active,
                         NULL AS created_at, NULL AS updated_at,
-                        1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                        1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS is_default_display,
                         NULL AS display_api_key, NULL AS display_key_id,
                         0 AS active_flash_count
                    FROM sf_worksites
@@ -96,6 +97,7 @@ try {
                 $w['updated_at'] = null;
                 $w['show_in_worksite_lists'] = 1;
                 $w['show_in_display_targets'] = 1;
+                $w['is_default_display'] = 0;
                 $w['display_api_key'] = null;
                 $w['display_key_id'] = null;
                 $w['active_flash_count'] = 0;
@@ -113,6 +115,7 @@ $tabWorksitesIsAdmin = (int)($tabWorksitesUser['role_id'] ?? 0) === 1;
 
 $visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
 $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Tulee display-targets -valintoihin julkaisussa (Xibo / Intra / muu kohde).');
+$defaultDisplayDesc = (string)(sf_term('settings_worksites_default_display_desc', $currentUiLang) ?? 'Valitaan oletuksena infonäyttökohteeksi safetyflashin julkaisussa.');
 ?>
 
 <div class="sf-settings-section" style="margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0;">
@@ -330,6 +333,7 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             $isActive = (int)$ws['is_active'] === 1;
             $showInLists = (int)($ws['show_in_worksite_lists'] ?? 1) === 1;
             $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
+            $isDefaultDisplay = (int)($ws['is_default_display'] ?? 0) === 1;
             $worksiteId = (int)$ws['id'];
             $worksiteName = (string)($ws['name'] ?? '');
             $worksiteNameLower = sf_worksite_strtolower($worksiteName);
@@ -366,6 +370,7 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
              data-active="<?= $isActive ? '1' : '0' ?>"
              data-lists="<?= $showInLists ? '1' : '0' ?>"
              data-displays="<?= $showInDisplays ? '1' : '0' ?>"
+             data-default-display="<?= $isDefaultDisplay ? '1' : '0' ?>"
              data-modal="#<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>">
             <span class="sf-worksite-status-dot <?= $isActive ? 'is-active' : 'is-inactive' ?>"
                   title="<?= htmlspecialchars($isActive ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen') : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'), ENT_QUOTES, 'UTF-8') ?>"
@@ -464,7 +469,8 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                                 class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
                                 data-ws-id="<?= $worksiteId ?>"
                                 data-ws-name="<?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?>"
-                                data-ws-site-type="<?= htmlspecialchars($ws['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                data-ws-site-type="<?= htmlspecialchars($ws['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                data-ws-default-display="<?= $isDefaultDisplay ? '1' : '0' ?>">
                             <?= htmlspecialchars(sf_term('settings_worksites_action_edit', $currentUiLang) ?? 'Muokkaa', ENT_QUOTES, 'UTF-8') ?>
                         </button>
                     </section>
@@ -515,6 +521,25 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                                 </div>
                                 <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
                                 <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_displays_hint', $currentUiLang) ?? 'Esim: julkaistava safetyflash → Valitse näytöt.', ENT_QUOTES, 'UTF-8') ?></p>
+                            </label>
+                            <label class="sf-ws-visibility-card" for="ws-modal-default-display-<?= $worksiteId ?>">
+                                <input type="checkbox"
+                                       id="ws-modal-default-display-<?= $worksiteId ?>"
+                                       class="sf-worksite-visibility-toggle"
+                                       data-worksite-id="<?= $worksiteId ?>"
+                                       data-field="is_default_display"
+                                       <?= $isDefaultDisplay ? 'checked' : '' ?>>
+                                <div class="sf-ws-visibility-card-head">
+                                    <p class="sf-ws-visibility-card-title">✅ <?= htmlspecialchars(sf_term('settings_worksites_default_display_label', $currentUiLang) ?? 'Valittu oletuksena infonäytöissä', ENT_QUOTES, 'UTF-8') ?></p>
+                                    <span class="sf-ws-visibility-switch-wrap" aria-hidden="true">
+                                        <span class="sf-ws-visibility-switch-status">
+                                            <span class="is-on">ON ●</span>
+                                            <span class="is-off">OFF</span>
+                                        </span>
+                                        <span class="sf-ws-visibility-switch"><span class="sf-ws-visibility-switch-thumb"></span></span>
+                                    </span>
+                                </div>
+                                <p class="sf-worksite-help-text"><?= htmlspecialchars($defaultDisplayDesc, ENT_QUOTES, 'UTF-8') ?></p>
                             </label>
                         </div>
                     </section>
@@ -752,6 +777,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             if (row) {
                 if (field === 'show_in_worksite_lists') row.setAttribute('data-lists', normalizedValue ? '1' : '0');
                 if (field === 'show_in_display_targets') row.setAttribute('data-displays', normalizedValue ? '1' : '0');
+                if (field === 'is_default_display') {
+                    row.setAttribute('data-default-display', normalizedValue ? '1' : '0');
+                    row.querySelectorAll('.sf-ws-edit-btn[data-ws-id="' + worksiteId + '"]').forEach(function (btn) {
+                        btn.setAttribute('data-ws-default-display', normalizedValue ? '1' : '0');
+                    });
+                }
                 var badge = row.querySelector('.sf-ws-badge[data-ws-badge-field="' + field + '"]');
                 if (badge) {
                     var isListsField = field === 'show_in_worksite_lists';
@@ -890,6 +921,11 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                             <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
                         </label>
                         <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
+                        <label class="sf-checkbox-label" for="ws-is-default-display">
+                            <input type="checkbox" id="ws-is-default-display" name="is_default_display" value="1">
+                            <?= htmlspecialchars(sf_term('settings_worksites_default_display_label', $currentUiLang) ?? 'Valittu oletuksena infonäytöissä', ENT_QUOTES, 'UTF-8') ?>
+                        </label>
+                        <p class="sf-worksite-help-text"><?= htmlspecialchars($defaultDisplayDesc, ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
             </div>
@@ -1178,6 +1214,11 @@ foreach ($worksites as $ws):
                         <option value="other"><?= htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8') ?></option>
                     </select>
                 </div>
+                <label class="sf-checkbox-label" for="editWsDefaultDisplay">
+                    <input type="checkbox" id="editWsDefaultDisplay" name="is_default_display" value="1">
+                    <?= htmlspecialchars(sf_term('settings_worksites_default_display_label', $currentUiLang) ?? 'Valittu oletuksena infonäytöissä', ENT_QUOTES, 'UTF-8') ?>
+                </label>
+                <p class="sf-worksite-help-text"><?= htmlspecialchars($defaultDisplayDesc, ENT_QUOTES, 'UTF-8') ?></p>
             </div>
             <div class="sf-modal-footer" style="padding:1rem 1.25rem;display:flex;justify-content:flex-end;gap:0.5rem;">
                 <button type="button" data-modal-close class="sf-btn sf-btn-secondary">
@@ -1204,9 +1245,11 @@ foreach ($worksites as $ws):
         var idInput       = modal.querySelector('#editWsId');
         var nameInput     = modal.querySelector('#editWsName');
         var siteTypeInput = modal.querySelector('#editWsSiteType');
+        var defaultDisplayInput = modal.querySelector('#editWsDefaultDisplay');
         if (idInput)       idInput.value       = btn.getAttribute('data-ws-id') || '';
         if (nameInput)     nameInput.value     = btn.getAttribute('data-ws-name') || '';
         if (siteTypeInput) siteTypeInput.value = btn.getAttribute('data-ws-site-type') || '';
+        if (defaultDisplayInput) defaultDisplayInput.checked = (btn.getAttribute('data-ws-default-display') || '0') === '1';
         modal.classList.remove('hidden');
         if (nameInput) nameInput.focus();
     });
