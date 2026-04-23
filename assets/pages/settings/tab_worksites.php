@@ -32,28 +32,42 @@ if (!function_exists('sf_worksite_strtolower')) {
 
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
-$worksitesRes = $mysqli->query(
-    'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
-            COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
-            COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
-            k.api_key AS display_api_key, k.id AS display_key_id,
-            COUNT(t.id) AS active_flash_count
-      FROM sf_worksites w
-      LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
-      LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-      GROUP BY w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
-      ORDER BY w.name ASC'
-);
-if (!$worksitesRes) {
-    error_log('tab_worksites: primary query failed: ' . $mysqli->error);
-    // Fallback if all columns are not yet migrated
-    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS created_at, NULL AS updated_at, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, NULL AS display_api_key, NULL AS display_key_id, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
-}
-if ($worksitesRes) {
-    while ($w = $worksitesRes->fetch_assoc()) {
-        $worksites[] = $w;
+$worksitesRes = false;
+try {
+    $worksitesRes = $mysqli->query(
+        'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
+                COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
+                COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
+                k.api_key AS display_api_key, k.id AS display_key_id,
+                COUNT(t.id) AS active_flash_count
+          FROM sf_worksites w
+          LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
+          LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
+          GROUP BY w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
+          ORDER BY w.name ASC'
+    );
+    if (!$worksitesRes) {
+        error_log('tab_worksites: primary query failed: ' . $mysqli->error);
+        // Fallback if all columns are not yet migrated
+        $worksitesRes = $mysqli->query(
+            'SELECT w.id, w.name, NULL AS site_type, w.is_active,
+                    NULL AS created_at, NULL AS updated_at,
+                    1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                    k.api_key AS display_api_key, k.id AS display_key_id,
+                    0 AS active_flash_count
+               FROM sf_worksites w
+               LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
+              ORDER BY w.name ASC'
+        );
     }
-    $worksitesRes->free();
+    if ($worksitesRes) {
+        while ($w = $worksitesRes->fetch_assoc()) {
+            $worksites[] = $w;
+        }
+        $worksitesRes->free();
+    }
+} catch (Throwable $e) {
+    error_log('tab_worksites: worksites query failed: ' . $e->getMessage());
 }
 
 $visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
@@ -277,10 +291,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                 ? (rtrim((string)($baseUrl ?? ''), '/') . '/app/api/display_playlist.php?key=' . urlencode((string)$ws['display_api_key']) . '&format=slideshow')
                 : '';
         } catch (Throwable $worksiteRenderError) {
-            sf_app_log(
-                'tab_worksites: row render failed for worksite id ' . (int)($ws['id'] ?? 0) . ': ' . $worksiteRenderError->getMessage(),
-                LOG_LEVEL_ERROR
-            );
+            $rowRenderErrorMessage = 'tab_worksites: row render failed for worksite id ' . (int)($ws['id'] ?? 0) . ': ' . $worksiteRenderError->getMessage();
+            if (function_exists('sf_app_log') && defined('LOG_LEVEL_ERROR')) {
+                sf_app_log($rowRenderErrorMessage, LOG_LEVEL_ERROR);
+            } else {
+                error_log($rowRenderErrorMessage);
+            }
             continue;
         }
         ?>
