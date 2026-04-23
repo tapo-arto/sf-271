@@ -215,7 +215,7 @@ if ($worksitesRes) {
                placeholder="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>"
                aria-label="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>">
         <p id="sfWorksiteShowingCount" class="sf-worksites-showing-count" aria-live="polite">
-            <?= htmlspecialchars(sprintf(sf_term('settings_worksites_showing_count', $currentUiLang) ?? 'Näytetään %d / %d työmaata', count($worksites), count($worksites)), ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars(sprintf((sf_term('settings_worksites_showing_count', $currentUiLang) ?? 'Näytetään %d / %d työmaata'), count($worksites), count($worksites)), ENT_QUOTES, 'UTF-8') ?>
         </p>
     </div>
     <div class="sf-worksites-filter-chips" role="group" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
@@ -319,8 +319,8 @@ if ($worksitesRes) {
                         <dl class="sf-worksite-manage-meta">
                             <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_name', $currentUiLang) ?? 'Nimi', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?></dd></div>
                             <div><dt><?= htmlspecialchars(sf_term('settings_worksites_site_type', $currentUiLang) ?? 'Työmaan tyyppi', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($siteTypeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div>
-                            <div><dt><?= htmlspecialchars(sf_term('users_col_created', $currentUiLang) ?? 'Luotu', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['created_at']) ? (string)$ws['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
-                            <div><dt><?= htmlspecialchars(sf_term('audit_col_updated_at', $currentUiLang) ?? 'Viimeksi päivitetty', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['updated_at']) ? (string)$ws['updated_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_created', $currentUiLang) ?? 'Luotu', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['created_at']) ? (string)$ws['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_updated', $currentUiLang) ?? 'Viimeksi päivitetty', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['updated_at']) ? (string)$ws['updated_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
                         </dl>
                         <button type="button"
                                 class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
@@ -388,7 +388,7 @@ if ($worksitesRes) {
 
                     <section class="sf-worksite-manage-section">
                         <h4><?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?></h4>
-                        <p class="sf-worksite-help-text"><?= htmlspecialchars(sprintf(sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa', $flashCount), ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="sf-worksite-help-text"><?= htmlspecialchars(sprintf((sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa'), $flashCount), ENT_QUOTES, 'UTF-8') ?></p>
                         <?php if ($playlistUrl !== ''): ?>
                             <a href="<?= htmlspecialchars($playlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-btn sf-btn-sm sf-btn-outline-primary">
                                 <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
@@ -563,7 +563,11 @@ if ($worksitesRes) {
     }
 
     function formatShowingCount(visible, total) {
-        return showingCountTemplate.replace('%d', String(visible)).replace('%d', String(total));
+        var index = 0;
+        return showingCountTemplate.replace(/%d/g, function () {
+            index += 1;
+            return String(index === 1 ? visible : total);
+        });
     }
 
     function applyFilters() {

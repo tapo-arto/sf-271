@@ -87,6 +87,20 @@ return [
     'it' => 'Azioni',
     'el' => 'Ενέργειες',
 ],
+'settings_worksites_col_created' => [
+    'fi' => 'Luotu',
+    'sv' => 'Skapad',
+    'en' => 'Created',
+    'it' => 'Creato',
+    'el' => 'Δημιουργήθηκε',
+],
+'settings_worksites_col_updated' => [
+    'fi' => 'Viimeksi päivitetty',
+    'sv' => 'Senast uppdaterad',
+    'en' => 'Last updated',
+    'it' => 'Ultimo aggiornamento',
+    'el' => 'Τελευταία ενημέρωση',
+],
 'settings_worksites_action_disable' => [
     'fi' => 'Passivoi',
     'sv' => 'Inaktivera',
