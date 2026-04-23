@@ -67,12 +67,24 @@ if ($action === 'add') {
     $siteTypeRaw = trim((string)($_POST['site_type'] ?? ''));
     $siteType = in_array($siteTypeRaw, $allowedSiteTypes, true) ? $siteTypeRaw : null;
 
+    // Mikäli kenttää ei ole POST:ssa lainkaan (esim. vanha API-kutsu),
+    // käytä oletusta 1 jotta nykykäytös säilyy. Jos kenttä on POST:ssa
+    // ja arvo on 0, tulkitaan se tarkoitukselliseksi pois-valinnaksi.
+    $hasListsField = array_key_exists('show_in_worksite_lists_present', $_POST);
+    $hasDisplaysField = array_key_exists('show_in_display_targets_present', $_POST);
+    $showInWorksiteLists = $hasListsField ? (isset($_POST['show_in_worksite_lists']) ? 1 : 0) : 1;
+    $showInDisplayTargets = $hasDisplaysField ? (isset($_POST['show_in_display_targets']) ? 1 : 0) : 1;
+
     // Insert name, is_active, and optional site_type.
-    $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active) VALUES (?, ?, 1)");
+    $stmt = $mysqli->prepare(
+        "INSERT INTO sf_worksites
+            (name, site_type, is_active, show_in_worksite_lists, show_in_display_targets)
+         VALUES (?, ?, 1, ?, ?)"
+    );
     if (!$stmt) {
         throw new Exception('Prepare failed: ' .  $mysqli->error);
     }
-    $stmt->bind_param('ss', $name, $siteType);
+    $stmt->bind_param('ssii', $name, $siteType, $showInWorksiteLists, $showInDisplayTargets);
     $ok = $stmt->execute();
     $newWorksiteId = $mysqli->insert_id;
     $stmt->close();
@@ -124,6 +136,8 @@ if ($action === 'add') {
                 'name' => $name,
                 'site_type' => $siteType,
                 'is_active' => 1,
+                'show_in_worksite_lists' => $showInWorksiteLists,
+                'show_in_display_targets' => $showInDisplayTargets,
             ],
             $currentUser ?  (int)$currentUser['id'] : null
         );
@@ -147,6 +161,50 @@ $msg = $ok
     header("Location:  {$base}/index.php?page=settings&tab=worksites&notice=" . ($ok ?  "worksite_added" : "error"));
     exit;
 }
+
+    if ($action === 'toggle_worksite_visibility') {
+        $id = (int)($_POST['id'] ?? 0);
+        $field = (string)($_POST['field'] ?? '');
+        $fieldMap = [
+            'show_in_worksite_lists' => 'show_in_worksite_lists',
+            'show_in_display_targets' => 'show_in_display_targets',
+        ];
+        $column = $fieldMap[$field] ?? null;
+        $ok = false;
+
+        if ($id > 0 && $column !== null) {
+            // Sarake on whitelistattu, joten interpolointi on turvallista.
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$column} = CASE WHEN {$column} = 1 THEN 0 ELSE 1 END WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('i', $id);
+                $ok = $stmt->execute();
+                $stmt->close();
+
+                if ($ok) {
+                    sf_audit_log(
+                        'worksite_visibility_toggled',
+                        'worksite',
+                        $id,
+                        ['field' => $field],
+                        $currentUser ? (int)$currentUser['id'] : null
+                    );
+                }
+            }
+        }
+
+        if (sf_is_fetch()) {
+            sf_json([
+                'ok' => $ok,
+                'success' => $ok,
+                'notice' => $ok ? 'worksite_saved' : 'error',
+                'message' => $ok
+                    ? (sf_term('worksite_saved', $_SESSION['ui_lang'] ?? 'fi') ?: 'Työmaa tallennettu.')
+                    : (sf_term('error', $_SESSION['ui_lang'] ?? 'fi') ?: 'Toiminto epäonnistui.'),
+            ], $ok ? 200 : 400);
+        }
+        header("Location: {$base}/index.php?page=settings&tab=worksites");
+        exit;
+    }
 
     // ---------------------------------------------------------------------
     // TOGGLE (used by settings tab: form_action=toggle, field: id)
