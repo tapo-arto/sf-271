@@ -135,7 +135,7 @@ if ($action === 'add') {
                     'show_in_worksite_lists' => $showInWorksiteLists,
                     'show_in_display_targets' => $showInDisplayTargets,
                 ],
-                $currentUser ?  (int)$currentUser['id'] : null
+                $currentUser ? (int)$currentUser['id'] : null
             );
     }
     // ================================
