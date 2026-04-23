@@ -337,6 +337,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             $slideshowUrl = !empty($ws['display_api_key'])
                 ? (rtrim((string)($baseUrl ?? ''), '/') . '/app/api/display_playlist.php?key=' . urlencode((string)$ws['display_api_key']) . '&format=slideshow')
                 : '';
+            $tabOverviewId = $manageModalId . 'TabOverview';
+            $tabVisibilityId = $manageModalId . 'TabVisibility';
+            $tabDisplayId = $manageModalId . 'TabDisplay';
+            $panelOverviewId = $manageModalId . 'PanelOverview';
+            $panelVisibilityId = $manageModalId . 'PanelVisibility';
+            $panelDisplayId = $manageModalId . 'PanelDisplay';
         } catch (Throwable $worksiteRenderError) {
             $rowRenderErrorMessage = 'tab_worksites: row render failed for worksite id ' . (int)($ws['id'] ?? 0) . ': ' . $worksiteRenderError->getMessage();
             if (function_exists('sf_app_log') && defined('LOG_LEVEL_ERROR')) {
@@ -406,8 +412,40 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                     </span>
                     <button type="button" data-modal-close class="sf-modal-close" aria-label="<?= htmlspecialchars(sf_term('settings_worksites_close', $currentUiLang) ?? 'Sulje', ENT_QUOTES, 'UTF-8') ?>">✕</button>
                 </div>
+                <div class="sf-worksite-manage-tabs" role="tablist" aria-label="<?= htmlspecialchars(sf_term('settings_worksites_manage_tabs_label', $currentUiLang) ?? 'Työmaan hallinnan välilehdet', ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="button"
+                            class="sf-ws-tab is-active"
+                            id="<?= htmlspecialchars($tabOverviewId, ENT_QUOTES, 'UTF-8') ?>"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="<?= htmlspecialchars($panelOverviewId, ENT_QUOTES, 'UTF-8') ?>"
+                            tabindex="0">
+                        <?= htmlspecialchars(sf_term('settings_worksites_tab_overview', $currentUiLang) ?? 'Yleiskatsaus', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                    <button type="button"
+                            class="sf-ws-tab"
+                            id="<?= htmlspecialchars($tabVisibilityId, ENT_QUOTES, 'UTF-8') ?>"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="<?= htmlspecialchars($panelVisibilityId, ENT_QUOTES, 'UTF-8') ?>"
+                            tabindex="-1">
+                        <?= htmlspecialchars(sf_term('settings_worksites_tab_visibility', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                    <button type="button"
+                            class="sf-ws-tab"
+                            id="<?= htmlspecialchars($tabDisplayId, ENT_QUOTES, 'UTF-8') ?>"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="<?= htmlspecialchars($panelDisplayId, ENT_QUOTES, 'UTF-8') ?>"
+                            tabindex="-1">
+                        <?= htmlspecialchars(sf_term('settings_worksites_tab_display', $currentUiLang) ?? 'Infonäyttö', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                </div>
                 <div class="sf-modal-body sf-worksite-manage-body">
-                    <section class="sf-worksite-manage-section">
+                    <section class="sf-ws-tab-panel"
+                             id="<?= htmlspecialchars($panelOverviewId, ENT_QUOTES, 'UTF-8') ?>"
+                             role="tabpanel"
+                             aria-labelledby="<?= htmlspecialchars($tabOverviewId, ENT_QUOTES, 'UTF-8') ?>">
                         <h4><?= htmlspecialchars(sf_term('settings_worksites_basic_info', $currentUiLang) ?? 'Perustiedot', ENT_QUOTES, 'UTF-8') ?></h4>
                         <dl class="sf-worksite-manage-meta">
                             <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_name', $currentUiLang) ?? 'Nimi', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?></dd></div>
@@ -415,6 +453,14 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                             <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_created', $currentUiLang) ?? 'Luotu', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['created_at']) ? (string)$ws['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
                             <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_updated', $currentUiLang) ?? 'Viimeksi päivitetty', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['updated_at']) ? (string)$ws['updated_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
                         </dl>
+                        <div class="sf-worksite-overview-stats">
+                            <p class="sf-worksite-overview-stat">📊 <?= htmlspecialchars(sprintf((sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa'), $flashCount), ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php if ($playlistUrl !== ''): ?>
+                                <a href="<?= htmlspecialchars($playlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-btn sf-btn-sm sf-btn-outline-primary">
+                                    <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
                         <button type="button"
                                 class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
                                 data-ws-id="<?= $worksiteId ?>"
@@ -424,35 +470,61 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                         </button>
                     </section>
 
-                    <section class="sf-worksite-manage-section">
-                        <h4><?= htmlspecialchars(sf_term('settings_worksites_visibility', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?></h4>
+                    <section class="sf-ws-tab-panel"
+                             id="<?= htmlspecialchars($panelVisibilityId, ENT_QUOTES, 'UTF-8') ?>"
+                             role="tabpanel"
+                             aria-labelledby="<?= htmlspecialchars($tabVisibilityId, ENT_QUOTES, 'UTF-8') ?>"
+                             hidden>
+                        <p class="sf-worksite-visibility-tip">💡 <?= htmlspecialchars(sf_term('settings_worksites_visibility_tip', $currentUiLang) ?? 'Vinkki: Jos työmaa on pelkkä infonäyttökohde (esim. Intra tai aula), laita "Näytä työmaalistoissa" pois päältä ja pidä "Näytä infonäytöissä" päällä.', ENT_QUOTES, 'UTF-8') ?></p>
                         <div class="sf-worksite-modal-visibility">
-                            <label class="sf-toggle-compact sf-toggle-compact-modal" for="ws-modal-lists-<?= $worksiteId ?>">
+                            <label class="sf-ws-visibility-card" for="ws-modal-lists-<?= $worksiteId ?>">
                                 <input type="checkbox"
                                        id="ws-modal-lists-<?= $worksiteId ?>"
                                        class="sf-worksite-visibility-toggle"
                                        data-worksite-id="<?= $worksiteId ?>"
                                        data-field="show_in_worksite_lists"
                                        <?= $showInLists ? 'checked' : '' ?>>
-                                <span class="sf-toggle-slider"></span>
-                                <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
+                                <div class="sf-ws-visibility-card-head">
+                                    <p class="sf-ws-visibility-card-title">📋 <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></p>
+                                    <span class="sf-ws-visibility-switch-wrap" aria-hidden="true">
+                                        <span class="sf-ws-visibility-switch-status">
+                                            <span class="is-on">ON ●</span>
+                                            <span class="is-off">OFF</span>
+                                        </span>
+                                        <span class="sf-ws-visibility-switch"><span class="sf-ws-visibility-switch-thumb"></span></span>
+                                    </span>
+                                </div>
+                                <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_lists_hint', $currentUiLang) ?? 'Esim: uuden safetyflashin lomake, Lista-välilehden Työmaa-suodatin.', ENT_QUOTES, 'UTF-8') ?></p>
                             </label>
-                            <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?></p>
-                            <label class="sf-toggle-compact sf-toggle-compact-modal" for="ws-modal-displays-<?= $worksiteId ?>">
+                            <label class="sf-ws-visibility-card" for="ws-modal-displays-<?= $worksiteId ?>">
                                 <input type="checkbox"
                                        id="ws-modal-displays-<?= $worksiteId ?>"
                                        class="sf-worksite-visibility-toggle"
                                        data-worksite-id="<?= $worksiteId ?>"
                                        data-field="show_in_display_targets"
                                        <?= $showInDisplays ? 'checked' : '' ?>>
-                                <span class="sf-toggle-slider"></span>
-                                <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
+                                <div class="sf-ws-visibility-card-head">
+                                    <p class="sf-ws-visibility-card-title">📺 <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäytöissä', ENT_QUOTES, 'UTF-8') ?></p>
+                                    <span class="sf-ws-visibility-switch-wrap" aria-hidden="true">
+                                        <span class="sf-ws-visibility-switch-status">
+                                            <span class="is-on">ON ●</span>
+                                            <span class="is-off">OFF</span>
+                                        </span>
+                                        <span class="sf-ws-visibility-switch"><span class="sf-ws-visibility-switch-thumb"></span></span>
+                                    </span>
+                                </div>
+                                <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_displays_hint', $currentUiLang) ?? 'Esim: julkaistava safetyflash → Valitse näytöt.', ENT_QUOTES, 'UTF-8') ?></p>
                             </label>
-                            <p class="sf-worksite-help-text"><?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
                     </section>
 
-                    <section class="sf-worksite-manage-section">
+                    <section class="sf-ws-tab-panel"
+                             id="<?= htmlspecialchars($panelDisplayId, ENT_QUOTES, 'UTF-8') ?>"
+                             role="tabpanel"
+                             aria-labelledby="<?= htmlspecialchars($tabDisplayId, ENT_QUOTES, 'UTF-8') ?>"
+                             hidden>
                         <h4><?= htmlspecialchars(sf_term('settings_worksites_col_api_key', $currentUiLang) ?? 'API-avain', ENT_QUOTES, 'UTF-8') ?></h4>
                         <?php if (!empty($ws['display_api_key'])): ?>
                             <div class="sf-worksite-copy-row">
@@ -475,17 +547,7 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                                 <?= htmlspecialchars(sf_term('xibo_col_heading', $currentUiLang) ?? 'Xibo-koodi', ENT_QUOTES, 'UTF-8') ?>
                             </button>
                         <?php else: ?>
-                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_no_api_key', $currentUiLang) ?? 'Ei avainta', ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                    </section>
-
-                    <section class="sf-worksite-manage-section">
-                        <h4><?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?></h4>
-                        <p class="sf-worksite-help-text"><?= htmlspecialchars(sprintf((sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa'), $flashCount), ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php if ($playlistUrl !== ''): ?>
-                            <a href="<?= htmlspecialchars($playlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-btn sf-btn-sm sf-btn-outline-primary">
-                                <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
-                            </a>
+                            <p class="sf-worksite-info-callout">ℹ️ <?= htmlspecialchars(sf_term('settings_worksites_no_api_key_detail', $currentUiLang) ?? 'Tällä työmaalla ei ole infonäyttöavainta. Avain luodaan automaattisesti, kun työmaa julkaistaan ensimmäisen kerran infonäytölle.', ENT_QUOTES, 'UTF-8') ?></p>
                         <?php endif; ?>
                     </section>
                 </div>
@@ -532,10 +594,68 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
         });
     }
 
+    function initWorksiteTabs(modal) {
+        if (!modal || modal.getAttribute('data-ws-tabs-init') === '1') return;
+        var tabs = Array.prototype.slice.call(modal.querySelectorAll('[role="tab"]'));
+        var panels = Array.prototype.slice.call(modal.querySelectorAll('.sf-ws-tab-panel[role="tabpanel"]'));
+        if (tabs.length === 0 || panels.length === 0) return;
+
+        function activateTab(tab, focus) {
+            if (!tab) return;
+            var controls = tab.getAttribute('aria-controls');
+            tabs.forEach(function (item) {
+                var isActive = item === tab;
+                item.classList.toggle('is-active', isActive);
+                item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                item.setAttribute('tabindex', isActive ? '0' : '-1');
+            });
+            panels.forEach(function (panel) {
+                panel.hidden = panel.id !== controls;
+            });
+            if (focus) {
+                tab.focus();
+            }
+        }
+
+        tabs.forEach(function (tab, index) {
+            tab.addEventListener('click', function () {
+                activateTab(tab, false);
+            });
+            tab.addEventListener('keydown', function (event) {
+                var nextIndex = index;
+                if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+                else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+                else if (event.key === 'Home') nextIndex = 0;
+                else if (event.key === 'End') nextIndex = tabs.length - 1;
+                else if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    activateTab(tab, true);
+                    return;
+                } else {
+                    return;
+                }
+                event.preventDefault();
+                activateTab(tabs[nextIndex], true);
+            });
+        });
+
+        modal.setAttribute('data-ws-tabs-init', '1');
+        activateTab(tabs[0], false);
+    }
+
+    function resetWorksiteTabs(modal) {
+        if (!modal) return;
+        var firstTab = modal.querySelector('[role="tab"]');
+        if (!firstTab) return;
+        firstTab.click();
+    }
+
     function openWorksiteModal(selector) {
         if (!selector) return;
         var modal = document.querySelector(selector);
         if (!modal) return;
+        initWorksiteTabs(modal);
+        resetWorksiteTabs(modal);
         modal.classList.remove('hidden');
         document.body.classList.add('sf-modal-open');
         var focusable = getFocusableElements(modal);
@@ -545,6 +665,12 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
     }
 
     document.addEventListener('click', function (event) {
+        var modalTrigger = event.target.closest('.sf-worksite-row [data-modal-open]');
+        if (modalTrigger) {
+            event.preventDefault();
+            openWorksiteModal(modalTrigger.getAttribute('data-modal-open'));
+            return;
+        }
         var row = event.target.closest('.sf-worksite-row');
         if (!row) return;
         if (event.target.closest('[data-no-row-click]')) return;
@@ -642,6 +768,10 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
     var list = document.getElementById('sfWorksiteList');
     var showingCount = document.getElementById('sfWorksiteShowingCount');
     if (!list) return;
+
+    document.querySelectorAll('.sf-worksite-manage-modal').forEach(function (modal) {
+        initWorksiteTabs(modal);
+    });
 
     var rows = Array.prototype.slice.call(list.querySelectorAll('.sf-worksite-row'));
     var chips = Array.prototype.slice.call(document.querySelectorAll('.sf-filter-chip'));
