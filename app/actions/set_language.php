@@ -8,6 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 $base = rtrim($config['base_url'] ?? '', '/');
 
@@ -31,6 +32,22 @@ if (!in_array($lang, $allowed, true)) {
 }
 
 $_SESSION['ui_lang'] = $lang;
+
+$user = sf_current_user();
+if ($user && !empty($user['id'])) {
+    try {
+        $mysqli = sf_db();
+        $stmt = $mysqli->prepare('UPDATE sf_users SET ui_lang = ? WHERE id = ?');
+        if ($stmt) {
+            $uid = (int)$user['id'];
+            $stmt->bind_param('si', $lang, $uid);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } catch (Throwable $e) {
+        error_log('Kielen tallennus tietokantaan epäonnistui: ' . $e->getMessage());
+    }
+}
 
 // cookie myös
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
