@@ -266,12 +266,15 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
     </div>
 </div>
 
-<p class="sf-notice sf-notice-info" style="margin:0 0 1rem;">
-    <?= htmlspecialchars(
-        sf_term('settings_worksites_display_only_hint', $currentUiLang) ?? 'Voit lisätä myös pelkkiä näyttökohteita (esim. Intra), jotka eivät näy työmaavalinnoissa safetyflashia luotaessa. Poista sellaiselta rasti kohdasta Näytä työmaalistoissa ja jätä Näytä infonäytöissä päälle.',
-        ENT_QUOTES,
-        'UTF-8'
-    ) ?>
+<p class="sf-notice sf-notice-info sf-worksites-info-notice">
+    <span class="sf-worksites-info-icon" aria-hidden="true">ℹ️</span>
+    <span>
+        <?= htmlspecialchars(
+            sf_term('settings_worksites_display_only_hint', $currentUiLang) ?? 'Voit lisätä myös pelkkiä näyttökohteita (esim. Intra), jotka eivät näy työmaavalinnoissa safetyflashia luotaessa. Poista sellaiselta rasti kohdasta Näytä työmaalistoissa ja jätä Näytä infonäytöissä päälle.',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+    </span>
 </p>
 
 <?php if ($worksitesFallbackUsed && $tabWorksitesIsAdmin): ?>
@@ -811,12 +814,13 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             var matchesSearch = term === '' || name.indexOf(term) !== -1;
             var matchesChip = matchesFilter(row, activeFilter);
             var isVisible = matchesSearch && matchesChip;
+            row.style.display = isVisible ? '' : 'none';
             row.hidden = !isVisible;
             row.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         });
         if (showingCount) {
             var visibleCount = rows.filter(function (row) {
-                return !row.hidden;
+                return row.style.display !== 'none';
             }).length;
             showingCount.textContent = formatShowingCount(visibleCount, rows.length);
         }
