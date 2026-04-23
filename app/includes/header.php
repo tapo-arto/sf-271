@@ -108,6 +108,22 @@ if (isset($_GET['lang']) && array_key_exists($_GET['lang'], $availableLangs)) {
         'samesite' => 'Lax',
     ]);
 
+    // Jos käyttäjä on kirjautunut, tallennetaan kielivalinta myös tietokantaan, jotta käyttöliittymä ja sähköpostit pysyvät synkassa
+    if ($user && !empty($user['id'])) {
+        try {
+            $mysqli = sf_db();
+            $stmt = $mysqli->prepare('UPDATE sf_users SET ui_lang = ? WHERE id = ?');
+            if ($stmt) {
+                $uid = (int)$user['id'];
+                $stmt->bind_param('si', $newLang, $uid);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } catch (Throwable $e) {
+            error_log('Kielen tallennus tietokantaan epäonnistui: ' . $e->getMessage());
+        }
+    }
+
     // Poista lang-parametri URL:sta ja ohjaa takaisin samalle sivulle
     $uri = $_SERVER['REQUEST_URI'] ?? '/index.php?page=list';
     $parts = parse_url($uri);
