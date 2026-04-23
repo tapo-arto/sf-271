@@ -461,6 +461,17 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
         }
     }
 
+    var closestFromEventTarget = window.sfClosestFromEventTarget || function (target, selector) {
+        if (target && typeof target.closest === 'function') {
+            return target.closest(selector);
+        }
+        if (target && target.parentElement && typeof target.parentElement.closest === 'function') {
+            return target.parentElement.closest(selector);
+        }
+        return null;
+    };
+    window.sfClosestFromEventTarget = closestFromEventTarget;
+
     function getFocusableElements(modal) {
         if (!modal) return [];
         var all = modal.querySelectorAll('a[href], button:not([disabled]), textarea:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
@@ -481,18 +492,25 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
         }
     }
 
-    document.addEventListener('click', function (event) {
-        var row = event.target.closest('.sf-worksite-row');
+    if (document.__sfWsClickHandler) {
+        document.removeEventListener('click', document.__sfWsClickHandler);
+    }
+    document.__sfWsClickHandler = function (event) {
+        var row = closestFromEventTarget(event.target, '.sf-worksite-row');
         if (!row) return;
-        if (event.target.closest('[data-no-row-click]')) return;
+        if (closestFromEventTarget(event.target, '[data-no-row-click]')) return;
         openWorksiteModal(row.getAttribute('data-modal'));
-    });
+    };
+    document.addEventListener('click', document.__sfWsClickHandler);
 
-    document.addEventListener('keydown', function (event) {
-        var row = event.target.closest('.sf-worksite-row');
+    if (document.__sfWsKeydownHandler) {
+        document.removeEventListener('keydown', document.__sfWsKeydownHandler);
+    }
+    document.__sfWsKeydownHandler = function (event) {
+        var row = closestFromEventTarget(event.target, '.sf-worksite-row');
         if (row && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
-            if (!event.target.closest('[data-no-row-click]')) {
+            if (!closestFromEventTarget(event.target, '[data-no-row-click]')) {
                 openWorksiteModal(row.getAttribute('data-modal'));
             }
         }
@@ -511,11 +529,15 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             event.preventDefault();
             first.focus();
         }
-    });
+    };
+    document.addEventListener('keydown', document.__sfWsKeydownHandler);
 
-    document.addEventListener('change', function (event) {
+    if (document.__sfWsChangeHandler) {
+        document.removeEventListener('change', document.__sfWsChangeHandler);
+    }
+    document.__sfWsChangeHandler = function (event) {
         var input = event.target;
-        if (!input.classList.contains('sf-worksite-visibility-toggle')) return;
+        if (!input || !input.classList || !input.classList.contains('sf-worksite-visibility-toggle')) return;
 
         var previousState = !input.checked;
         var worksiteId = input.getAttribute('data-worksite-id');
@@ -573,7 +595,8 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                 related.disabled = false;
             });
         });
-    });
+    };
+    document.addEventListener('change', document.__sfWsChangeHandler);
 
     var searchInput = document.getElementById('sfWorksiteSearch');
     var list = document.getElementById('sfWorksiteList');
@@ -897,8 +920,14 @@ foreach ($worksites as $ws):
 
 <script>
 (function () {
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.sf-xibo-copy-btn, .sf-copy-btn');
+    var closestFromEventTarget = window.sfClosestFromEventTarget;
+    if (typeof closestFromEventTarget !== 'function') return;
+
+    if (document.__sfWsXiboCopyClickHandler) {
+        document.removeEventListener('click', document.__sfWsXiboCopyClickHandler);
+    }
+    document.__sfWsXiboCopyClickHandler = function (e) {
+        var btn = closestFromEventTarget(e.target, '.sf-xibo-copy-btn, .sf-copy-btn');
         if (!btn) return;
         var targetId = btn.getAttribute('data-copy-target');
         var wsId = btn.getAttribute('data-ws-id');
@@ -915,7 +944,8 @@ foreach ($worksites as $ws):
         } else {
             fallbackCopy(text, wsId, feedbackId);
         }
-    });
+    };
+    document.addEventListener('click', document.__sfWsXiboCopyClickHandler);
 
     function fallbackCopy(text, wsId, feedbackId) {
         var ta = document.createElement('textarea');
@@ -986,10 +1016,14 @@ foreach ($worksites as $ws):
 <script>
 (function () {
     'use strict';
-    if (document.__sfWsEditListenerAttached) return;
-    document.__sfWsEditListenerAttached = true;
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.sf-ws-edit-btn');
+    var closestFromEventTarget = window.sfClosestFromEventTarget;
+    if (typeof closestFromEventTarget !== 'function') return;
+
+    if (document.__sfWsEditClickHandler) {
+        document.removeEventListener('click', document.__sfWsEditClickHandler);
+    }
+    document.__sfWsEditClickHandler = function (e) {
+        var btn = closestFromEventTarget(e.target, '.sf-ws-edit-btn');
         if (!btn) return;
         var modal = document.getElementById('modalEditWorksite');
         if (!modal) return;
@@ -1001,6 +1035,7 @@ foreach ($worksites as $ws):
         if (siteTypeInput) siteTypeInput.value = btn.getAttribute('data-ws-site-type') || '';
         modal.classList.remove('hidden');
         if (nameInput) nameInput.focus();
-    });
+    };
+    document.addEventListener('click', document.__sfWsEditClickHandler);
 })();
 </script>
