@@ -11,17 +11,18 @@ $fallbackImageUrl  = ($fallbackImagePath && $baseUrl)
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
 $worksitesRes = $mysqli->query(
-    'SELECT w.id, w.name, w.site_type, w.is_active, k.api_key AS display_api_key, k.id AS display_key_id,
+    'SELECT w.id, w.name, w.site_type, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets,
+            k.api_key AS display_api_key, k.id AS display_key_id,
             COUNT(t.id) AS active_flash_count
      FROM sf_worksites w
      LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
      LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-     GROUP BY w.id, w.name, w.site_type, w.is_active, k.api_key, k.id
+     GROUP BY w.id, w.name, w.site_type, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
      ORDER BY w.name ASC'
 );
 if (!$worksitesRes) {
     // Fallback if worksite_id or site_type column not yet migrated
-    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
+    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS show_in_worksite_lists, NULL AS show_in_display_targets, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
 }
 if ($worksitesRes) {
     while ($w = $worksitesRes->fetch_assoc()) {
@@ -183,6 +184,16 @@ action="app/actions/worksites_save.php"
         <option value="opencast"><?= htmlspecialchars(sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos', ENT_QUOTES, 'UTF-8') ?></option>
         <option value="other"><?= htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8') ?></option>
     </select>
+    <input type="hidden" name="show_in_worksite_lists" value="0">
+    <label class="sf-form-inline-check">
+        <input type="checkbox" name="show_in_worksite_lists" value="1" checked>
+        <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?>
+    </label>
+    <input type="hidden" name="show_in_display_targets" value="0">
+    <label class="sf-form-inline-check">
+        <input type="checkbox" name="show_in_display_targets" value="1" checked>
+        <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
+    </label>
     <button type="submit">
         <?= htmlspecialchars(
             sf_term('btn_add', $currentUiLang) ?? 'Lisää',
@@ -241,6 +252,20 @@ action="app/actions/worksites_save.php"
             <th>
                 <?= htmlspecialchars(
                     sf_term('settings_worksites_col_active', $currentUiLang) ?? 'Aktiivinen',
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?>
+            </th>
+            <th>
+                <?= htmlspecialchars(
+                    sf_term('settings_worksites_col_in_lists', $currentUiLang) ?? 'Työmaalistoissa',
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?>
+            </th>
+            <th>
+                <?= htmlspecialchars(
+                    sf_term('settings_worksites_col_in_displays', $currentUiLang) ?? 'Infonäytöissä',
                     ENT_QUOTES,
                     'UTF-8'
                 ) ?>
@@ -307,6 +332,44 @@ action="app/actions/worksites_save.php"
         ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
         : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>
 </td>
+                <td>
+                    <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1) ? '✔' : '—' ?>
+                    <form
+                        method="post"
+                        class="sf-inline-form"
+                        action="app/actions/worksites_save.php"
+                        data-sf-ajax="1"
+                    >
+                        <input type="hidden" name="action" value="toggle_worksite_visibility">
+                        <?= sf_csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
+                        <input type="hidden" name="field" value="show_in_worksite_lists">
+                        <button type="submit" class="sf-btn sf-btn-sm sf-btn-outline-primary">
+                            <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1)
+                                ? htmlspecialchars(sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi', ENT_QUOTES, 'UTF-8')
+                                : htmlspecialchars(sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi', ENT_QUOTES, 'UTF-8') ?>
+                        </button>
+                    </form>
+                </td>
+                <td>
+                    <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1) ? '✔' : '—' ?>
+                    <form
+                        method="post"
+                        class="sf-inline-form"
+                        action="app/actions/worksites_save.php"
+                        data-sf-ajax="1"
+                    >
+                        <input type="hidden" name="action" value="toggle_worksite_visibility">
+                        <?= sf_csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
+                        <input type="hidden" name="field" value="show_in_display_targets">
+                        <button type="submit" class="sf-btn sf-btn-sm sf-btn-outline-primary">
+                            <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1)
+                                ? htmlspecialchars(sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi', ENT_QUOTES, 'UTF-8')
+                                : htmlspecialchars(sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi', ENT_QUOTES, 'UTF-8') ?>
+                        </button>
+                    </form>
+                </td>
                 <td>
                     <span class="sf-flash-count">
                         <?= (int)($ws['active_flash_count'] ?? 0) ?>
