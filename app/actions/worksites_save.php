@@ -51,6 +51,11 @@ $mysqli->set_charset((string)($db['charset'] ?? 'utf8mb4'));
 // Accept both "form_action" (settings tab) and legacy "action"
 $action = (string)($_POST['form_action'] ?? ($_POST['action'] ?? ''));
 
+function sf_is_unknown_column_error(string $errorMessage, string $column): bool {
+    return stripos($errorMessage, 'Unknown column') !== false
+        && stripos($errorMessage, $column) !== false;
+}
+
 try {
     // ---------------------------------------------------------------------
     // ADD (used by settings tab: form_action=add, field: name)
@@ -75,12 +80,35 @@ if ($action === 'add') {
         $showInDisplayTargets = array_key_exists('show_in_display_targets', $_POST) ? 1 : 0;
     }
 
-    // Insert name, is_active, and optional site_type.
+    // Insert name, is_active, and optional site_type with backward-compatible fallbacks.
+    $insertMode = 'full';
     $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active, show_in_worksite_lists, show_in_display_targets) VALUES (?, ?, 1, ?, ?)");
+    if (!$stmt) {
+        $prepareError = $mysqli->error;
+        if (sf_is_unknown_column_error($prepareError, 'show_in_worksite_lists') || sf_is_unknown_column_error($prepareError, 'show_in_display_targets')) {
+            $insertMode = 'site_type_only';
+            $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, site_type, is_active) VALUES (?, ?, 1)");
+            if (!$stmt && sf_is_unknown_column_error($mysqli->error, 'site_type')) {
+                $insertMode = 'name_only';
+                $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, is_active) VALUES (?, 1)");
+                $siteType = null;
+            }
+        } elseif (sf_is_unknown_column_error($prepareError, 'site_type')) {
+            $insertMode = 'name_only';
+            $stmt = $mysqli->prepare("INSERT INTO sf_worksites (name, is_active) VALUES (?, 1)");
+            $siteType = null;
+        }
+    }
     if (!$stmt) {
         throw new Exception('Prepare failed: ' .  $mysqli->error);
     }
-    $stmt->bind_param('ssii', $name, $siteType, $showInWorksiteLists, $showInDisplayTargets);
+    if ($insertMode === 'full') {
+        $stmt->bind_param('ssii', $name, $siteType, $showInWorksiteLists, $showInDisplayTargets);
+    } elseif ($insertMode === 'site_type_only') {
+        $stmt->bind_param('ss', $name, $siteType);
+    } else {
+        $stmt->bind_param('s', $name);
+    }
     $ok = $stmt->execute();
     $newWorksiteId = $mysqli->insert_id;
     $stmt->close();
@@ -554,11 +582,21 @@ exit;
             exit;
         }
 
+        $siteTypeWasSaved = true;
         $stmt = $mysqli->prepare("UPDATE sf_worksites SET name = ?, site_type = ? WHERE id = ?");
-        if (!$stmt) {
-            throw new Exception('Prepare failed: ' . $mysqli->error);
+        if (!$stmt && sf_is_unknown_column_error($mysqli->error, 'site_type')) {
+            $siteTypeWasSaved = false;
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET name = ? WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('si', $name, $id);
+        } else {
+            if (!$stmt) {
+                throw new Exception('Prepare failed: ' . $mysqli->error);
+            }
+            $stmt->bind_param('ssi', $name, $siteType, $id);
         }
-        $stmt->bind_param('ssi', $name, $siteType, $id);
         $ok = $stmt->execute();
         $stmt->close();
 
@@ -601,7 +639,7 @@ exit;
                 [
                     'name' => $name,
                     'old_name' => $oldName,
-                    'site_type' => $siteType,
+                    'site_type' => $siteTypeWasSaved ? $siteType : null,
                     'action' => 'edit',
                 ],
                 $currentUser ? (int)$currentUser['id'] : null

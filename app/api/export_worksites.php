@@ -23,25 +23,71 @@ $date = date('Y-m-d');
 // Query worksites (same as tab_worksites.php)
 $pdo = Database::getInstance();
 $worksites = [];
-$stmt = $pdo->query(
-    'SELECT w.id, w.name, w.is_active,
-            COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
-            COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
-            k.api_key AS display_api_key,
-            COUNT(t.id) AS active_flash_count
-     FROM sf_worksites w
-     LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
-     LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-     GROUP BY w.id, w.name, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key
-     ORDER BY w.name ASC'
-);
-if ($stmt) {
-    $worksites = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    $stmt2 = $pdo->query('SELECT id, name, is_active, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, NULL AS display_api_key, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
-    if ($stmt2) {
-        $worksites = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+$worksitesFallbackLevel = 0;
+try {
+    $stmt = $pdo->query(
+        'SELECT w.id, w.name, w.is_active,
+                COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
+                COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
+                k.api_key AS display_api_key,
+                COUNT(t.id) AS active_flash_count
+         FROM sf_worksites w
+         LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
+         LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
+         GROUP BY w.id, w.name, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key
+         ORDER BY w.name ASC'
+    );
+    if (!$stmt) {
+        $errorInfo = $pdo->errorInfo();
+        error_log('export_worksites: primary query failed: ' . ($errorInfo[2] ?? 'unknown SQL error'));
+        $worksitesFallbackLevel = 1;
+        $stmt = $pdo->query(
+            'SELECT w.id, w.name, w.is_active,
+                    1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                    k.api_key AS display_api_key,
+                    0 AS active_flash_count
+               FROM sf_worksites w
+               LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
+              ORDER BY w.name ASC'
+        );
+        if (!$stmt) {
+            $errorInfo = $pdo->errorInfo();
+            error_log('export_worksites: secondary fallback failed: ' . ($errorInfo[2] ?? 'unknown SQL error'));
+            $worksitesFallbackLevel = 2;
+            $stmt = $pdo->query(
+                'SELECT id, name, is_active,
+                        1 AS show_in_worksite_lists, 1 AS show_in_display_targets,
+                        NULL AS display_api_key,
+                        0 AS active_flash_count
+                   FROM sf_worksites
+                  ORDER BY name ASC'
+            );
+            if (!$stmt) {
+                $errorInfo = $pdo->errorInfo();
+                error_log('export_worksites: minimal fallback failed: ' . ($errorInfo[2] ?? 'unknown SQL error'));
+                $worksitesFallbackLevel = 3;
+                $stmt = $pdo->query('SELECT id, name, is_active FROM sf_worksites ORDER BY name ASC');
+                if (!$stmt) {
+                    $errorInfo = $pdo->errorInfo();
+                    error_log('export_worksites: ultra-minimal fallback failed: ' . ($errorInfo[2] ?? 'unknown SQL error'));
+                }
+            }
+        }
     }
+    if ($stmt) {
+        $worksites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($worksitesFallbackLevel >= 3) {
+            foreach ($worksites as &$ws) {
+                $ws['show_in_worksite_lists'] = 1;
+                $ws['show_in_display_targets'] = 1;
+                $ws['display_api_key'] = null;
+                $ws['active_flash_count'] = 0;
+            }
+            unset($ws);
+        }
+    }
+} catch (Throwable $e) {
+    error_log('export_worksites: query chain failed: ' . $e->getMessage());
 }
 
 if ($format === 'json') {
