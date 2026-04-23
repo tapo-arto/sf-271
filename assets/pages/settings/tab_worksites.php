@@ -461,7 +461,7 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
         }
     }
 
-    function closestFromEventTarget(target, selector) {
+    var closestFromEventTarget = window.sfClosestFromEventTarget || function (target, selector) {
         if (target && typeof target.closest === 'function') {
             return target.closest(selector);
         }
@@ -469,7 +469,8 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             return target.parentElement.closest(selector);
         }
         return null;
-    }
+    };
+    window.sfClosestFromEventTarget = closestFromEventTarget;
 
     function getFocusableElements(modal) {
         if (!modal) return [];
@@ -919,15 +920,8 @@ foreach ($worksites as $ws):
 
 <script>
 (function () {
-    function closestFromEventTarget(target, selector) {
-        if (target && typeof target.closest === 'function') {
-            return target.closest(selector);
-        }
-        if (target && target.parentElement && typeof target.parentElement.closest === 'function') {
-            return target.parentElement.closest(selector);
-        }
-        return null;
-    }
+    var closestFromEventTarget = window.sfClosestFromEventTarget;
+    if (typeof closestFromEventTarget !== 'function') return;
 
     if (document.__sfWsXiboCopyClickHandler) {
         document.removeEventListener('click', document.__sfWsXiboCopyClickHandler);
@@ -1022,19 +1016,13 @@ foreach ($worksites as $ws):
 <script>
 (function () {
     'use strict';
-    if (document.__sfWsEditListenerAttached) return;
-    document.__sfWsEditListenerAttached = true;
-    function closestFromEventTarget(target, selector) {
-        if (target && typeof target.closest === 'function') {
-            return target.closest(selector);
-        }
-        if (target && target.parentElement && typeof target.parentElement.closest === 'function') {
-            return target.parentElement.closest(selector);
-        }
-        return null;
-    }
+    var closestFromEventTarget = window.sfClosestFromEventTarget;
+    if (typeof closestFromEventTarget !== 'function') return;
 
-    document.addEventListener('click', function (e) {
+    if (document.__sfWsEditClickHandler) {
+        document.removeEventListener('click', document.__sfWsEditClickHandler);
+    }
+    document.__sfWsEditClickHandler = function (e) {
         var btn = closestFromEventTarget(e.target, '.sf-ws-edit-btn');
         if (!btn) return;
         var modal = document.getElementById('modalEditWorksite');
@@ -1047,6 +1035,7 @@ foreach ($worksites as $ws):
         if (siteTypeInput) siteTypeInput.value = btn.getAttribute('data-ws-site-type') || '';
         modal.classList.remove('hidden');
         if (nameInput) nameInput.focus();
-    });
+    };
+    document.addEventListener('click', document.__sfWsEditClickHandler);
 })();
 </script>
