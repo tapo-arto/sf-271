@@ -184,12 +184,12 @@ action="app/actions/worksites_save.php"
         <option value="opencast"><?= htmlspecialchars(sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos', ENT_QUOTES, 'UTF-8') ?></option>
         <option value="other"><?= htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8') ?></option>
     </select>
-    <input type="hidden" name="show_in_worksite_lists" value="0">
+    <input type="hidden" name="show_in_worksite_lists_present" value="1">
     <label class="sf-form-inline-check">
         <input type="checkbox" name="show_in_worksite_lists" value="1" checked>
         <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?>
     </label>
-    <input type="hidden" name="show_in_display_targets" value="0">
+    <input type="hidden" name="show_in_display_targets_present" value="1">
     <label class="sf-form-inline-check">
         <input type="checkbox" name="show_in_display_targets" value="1" checked>
         <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
@@ -333,7 +333,11 @@ action="app/actions/worksites_save.php"
         : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>
 </td>
                 <td>
-                    <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1) ? '✔' : '—' ?>
+                    <span aria-label="<?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1)
+                        ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
+                        : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>">
+                        <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1) ? '✔' : '—' ?>
+                    </span>
                     <form
                         method="post"
                         class="sf-inline-form"
@@ -352,7 +356,11 @@ action="app/actions/worksites_save.php"
                     </form>
                 </td>
                 <td>
-                    <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1) ? '✔' : '—' ?>
+                    <span aria-label="<?= ((int)($ws['show_in_display_targets'] ?? 1) === 1)
+                        ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
+                        : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>">
+                        <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1) ? '✔' : '—' ?>
+                    </span>
                     <form
                         method="post"
                         class="sf-inline-form"

@@ -70,10 +70,10 @@ if ($action === 'add') {
     // Mikäli kenttää ei ole POST:ssa lainkaan (esim. vanha API-kutsu),
     // käytä oletusta 1 jotta nykykäytös säilyy. Jos kenttä on POST:ssa
     // ja arvo on 0, tulkitaan se tarkoitukselliseksi pois-valinnaksi.
-    $hasListsField = array_key_exists('show_in_worksite_lists', $_POST);
-    $hasDisplaysField = array_key_exists('show_in_display_targets', $_POST);
-    $showInWorksiteLists = $hasListsField ? (((string)$_POST['show_in_worksite_lists'] === '1') ? 1 : 0) : 1;
-    $showInDisplayTargets = $hasDisplaysField ? (((string)$_POST['show_in_display_targets'] === '1') ? 1 : 0) : 1;
+    $hasListsField = array_key_exists('show_in_worksite_lists_present', $_POST);
+    $hasDisplaysField = array_key_exists('show_in_display_targets_present', $_POST);
+    $showInWorksiteLists = $hasListsField ? (isset($_POST['show_in_worksite_lists']) ? 1 : 0) : 1;
+    $showInDisplayTargets = $hasDisplaysField ? (isset($_POST['show_in_display_targets']) ? 1 : 0) : 1;
 
     // Insert name, is_active, and optional site_type.
     $stmt = $mysqli->prepare(
@@ -165,12 +165,16 @@ $msg = $ok
     if ($action === 'toggle_worksite_visibility') {
         $id = (int)($_POST['id'] ?? 0);
         $field = (string)($_POST['field'] ?? '');
-        $allowedFields = ['show_in_worksite_lists', 'show_in_display_targets'];
+        $fieldMap = [
+            'show_in_worksite_lists' => 'show_in_worksite_lists',
+            'show_in_display_targets' => 'show_in_display_targets',
+        ];
+        $column = $fieldMap[$field] ?? null;
         $ok = false;
 
-        if ($id > 0 && in_array($field, $allowedFields, true)) {
+        if ($id > 0 && $column !== null) {
             // Sarake on whitelistattu, joten interpolointi on turvallista.
-            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$field} = 1 - {$field} WHERE id = ?");
+            $stmt = $mysqli->prepare("UPDATE sf_worksites SET {$column} = CASE WHEN {$column} = 1 THEN 0 ELSE 1 END WHERE id = ?");
             if ($stmt) {
                 $stmt->bind_param('i', $id);
                 $ok = $stmt->execute();
