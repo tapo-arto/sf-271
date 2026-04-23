@@ -343,6 +343,8 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             $panelOverviewId = $manageModalId . 'PanelOverview';
             $panelVisibilityId = $manageModalId . 'PanelVisibility';
             $panelDisplayId = $manageModalId . 'PanelDisplay';
+            $listsBadgeTitle = (string)sf_term($showInLists ? 'settings_worksites_badge_lists_on' : 'settings_worksites_badge_lists_off', $currentUiLang);
+            $displaysBadgeTitle = (string)sf_term($showInDisplays ? 'settings_worksites_badge_displays_on' : 'settings_worksites_badge_displays_off', $currentUiLang);
         } catch (Throwable $worksiteRenderError) {
             $rowRenderErrorMessage = 'tab_worksites: row render failed for worksite id ' . (int)($ws['id'] ?? 0) . ': ' . $worksiteRenderError->getMessage();
             if (function_exists('sf_app_log') && defined('LOG_LEVEL_ERROR')) {
@@ -373,27 +375,21 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
                     <?= htmlspecialchars(sprintf(sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa', $flashCount), ENT_QUOTES, 'UTF-8') ?>
                 </div>
             </div>
-            <div class="sf-worksite-row-toggles" data-no-row-click>
-                <label class="sf-toggle-compact" for="ws-row-lists-<?= $worksiteId ?>" title="<?= htmlspecialchars($visibilityListsDesc, ENT_QUOTES, 'UTF-8') ?>">
-                    <input type="checkbox"
-                           id="ws-row-lists-<?= $worksiteId ?>"
-                           class="sf-worksite-visibility-toggle"
-                           data-worksite-id="<?= $worksiteId ?>"
-                           data-field="show_in_worksite_lists"
-                           <?= $showInLists ? 'checked' : '' ?>>
-                    <span class="sf-toggle-slider"></span>
-                    <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
-                </label>
-                <label class="sf-toggle-compact" for="ws-row-displays-<?= $worksiteId ?>" title="<?= htmlspecialchars($visibilityDisplaysDesc, ENT_QUOTES, 'UTF-8') ?>">
-                    <input type="checkbox"
-                           id="ws-row-displays-<?= $worksiteId ?>"
-                           class="sf-worksite-visibility-toggle"
-                           data-worksite-id="<?= $worksiteId ?>"
-                           data-field="show_in_display_targets"
-                           <?= $showInDisplays ? 'checked' : '' ?>>
-                    <span class="sf-toggle-slider"></span>
-                    <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
-                </label>
+            <div class="sf-worksite-row-toggles sf-ws-visibility-badges" data-no-row-click>
+                <span class="sf-ws-badge sf-ws-badge-lists <?= $showInLists ? 'is-on' : 'is-off' ?>"
+                      data-ws-badge-field="show_in_worksite_lists"
+                      title="<?= htmlspecialchars($listsBadgeTitle, ENT_QUOTES, 'UTF-8') ?>"
+                      aria-label="<?= htmlspecialchars($listsBadgeTitle, ENT_QUOTES, 'UTF-8') ?>">
+                    <span aria-hidden="true">📋</span>
+                    <span class="sf-ws-badge-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
+                </span>
+                <span class="sf-ws-badge sf-ws-badge-displays <?= $showInDisplays ? 'is-on' : 'is-off' ?>"
+                      data-ws-badge-field="show_in_display_targets"
+                      title="<?= htmlspecialchars($displaysBadgeTitle, ENT_QUOTES, 'UTF-8') ?>"
+                      aria-label="<?= htmlspecialchars($displaysBadgeTitle, ENT_QUOTES, 'UTF-8') ?>">
+                    <span aria-hidden="true">📺</span>
+                    <span class="sf-ws-badge-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
+                </span>
             </div>
             <button type="button"
                     class="sf-btn sf-btn-sm sf-btn-outline-primary sf-worksite-manage-btn"
@@ -577,6 +573,10 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
     var csrfToken = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var saveError = <?= json_encode(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var showingCountTemplate = <?= json_encode(sf_term('settings_worksites_showing_count', $currentUiLang) ?? 'Näytetään %d / %d työmaata', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var badgeListsOnText = <?= json_encode(sf_term('settings_worksites_badge_lists_on', $currentUiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var badgeListsOffText = <?= json_encode(sf_term('settings_worksites_badge_lists_off', $currentUiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var badgeDisplaysOnText = <?= json_encode(sf_term('settings_worksites_badge_displays_on', $currentUiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var badgeDisplaysOffText = <?= json_encode(sf_term('settings_worksites_badge_displays_off', $currentUiLang), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     function showError(message) {
         if (typeof window.sfToast === 'function') {
@@ -749,6 +749,17 @@ $visibilityDisplaysDesc = (string)(sf_term('settings_worksites_visibility_displa
             if (row) {
                 if (field === 'show_in_worksite_lists') row.setAttribute('data-lists', normalizedValue ? '1' : '0');
                 if (field === 'show_in_display_targets') row.setAttribute('data-displays', normalizedValue ? '1' : '0');
+                var badge = row.querySelector('.sf-ws-badge[data-ws-badge-field="' + field + '"]');
+                if (badge) {
+                    var isListsField = field === 'show_in_worksite_lists';
+                    var tooltipText = normalizedValue
+                        ? (isListsField ? badgeListsOnText : badgeDisplaysOnText)
+                        : (isListsField ? badgeListsOffText : badgeDisplaysOffText);
+                    badge.classList.toggle('is-on', normalizedValue);
+                    badge.classList.toggle('is-off', !normalizedValue);
+                    badge.setAttribute('title', tooltipText);
+                    badge.setAttribute('aria-label', tooltipText);
+                }
             }
             applyFilters();
         }).catch(function (error) {
