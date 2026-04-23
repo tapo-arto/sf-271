@@ -8,23 +8,36 @@ $fallbackImageUrl  = ($fallbackImagePath && $baseUrl)
     ? rtrim($baseUrl, '/') . '/' . ltrim($fallbackImagePath, '/')
     : '';
 
+if (!function_exists('sf_worksite_format_datetime')) {
+    function sf_worksite_format_datetime(?string $value): string {
+        if ($value === null || trim($value) === '') {
+            return '—';
+        }
+        $ts = strtotime($value);
+        if ($ts === false) {
+            return '—';
+        }
+        return date('d.m.Y H:i', $ts);
+    }
+}
+
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
 $worksitesRes = $mysqli->query(
-    'SELECT w.id, w.name, w.site_type, w.is_active,
+    'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
             COALESCE(w.show_in_worksite_lists, 1) AS show_in_worksite_lists,
             COALESCE(w.show_in_display_targets, 1) AS show_in_display_targets,
             k.api_key AS display_api_key, k.id AS display_key_id,
             COUNT(t.id) AS active_flash_count
-     FROM sf_worksites w
-     LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
-     LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
-     GROUP BY w.id, w.name, w.site_type, w.is_active, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
-     ORDER BY w.name ASC'
+      FROM sf_worksites w
+      LEFT JOIN sf_display_api_keys k ON k.worksite_id = w.id AND k.is_active = 1
+      LEFT JOIN sf_flash_display_targets t ON t.display_key_id = k.id AND t.is_active = 1
+      GROUP BY w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at, w.show_in_worksite_lists, w.show_in_display_targets, k.api_key, k.id
+      ORDER BY w.name ASC'
 );
 if (!$worksitesRes) {
     // Fallback if all columns are not yet migrated
-    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
+    $worksitesRes = $mysqli->query('SELECT id, name, NULL AS site_type, is_active, NULL AS created_at, NULL AS updated_at, 1 AS show_in_worksite_lists, 1 AS show_in_display_targets, 0 AS active_flash_count FROM sf_worksites ORDER BY name ASC');
 }
 if ($worksitesRes) {
     while ($w = $worksitesRes->fetch_assoc()) {
@@ -164,20 +177,20 @@ if ($worksitesRes) {
         <?php if (!empty($worksites)): ?>
             <details class="sf-export-menu">
                 <summary class="sf-btn sf-btn-sm sf-btn-outline-primary">
-                    ⬇ <?= htmlspecialchars(sf_term('btn_export_worksites', $currentUiLang) ?? 'Vie työmaat', ENT_QUOTES, 'UTF-8') ?>
+                    <?= htmlspecialchars(sf_term('btn_export_worksites', $currentUiLang) ?? 'Vie työmaat', ENT_QUOTES, 'UTF-8') ?>
                 </summary>
                 <div class="sf-export-menu-items" role="menu">
                     <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=csv', ENT_QUOTES, 'UTF-8') ?>"
                        class="sf-export-btn"
                        role="menuitem"
                        download>
-                        📄 <?= htmlspecialchars(sf_term('btn_export_csv', $currentUiLang) ?? 'Lataa CSV', ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars(sf_term('btn_export_csv', $currentUiLang) ?? 'Lataa CSV', ENT_QUOTES, 'UTF-8') ?>
                     </a>
                     <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=json', ENT_QUOTES, 'UTF-8') ?>"
                        class="sf-export-btn"
                        role="menuitem"
                        download>
-                        { } <?= htmlspecialchars(sf_term('btn_export_json', $currentUiLang) ?? 'Lataa JSON', ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars(sf_term('btn_export_json', $currentUiLang) ?? 'Lataa JSON', ENT_QUOTES, 'UTF-8') ?>
                     </a>
                 </div>
             </details>
@@ -195,11 +208,16 @@ if ($worksitesRes) {
     </p>
 <?php else: ?>
 <div class="sf-worksites-filters" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
-    <input type="search"
-           id="sfWorksiteSearch"
-           class="sf-input"
-           placeholder="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>"
-           aria-label="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>">
+    <div class="sf-worksites-search-row">
+        <input type="search"
+               id="sfWorksiteSearch"
+               class="sf-input"
+               placeholder="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>"
+               aria-label="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>">
+        <p id="sfWorksiteShowingCount" class="sf-worksites-showing-count" aria-live="polite">
+            <?= htmlspecialchars(sprintf((sf_term('settings_worksites_showing_count', $currentUiLang) ?? 'Näytetään %d / %d työmaata'), count($worksites), count($worksites)), ENT_QUOTES, 'UTF-8') ?>
+        </p>
+    </div>
     <div class="sf-worksites-filter-chips" role="group" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
         <button type="button" class="sf-filter-chip is-active" data-filter="all"><?= htmlspecialchars(sf_term('settings_worksites_filter_all', $currentUiLang) ?? 'Kaikki', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="active"><?= htmlspecialchars(sf_term('settings_worksites_filter_active', $currentUiLang) ?? 'Aktiiviset', ENT_QUOTES, 'UTF-8') ?></button>
@@ -207,10 +225,9 @@ if ($worksitesRes) {
         <button type="button" class="sf-filter-chip" data-filter="lists"><?= htmlspecialchars(sf_term('settings_worksites_filter_lists', $currentUiLang) ?? 'Näytetään työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></button>
         <button type="button" class="sf-filter-chip" data-filter="displays"><?= htmlspecialchars(sf_term('settings_worksites_filter_displays', $currentUiLang) ?? 'Näytetään infonäytöissä', ENT_QUOTES, 'UTF-8') ?></button>
     </div>
-    <p id="sfWorksiteFilterStatus" class="sf-visually-hidden" aria-live="polite"></p>
 </div>
 
-<div class="sf-worksite-grid" id="sfWorksiteGrid">
+<div class="sf-worksites-list" id="sfWorksiteList" role="list">
     <?php foreach ($worksites as $ws): ?>
         <?php
         $siteTypeKey = $ws['site_type'] ?? null;
@@ -227,130 +244,173 @@ if ($worksitesRes) {
         $isActive = (int)$ws['is_active'] === 1;
         $showInLists = (int)($ws['show_in_worksite_lists'] ?? 1) === 1;
         $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
+        $worksiteId = (int)$ws['id'];
+        $worksiteName = (string)($ws['name'] ?? '');
+        $manageModalId = 'sfWorksiteManageModal' . $worksiteId;
+        $playlistUrl = !empty($ws['display_key_id'])
+            ? (($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'])
+            : '';
+        $slideshowUrl = !empty($ws['display_api_key'])
+            ? (rtrim((string)($baseUrl ?? ''), '/') . '/app/api/display_playlist.php?key=' . urlencode((string)$ws['display_api_key']) . '&format=slideshow')
+            : '';
         ?>
-        <article class="sf-worksite-card <?= $isActive ? '' : 'is-inactive' ?>"
-                 data-name="<?= htmlspecialchars(mb_strtolower((string)$ws['name']), ENT_QUOTES, 'UTF-8') ?>"
-                 data-active="<?= $isActive ? '1' : '0' ?>"
-                 data-lists="<?= $showInLists ? '1' : '0' ?>"
-                 data-displays="<?= $showInDisplays ? '1' : '0' ?>">
-            <header class="sf-worksite-card-header">
-                <h3 class="sf-worksite-card-title"><?= htmlspecialchars($ws['name'], ENT_QUOTES, 'UTF-8') ?></h3>
-                <span class="sf-status-badge <?= $isActive ? 'is-active' : 'is-inactive' ?>">
-                    <?= htmlspecialchars(
-                        $isActive
-                            ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen')
-                            : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'),
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>
-                </span>
-            </header>
-
-            <p class="sf-worksite-meta">
-                <?= htmlspecialchars($siteTypeLabel, ENT_QUOTES, 'UTF-8') ?>
-                ·
-                <?= htmlspecialchars(
-                    sprintf(sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa', $flashCount),
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </p>
-
-            <section class="sf-worksite-section">
-                <strong><?= htmlspecialchars(sf_term('settings_worksites_visibility_heading', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>:</strong>
-                <div class="sf-worksite-visibility-toggles">
-                    <label class="sf-toggle-row" for="ws-toggle-lists-<?= (int)$ws['id'] ?>">
-                        <input type="checkbox"
-                               id="ws-toggle-lists-<?= (int)$ws['id'] ?>"
-                               class="sf-worksite-visibility-toggle"
-                               data-worksite-id="<?= (int)$ws['id'] ?>"
-                               data-field="show_in_worksite_lists"
-                               <?= $showInLists ? 'checked' : '' ?>>
-                        <span><?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></span>
-                    </label>
-                    <label class="sf-toggle-row" for="ws-toggle-displays-<?= (int)$ws['id'] ?>">
-                        <input type="checkbox"
-                               id="ws-toggle-displays-<?= (int)$ws['id'] ?>"
-                               class="sf-worksite-visibility-toggle"
-                               data-worksite-id="<?= (int)$ws['id'] ?>"
-                               data-field="show_in_display_targets"
-                               <?= $showInDisplays ? 'checked' : '' ?>>
-                        <span><?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?></span>
-                    </label>
+        <div class="sf-worksite-row"
+             role="listitem"
+             tabindex="0"
+             data-worksite-id="<?= $worksiteId ?>"
+             data-name="<?= htmlspecialchars(mb_strtolower($worksiteName), ENT_QUOTES, 'UTF-8') ?>"
+             data-active="<?= $isActive ? '1' : '0' ?>"
+             data-lists="<?= $showInLists ? '1' : '0' ?>"
+             data-displays="<?= $showInDisplays ? '1' : '0' ?>"
+             data-modal="#<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>">
+            <span class="sf-worksite-status-dot <?= $isActive ? 'is-active' : 'is-inactive' ?>"
+                  title="<?= htmlspecialchars($isActive ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen') : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'), ENT_QUOTES, 'UTF-8') ?>"
+                  aria-label="<?= htmlspecialchars($isActive ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen') : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'), ENT_QUOTES, 'UTF-8') ?>"></span>
+            <div class="sf-worksite-row-main">
+                <div class="sf-worksite-row-name"><?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="sf-worksite-row-meta">
+                    <?= htmlspecialchars($siteTypeLabel, ENT_QUOTES, 'UTF-8') ?>
+                    ·
+                    <?= htmlspecialchars(sprintf(sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa', $flashCount), ENT_QUOTES, 'UTF-8') ?>
                 </div>
-            </section>
+            </div>
+            <div class="sf-worksite-row-toggles" data-no-row-click>
+                <label class="sf-toggle-compact" for="ws-row-lists-<?= $worksiteId ?>">
+                    <input type="checkbox"
+                           id="ws-row-lists-<?= $worksiteId ?>"
+                           class="sf-worksite-visibility-toggle"
+                           data-worksite-id="<?= $worksiteId ?>"
+                           data-field="show_in_worksite_lists"
+                           <?= $showInLists ? 'checked' : '' ?>>
+                    <span class="sf-toggle-slider"></span>
+                    <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
+                </label>
+                <label class="sf-toggle-compact" for="ws-row-displays-<?= $worksiteId ?>">
+                    <input type="checkbox"
+                           id="ws-row-displays-<?= $worksiteId ?>"
+                           class="sf-worksite-visibility-toggle"
+                           data-worksite-id="<?= $worksiteId ?>"
+                           data-field="show_in_display_targets"
+                           <?= $showInDisplays ? 'checked' : '' ?>>
+                    <span class="sf-toggle-slider"></span>
+                    <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
+                </label>
+            </div>
+            <button type="button"
+                    class="sf-btn sf-btn-sm sf-btn-outline-primary sf-worksite-manage-btn"
+                    data-no-row-click
+                    data-modal-open="#<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars(sf_term('settings_worksites_manage_btn', $currentUiLang) ?? 'Hallinnoi', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+        </div>
 
-            <section class="sf-worksite-section">
-                <strong>🔑 <?= htmlspecialchars(sf_term('settings_worksites_col_api_key', $currentUiLang) ?? 'API-avain', ENT_QUOTES, 'UTF-8') ?></strong>
-                <?php if (!empty($ws['display_api_key'])): ?>
-                    <div class="sf-api-key-cell">
-                        <code class="sf-api-key-code"
-                              id="apiKey<?= (int)$ws['id'] ?>"
-                              title="<?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?>">
-                            <?= htmlspecialchars(
-                                mb_strlen($ws['display_api_key']) > 20
-                                    ? mb_substr($ws['display_api_key'], 0, 18) . '…'
-                                    : $ws['display_api_key'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            ) ?>
-                        </code>
-                        <button type="button"
-                                class="sf-api-key-copy-btn sf-xibo-copy-btn"
-                                data-copy-target="apiKeyFull<?= (int)$ws['id'] ?>"
-                                data-ws-id="<?= (int)$ws['id'] ?>-apikey">
-                            📋 <?= htmlspecialchars(sf_term('btn_copy_api_key', $currentUiLang) ?? 'Kopioi', ENT_QUOTES, 'UTF-8') ?>
-                        </button>
-                        <span id="apiKeyFull<?= (int)$ws['id'] ?>" style="display:none;"><?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="sf-api-key-copied" id="xiboCopied<?= (int)$ws['id'] ?>-apikey">
-                            ✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?>
-                        </span>
-                    </div>
-                <?php else: ?>
-                    <span class="sf-api-key-none"><?= htmlspecialchars(sf_term('settings_worksites_no_api_key', $currentUiLang) ?? 'Ei avainta', ENT_QUOTES, 'UTF-8') ?></span>
-                <?php endif; ?>
-            </section>
-
-            <footer class="sf-worksite-card-actions">
-                <div class="sf-worksite-primary-actions">
-                    <button type="button"
-                        class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
-                        data-ws-id="<?= (int)$ws['id'] ?>"
-                        data-ws-name="<?= htmlspecialchars($ws['name'], ENT_QUOTES, 'UTF-8') ?>"
-                        data-ws-site-type="<?= htmlspecialchars($ws['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                        ✏️ <?= htmlspecialchars(sf_term('settings_worksites_action_edit', $currentUiLang) ?? 'Muokkaa', ENT_QUOTES, 'UTF-8') ?>
-                    </button>
-                    <?php if (!empty($ws['display_api_key']) && !empty($ws['display_key_id'])): ?>
-                        <a href="<?= htmlspecialchars(($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'], ENT_QUOTES, 'UTF-8') ?>"
-                           class="sf-btn sf-btn-sm sf-btn-outline-primary">
-                            <img src="<?= $baseUrl ?>/assets/img/icons/playlist.svg" alt="" aria-hidden="true" style="width:14px;height:14px;vertical-align:middle;">
-                            <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($ws['display_api_key'])): ?>
-                        <button type="button"
-                            class="sf-btn sf-btn-sm sf-btn-outline-primary"
-                            data-modal-open="#xiboModal<?= (int)$ws['id'] ?>">
-                            📋 <?= htmlspecialchars(sf_term('xibo_col_heading', $currentUiLang) ?? 'Xibo-koodi', ENT_QUOTES, 'UTF-8') ?>
-                        </button>
-                    <?php endif; ?>
+        <div class="sf-modal hidden sf-worksite-manage-modal" id="<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>" role="dialog" aria-modal="true" aria-labelledby="<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>Title">
+            <div class="sf-modal-content sf-worksite-manage-content">
+                <div class="sf-modal-header">
+                    <h3 id="<?= htmlspecialchars($manageModalId, ENT_QUOTES, 'UTF-8') ?>Title"><?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?></h3>
+                    <span class="sf-status-badge <?= $isActive ? 'is-active' : 'is-inactive' ?>">
+                        <?= htmlspecialchars($isActive ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen') : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'), ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                    <button type="button" data-modal-close class="sf-modal-close" aria-label="<?= htmlspecialchars(sf_term('settings_worksites_close', $currentUiLang) ?? 'Sulje', ENT_QUOTES, 'UTF-8') ?>">✕</button>
                 </div>
-                <form method="post" class="sf-inline-form" action="app/actions/worksites_save.php" data-sf-ajax="1">
-                    <input type="hidden" name="form_action" value="toggle">
-                    <?= sf_csrf_field() ?>
-                    <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
-                    <button type="submit" class="sf-btn sf-btn-sm <?= $isActive ? 'sf-btn-outline-danger' : 'sf-btn-outline-primary' ?>">
-                        <?= htmlspecialchars(
-                            $isActive
-                                ? (sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi')
-                                : (sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi'),
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                <div class="sf-modal-body sf-worksite-manage-body">
+                    <section class="sf-worksite-manage-section">
+                        <h4><?= htmlspecialchars(sf_term('settings_worksites_basic_info', $currentUiLang) ?? 'Perustiedot', ENT_QUOTES, 'UTF-8') ?></h4>
+                        <dl class="sf-worksite-manage-meta">
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_name', $currentUiLang) ?? 'Nimi', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_site_type', $currentUiLang) ?? 'Työmaan tyyppi', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars($siteTypeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_created', $currentUiLang) ?? 'Luotu', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['created_at']) ? (string)$ws['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                            <div><dt><?= htmlspecialchars(sf_term('settings_worksites_col_updated', $currentUiLang) ?? 'Viimeksi päivitetty', ENT_QUOTES, 'UTF-8') ?></dt><dd><?= htmlspecialchars(sf_worksite_format_datetime(isset($ws['updated_at']) ? (string)$ws['updated_at'] : null), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                        </dl>
+                        <button type="button"
+                                class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
+                                data-ws-id="<?= $worksiteId ?>"
+                                data-ws-name="<?= htmlspecialchars($worksiteName, ENT_QUOTES, 'UTF-8') ?>"
+                                data-ws-site-type="<?= htmlspecialchars($ws['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <?= htmlspecialchars(sf_term('settings_worksites_action_edit', $currentUiLang) ?? 'Muokkaa', ENT_QUOTES, 'UTF-8') ?>
+                        </button>
+                    </section>
+
+                    <section class="sf-worksite-manage-section">
+                        <h4><?= htmlspecialchars(sf_term('settings_worksites_visibility', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?></h4>
+                        <div class="sf-worksite-modal-visibility">
+                            <label class="sf-toggle-compact sf-toggle-compact-modal" for="ws-modal-lists-<?= $worksiteId ?>">
+                                <input type="checkbox"
+                                       id="ws-modal-lists-<?= $worksiteId ?>"
+                                       class="sf-worksite-visibility-toggle"
+                                       data-worksite-id="<?= $worksiteId ?>"
+                                       data-field="show_in_worksite_lists"
+                                       <?= $showInLists ? 'checked' : '' ?>>
+                                <span class="sf-toggle-slider"></span>
+                                <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_lists_short', $currentUiLang) ?? 'Listat', ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Näkyy kotityömaan valinnassa, dashboardin suodattimissa, roolikategorioissa ja flashin luontilomakkeessa.', ENT_QUOTES, 'UTF-8') ?></p>
+                            <label class="sf-toggle-compact sf-toggle-compact-modal" for="ws-modal-displays-<?= $worksiteId ?>">
+                                <input type="checkbox"
+                                       id="ws-modal-displays-<?= $worksiteId ?>"
+                                       class="sf-worksite-visibility-toggle"
+                                       data-worksite-id="<?= $worksiteId ?>"
+                                       data-field="show_in_display_targets"
+                                       <?= $showInDisplays ? 'checked' : '' ?>>
+                                <span class="sf-toggle-slider"></span>
+                                <span class="sf-toggle-label"><?= htmlspecialchars(sf_term('settings_worksites_toggle_displays_short', $currentUiLang) ?? 'Näytöt', ENT_QUOTES, 'UTF-8') ?></span>
+                            </label>
+                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_visibility_displays_desc', $currentUiLang) ?? 'Näkyy safetyflashin julkaisumodalin näyttövalinnoissa.', ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </section>
+
+                    <section class="sf-worksite-manage-section">
+                        <h4><?= htmlspecialchars(sf_term('settings_worksites_col_api_key', $currentUiLang) ?? 'API-avain', ENT_QUOTES, 'UTF-8') ?></h4>
+                        <?php if (!empty($ws['display_api_key'])): ?>
+                            <div class="sf-worksite-copy-row">
+                                <code id="sfWsApiKeyText<?= $worksiteId ?>" class="sf-worksite-code"><?= htmlspecialchars((string)$ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?></code>
+                                <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary sf-copy-btn" data-copy-target="sfWsApiKeyText<?= $worksiteId ?>" data-copy-feedback="sfWsApiCopied<?= $worksiteId ?>">
+                                    <?= htmlspecialchars(sf_term('btn_copy_api_key', $currentUiLang) ?? 'Kopioi', ENT_QUOTES, 'UTF-8') ?>
+                                </button>
+                            </div>
+                            <span class="sf-copy-feedback" id="sfWsApiCopied<?= $worksiteId ?>"><?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
+
+                            <div class="sf-worksite-copy-row">
+                                <code id="sfWsSlideshowUrl<?= $worksiteId ?>" class="sf-worksite-code"><?= htmlspecialchars($slideshowUrl, ENT_QUOTES, 'UTF-8') ?></code>
+                                <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary sf-copy-btn" data-copy-target="sfWsSlideshowUrl<?= $worksiteId ?>" data-copy-feedback="sfWsSlideshowCopied<?= $worksiteId ?>">
+                                    <?= htmlspecialchars(sf_term('btn_copy', $currentUiLang) ?? 'Kopioi', ENT_QUOTES, 'UTF-8') ?>
+                                </button>
+                            </div>
+                            <span class="sf-copy-feedback" id="sfWsSlideshowCopied<?= $worksiteId ?>"><?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
+
+                            <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary" data-modal-open="#xiboModal<?= $worksiteId ?>">
+                                <?= htmlspecialchars(sf_term('xibo_col_heading', $currentUiLang) ?? 'Xibo-koodi', ENT_QUOTES, 'UTF-8') ?>
+                            </button>
+                        <?php else: ?>
+                            <p class="sf-worksite-help-text"><?= htmlspecialchars(sf_term('settings_worksites_no_api_key', $currentUiLang) ?? 'Ei avainta', ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                    </section>
+
+                    <section class="sf-worksite-manage-section">
+                        <h4><?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?></h4>
+                        <p class="sf-worksite-help-text"><?= htmlspecialchars(sprintf((sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa'), $flashCount), ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if ($playlistUrl !== ''): ?>
+                            <a href="<?= htmlspecialchars($playlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="sf-btn sf-btn-sm sf-btn-outline-primary">
+                                <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
+                            </a>
+                        <?php endif; ?>
+                    </section>
+                </div>
+                <div class="sf-modal-footer sf-worksite-manage-footer">
+                    <form method="post" class="sf-inline-form" action="app/actions/worksites_save.php" data-sf-ajax="1">
+                        <input type="hidden" name="form_action" value="toggle">
+                        <?= sf_csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= $worksiteId ?>">
+                        <button type="submit" class="sf-btn sf-btn-sm sf-btn-outline-secondary">
+                            <?= htmlspecialchars($isActive ? (sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi') : (sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi'), ENT_QUOTES, 'UTF-8') ?>
+                        </button>
+                    </form>
+                    <button type="button" data-modal-close class="sf-btn sf-btn-sm sf-btn-secondary">
+                        <?= htmlspecialchars(sf_term('settings_worksites_close', $currentUiLang) ?? 'Sulje', ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                </form>
-            </footer>
-        </article>
+                </div>
+            </div>
+        </div>
     <?php endforeach; ?>
 </div>
 
@@ -361,6 +421,7 @@ if ($worksitesRes) {
     var baseUrl = <?= json_encode(rtrim($baseUrl, '/'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var csrfToken = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var saveError = <?= json_encode(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var showingCountTemplate = <?= json_encode(sf_term('settings_worksites_showing_count', $currentUiLang) ?? 'Näytetään %d / %d työmaata', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     function showError(message) {
         if (typeof window.sfToast === 'function') {
@@ -370,6 +431,58 @@ if ($worksitesRes) {
         }
     }
 
+    function getFocusableElements(modal) {
+        if (!modal) return [];
+        var all = modal.querySelectorAll('a[href], button:not([disabled]), textarea:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        return Array.prototype.slice.call(all).filter(function (el) {
+            return el.offsetParent !== null;
+        });
+    }
+
+    function openWorksiteModal(selector) {
+        if (!selector) return;
+        var modal = document.querySelector(selector);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.classList.add('sf-modal-open');
+        var focusable = getFocusableElements(modal);
+        if (focusable.length > 0) {
+            focusable[0].focus({ preventScroll: true });
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        var row = event.target.closest('.sf-worksite-row');
+        if (!row) return;
+        if (event.target.closest('[data-no-row-click]')) return;
+        openWorksiteModal(row.getAttribute('data-modal'));
+    });
+
+    document.addEventListener('keydown', function (event) {
+        var row = event.target.closest('.sf-worksite-row');
+        if (row && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            if (!event.target.closest('[data-no-row-click]')) {
+                openWorksiteModal(row.getAttribute('data-modal'));
+            }
+        }
+
+        if (event.key !== 'Tab') return;
+        var modal = document.querySelector('.sf-worksite-manage-modal:not(.hidden)');
+        if (!modal) return;
+        var focusable = getFocusableElements(modal);
+        if (focusable.length === 0) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+
     document.addEventListener('change', function (event) {
         var input = event.target;
         if (!input.classList.contains('sf-worksite-visibility-toggle')) return;
@@ -377,10 +490,13 @@ if ($worksitesRes) {
         var previousState = !input.checked;
         var worksiteId = input.getAttribute('data-worksite-id');
         var field = input.getAttribute('data-field');
+        var row = document.querySelector('.sf-worksite-row[data-worksite-id="' + worksiteId + '"]');
+        if (row) row.setAttribute('aria-busy', 'true');
 
-        var card = input.closest('.sf-worksite-card');
-        if (card) card.setAttribute('aria-busy', 'true');
-        input.disabled = true;
+        var relatedInputs = document.querySelectorAll('.sf-worksite-visibility-toggle[data-worksite-id="' + worksiteId + '"][data-field="' + field + '"]');
+        relatedInputs.forEach(function (related) {
+            related.disabled = true;
+        });
 
         var fd = new FormData();
         fd.append('action', 'toggle_worksite_visibility');
@@ -407,53 +523,68 @@ if ($worksitesRes) {
             }
 
             var normalizedValue = Number(result.data.value) === 1;
-            input.checked = normalizedValue;
-            if (card) {
-                if (field === 'show_in_worksite_lists') card.setAttribute('data-lists', normalizedValue ? '1' : '0');
-                if (field === 'show_in_display_targets') card.setAttribute('data-displays', normalizedValue ? '1' : '0');
+            relatedInputs.forEach(function (related) {
+                related.checked = normalizedValue;
+            });
+
+            if (row) {
+                if (field === 'show_in_worksite_lists') row.setAttribute('data-lists', normalizedValue ? '1' : '0');
+                if (field === 'show_in_display_targets') row.setAttribute('data-displays', normalizedValue ? '1' : '0');
             }
             applyFilters();
         }).catch(function (error) {
-            input.checked = previousState;
+            relatedInputs.forEach(function (related) {
+                related.checked = previousState;
+            });
             showError(error && error.message ? error.message : saveError);
         }).finally(function () {
-            if (card) card.removeAttribute('aria-busy');
-            input.disabled = false;
+            if (row) row.removeAttribute('aria-busy');
+            relatedInputs.forEach(function (related) {
+                related.disabled = false;
+            });
         });
     });
 
     var searchInput = document.getElementById('sfWorksiteSearch');
-    var grid = document.getElementById('sfWorksiteGrid');
-    var filterStatus = document.getElementById('sfWorksiteFilterStatus');
-    if (!grid) return;
+    var list = document.getElementById('sfWorksiteList');
+    var showingCount = document.getElementById('sfWorksiteShowingCount');
+    if (!list) return;
 
-    var cards = Array.prototype.slice.call(grid.querySelectorAll('.sf-worksite-card'));
+    var rows = Array.prototype.slice.call(list.querySelectorAll('.sf-worksite-row'));
     var chips = Array.prototype.slice.call(document.querySelectorAll('.sf-filter-chip'));
     var activeFilter = 'all';
 
-    function matchesFilter(card, filter) {
-        if (filter === 'active') return card.getAttribute('data-active') === '1';
-        if (filter === 'inactive') return card.getAttribute('data-active') === '0';
-        if (filter === 'lists') return card.getAttribute('data-lists') === '1';
-        if (filter === 'displays') return card.getAttribute('data-displays') === '1';
+    function matchesFilter(row, filter) {
+        if (filter === 'active') return row.getAttribute('data-active') === '1';
+        if (filter === 'inactive') return row.getAttribute('data-active') === '0';
+        if (filter === 'lists') return row.getAttribute('data-lists') === '1';
+        if (filter === 'displays') return row.getAttribute('data-displays') === '1';
         return true;
+    }
+
+    function formatShowingCount(visible, total) {
+        var index = 0;
+        return showingCountTemplate.replace(/%d/g, function () {
+            index += 1;
+            return String(index === 1 ? visible : total);
+        });
     }
 
     function applyFilters() {
         var term = ((searchInput && searchInput.value) || '').toLowerCase().trim();
-        cards.forEach(function (card) {
-            var name = card.getAttribute('data-name') || '';
+        rows.forEach(function (row) {
+            var name = row.getAttribute('data-name') || '';
             var matchesSearch = term === '' || name.indexOf(term) !== -1;
-            var matchesChip = matchesFilter(card, activeFilter);
+            var matchesChip = matchesFilter(row, activeFilter);
             var isVisible = matchesSearch && matchesChip;
-            card.style.display = isVisible ? '' : 'none';
-            card.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+            row.hidden = !isVisible;
+            row.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         });
-        if (filterStatus) {
-            var visibleCount = cards.filter(function (card) {
-                return card.style.display !== 'none';
+        if (showingCount) {
+            var visibleCount = rows.filter(function (row) {
+                return !row.hidden;
             }).length;
-            filterStatus.textContent = visibleCount + ' / ' + cards.length;
+            showingCount.textContent = formatShowingCount(visibleCount, rows.length);
         }
     }
 
@@ -469,6 +600,8 @@ if ($worksitesRes) {
             applyFilters();
         });
     });
+
+    applyFilters();
 })();
 </script>
 <?php endif; ?>
@@ -688,36 +821,36 @@ foreach ($worksites as $ws):
             </p>
 
             <div style="margin-bottom:1.25rem;">
-                <strong style="display:block;margin-bottom:0.4rem;">▸ <?= htmlspecialchars(sf_term('xibo_webpage_url_label', $currentUiLang) ?? 'Webpage Widget URL', ENT_QUOTES, 'UTF-8') ?></strong>
+                <strong style="display:block;margin-bottom:0.4rem;"><?= htmlspecialchars(sf_term('xibo_webpage_url_label', $currentUiLang) ?? 'Webpage Widget URL', ENT_QUOTES, 'UTF-8') ?></strong>
                 <div style="display:flex;gap:0.5rem;align-items:stretch;">
                     <code id="xiboHtmlUrl<?= $xiboWsId ?>" style="flex:1;display:block;background:var(--sf-bg-secondary,#f5f5f5);padding:0.5rem 0.75rem;border-radius:4px;font-size:0.82rem;word-break:break-all;"><?= htmlspecialchars($htmlUrl, ENT_QUOTES, 'UTF-8') ?></code>
                     <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary sf-xibo-copy-btn" data-copy-target="xiboHtmlUrl<?= $xiboWsId ?>" data-ws-id="<?= $xiboWsId ?>-url">
-                        📋 <?= htmlspecialchars(sf_term('xibo_copy_url', $currentUiLang) ?? 'Kopioi URL', ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars(sf_term('xibo_copy_url', $currentUiLang) ?? 'Kopioi URL', ENT_QUOTES, 'UTF-8') ?>
                     </button>
                 </div>
-                <span id="xiboCopied<?= $xiboWsId ?>-url" style="display:none;color:green;font-size:0.85rem;margin-top:0.25rem;">✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
+                <span id="xiboCopied<?= $xiboWsId ?>-url" style="display:none;color:green;font-size:0.85rem;margin-top:0.25rem;"><?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
             </div>
 
             <div style="margin-bottom:1.25rem;">
-                <strong style="display:block;margin-bottom:0.25rem;">▸ <?= htmlspecialchars(sf_term('xibo_embedded_html_label', $currentUiLang) ?? 'HTML-kenttä (Embedded Widget)', ENT_QUOTES, 'UTF-8') ?></strong>
-                <p style="margin:0 0 0.5rem;color:var(--sf-text-secondary,#666);font-size:0.85rem;">ℹ️ <?= htmlspecialchars(sf_term('xibo_embedded_instructions', $currentUiLang) ?? 'Liitä HTML ja CSS Xibon Embedded Widget -kenttiin', ENT_QUOTES, 'UTF-8') ?></p>
+                <strong style="display:block;margin-bottom:0.25rem;"><?= htmlspecialchars(sf_term('xibo_embedded_html_label', $currentUiLang) ?? 'HTML-kenttä (Embedded Widget)', ENT_QUOTES, 'UTF-8') ?></strong>
+                <p style="margin:0 0 0.5rem;color:var(--sf-text-secondary,#666);font-size:0.85rem;"><?= htmlspecialchars(sf_term('xibo_embedded_instructions', $currentUiLang) ?? 'Liitä HTML ja CSS Xibon Embedded Widget -kenttiin', ENT_QUOTES, 'UTF-8') ?></p>
                 <pre id="xiboEmbedHtml<?= $xiboWsId ?>" style="background:var(--sf-bg-secondary,#f5f5f5);padding:0.5rem 0.75rem;border-radius:4px;font-size:0.78rem;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all;margin:0 0 0.4rem;"><code><?= htmlspecialchars($embeddedHtml, ENT_QUOTES, 'UTF-8') ?></code></pre>
                 <div style="display:flex;gap:0.5rem;align-items:center;">
                     <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary sf-xibo-copy-btn" data-copy-target="xiboEmbedHtml<?= $xiboWsId ?>" data-ws-id="<?= $xiboWsId ?>-html">
-                        📋 <?= htmlspecialchars(sf_term('xibo_copy_html', $currentUiLang) ?? 'Kopioi HTML', ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars(sf_term('xibo_copy_html', $currentUiLang) ?? 'Kopioi HTML', ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                    <span id="xiboCopied<?= $xiboWsId ?>-html" style="display:none;color:green;font-size:0.85rem;">✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
+                    <span id="xiboCopied<?= $xiboWsId ?>-html" style="display:none;color:green;font-size:0.85rem;"><?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
             </div>
 
             <div style="margin-bottom:1rem;">
-                <strong style="display:block;margin-bottom:0.4rem;">▸ <?= htmlspecialchars(sf_term('xibo_embedded_css_label', $currentUiLang) ?? 'CSS-kenttä (Embedded Widget)', ENT_QUOTES, 'UTF-8') ?></strong>
+                <strong style="display:block;margin-bottom:0.4rem;"><?= htmlspecialchars(sf_term('xibo_embedded_css_label', $currentUiLang) ?? 'CSS-kenttä (Embedded Widget)', ENT_QUOTES, 'UTF-8') ?></strong>
                 <pre id="xiboEmbedCss<?= $xiboWsId ?>" style="background:var(--sf-bg-secondary,#f5f5f5);padding:0.5rem 0.75rem;border-radius:4px;font-size:0.78rem;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all;margin:0 0 0.4rem;"><code><?= htmlspecialchars($embeddedCss, ENT_QUOTES, 'UTF-8') ?></code></pre>
                 <div style="display:flex;gap:0.5rem;align-items:center;">
                     <button type="button" class="sf-btn sf-btn-sm sf-btn-outline-primary sf-xibo-copy-btn" data-copy-target="xiboEmbedCss<?= $xiboWsId ?>" data-ws-id="<?= $xiboWsId ?>-css">
-                        📋 <?= htmlspecialchars(sf_term('xibo_copy_css', $currentUiLang) ?? 'Kopioi CSS', ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars(sf_term('xibo_copy_css', $currentUiLang) ?? 'Kopioi CSS', ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                    <span id="xiboCopied<?= $xiboWsId ?>-css" style="display:none;color:green;font-size:0.85rem;">✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
+                    <span id="xiboCopied<?= $xiboWsId ?>-css" style="display:none;color:green;font-size:0.85rem;"><?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
             </div>
         </div>
@@ -733,25 +866,26 @@ foreach ($worksites as $ws):
 <script>
 (function () {
     document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.sf-xibo-copy-btn');
+        var btn = e.target.closest('.sf-xibo-copy-btn, .sf-copy-btn');
         if (!btn) return;
         var targetId = btn.getAttribute('data-copy-target');
         var wsId = btn.getAttribute('data-ws-id');
+        var feedbackId = btn.getAttribute('data-copy-feedback');
         var el = document.getElementById(targetId);
         if (!el) return;
         var text = el.textContent;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(function () {
-                showCopied(wsId);
+                showCopied(wsId, feedbackId);
             }).catch(function () {
-                fallbackCopy(text, wsId);
+                fallbackCopy(text, wsId, feedbackId);
             });
         } else {
-            fallbackCopy(text, wsId);
+            fallbackCopy(text, wsId, feedbackId);
         }
     });
 
-    function fallbackCopy(text, wsId) {
+    function fallbackCopy(text, wsId, feedbackId) {
         var ta = document.createElement('textarea');
         ta.value = text;
         ta.style.position = 'fixed';
@@ -761,11 +895,11 @@ foreach ($worksites as $ws):
         ta.select();
         try { document.execCommand('copy'); } catch (err) {}
         document.body.removeChild(ta);
-        showCopied(wsId);
+        showCopied(wsId, feedbackId);
     }
 
-    function showCopied(wsId) {
-        var msg = document.getElementById('xiboCopied' + wsId);
+    function showCopied(wsId, feedbackId) {
+        var msg = feedbackId ? document.getElementById(feedbackId) : document.getElementById('xiboCopied' + wsId);
         if (!msg) return;
         msg.style.display = 'inline';
         setTimeout(function () { msg.style.display = 'none'; }, 2000);
