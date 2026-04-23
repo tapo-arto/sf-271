@@ -32,7 +32,6 @@ if (!function_exists('sf_worksite_strtolower')) {
 
 // Hae työmaat, niiden display API-avaimet ja aktiivisten flashien määrä
 $worksites = [];
-$worksitesRes = false;
 try {
     $worksitesRes = $mysqli->query(
         'SELECT w.id, w.name, w.site_type, w.is_active, w.created_at, w.updated_at,
@@ -67,7 +66,7 @@ try {
         $worksitesRes->free();
     }
 } catch (Throwable $e) {
-    error_log('tab_worksites: worksites query failed: ' . $e->getMessage());
+    error_log('tab_worksites: worksites data fetch failed: ' . $e->getMessage());
 }
 
 $visibilityListsDesc = (string)(sf_term('settings_worksites_visibility_lists_desc', $currentUiLang) ?? 'Tulee työmaavalintoihin safetyflashia luotaessa (lomake, suodattimet).');
