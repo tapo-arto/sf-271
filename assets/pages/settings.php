@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../app/includes/protect.php';
 require_once __DIR__ . '/../../app/includes/statuses.php';
 require_once __DIR__ . '/../../app/includes/settings.php';
+require_once __DIR__ . '/../../app/includes/log_app.php';
 
 $baseUrl = rtrim($config['base_url'] ?? '', '/');
 
