@@ -148,89 +148,42 @@ if ($worksitesRes) {
 })();
 </script>
 
-<h2>
-    <img src="<?= $baseUrl ?>/assets/img/icons/worksite.svg" alt="" class="sf-heading-icon" aria-hidden="true">
-    <?= htmlspecialchars(
-        sf_term('settings_worksites_heading', $currentUiLang) ?? 'Työmaiden hallinta',
-        ENT_QUOTES,
-        'UTF-8'
-    ) ?>
-</h2>
-
-<form
-    method="post"
-    class="sf-form-inline"
-action="app/actions/worksites_save.php"
-    data-sf-ajax="1"
->
-    <input type="hidden" name="form_action" value="add">
-    <input type="hidden" name="has_visibility_fields" value="1">
-    <?= sf_csrf_field() ?>
-    <label for="ws-name">
+<div class="sf-worksites-toolbar">
+    <h2>
+        <img src="<?= $baseUrl ?>/assets/img/icons/worksite.svg" alt="" class="sf-heading-icon" aria-hidden="true">
         <?= htmlspecialchars(
-            sf_term('settings_worksites_add_label', $currentUiLang) ?? 'Uusi työmaa:',
+            sf_term('settings_worksites_heading', $currentUiLang) ?? 'Työmaiden hallinta',
             ENT_QUOTES,
             'UTF-8'
         ) ?>
-    </label>
-    <input type="text" id="ws-name" name="name" required>
-    <label for="ws-site-type">
-        <?= htmlspecialchars(
-            sf_term('settings_worksites_site_type', $currentUiLang) ?? 'Työmaan tyyppi:',
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
-    </label>
-    <select id="ws-site-type" name="site_type">
-        <option value=""><?= htmlspecialchars(sf_term('site_type_unspecified', $currentUiLang) ?? 'Määrittämätön', ENT_QUOTES, 'UTF-8') ?></option>
-        <option value="tunnel"><?= htmlspecialchars(sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa', ENT_QUOTES, 'UTF-8') ?></option>
-        <option value="opencast"><?= htmlspecialchars(sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos', ENT_QUOTES, 'UTF-8') ?></option>
-        <option value="other"><?= htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8') ?></option>
-    </select>
-    <label class="sf-checkbox-label" for="ws-show-in-lists">
-        <input type="checkbox" id="ws-show-in-lists" name="show_in_worksite_lists" value="1" checked>
-        <?= htmlspecialchars(
-            sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa',
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
-    </label>
-    <label class="sf-checkbox-label" for="ws-show-in-displays">
-        <input type="checkbox" id="ws-show-in-displays" name="show_in_display_targets" value="1" checked>
-        <?= htmlspecialchars(
-            sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa',
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
-    </label>
-    <button type="submit">
-        <?= htmlspecialchars(
-            sf_term('btn_add', $currentUiLang) ?? 'Lisää',
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
-    </button>
-</form>
-
-<?php if (!empty($worksites)): ?>
-<div class="sf-export-bar">
-    <span class="sf-export-label">
-        📥 <?= htmlspecialchars(sf_term('btn_export_worksites', $currentUiLang) ?? 'Vie työmaat', ENT_QUOTES, 'UTF-8') ?>
-    </span>
-    <div class="sf-export-buttons">
-        <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=csv', ENT_QUOTES, 'UTF-8') ?>"
-           class="sf-btn sf-btn-sm sf-btn-outline-primary sf-export-btn"
-           download>
-            📄 <?= htmlspecialchars(sf_term('btn_export_csv', $currentUiLang) ?? 'Lataa CSV', ENT_QUOTES, 'UTF-8') ?>
-        </a>
-        <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=json', ENT_QUOTES, 'UTF-8') ?>"
-           class="sf-btn sf-btn-sm sf-btn-outline-primary sf-export-btn"
-           download>
-            { } <?= htmlspecialchars(sf_term('btn_export_json', $currentUiLang) ?? 'Lataa JSON', ENT_QUOTES, 'UTF-8') ?>
-        </a>
+    </h2>
+    <div class="sf-worksites-toolbar-actions">
+        <button type="button" class="sf-btn sf-btn-sm sf-btn-primary" data-modal-open="#modalAddWorksite">
+            + <?= htmlspecialchars(sf_term('settings_worksites_add_button', $currentUiLang) ?? 'Lisää uusi työmaa', ENT_QUOTES, 'UTF-8') ?>
+        </button>
+        <?php if (!empty($worksites)): ?>
+            <details class="sf-export-menu">
+                <summary class="sf-btn sf-btn-sm sf-btn-outline-primary">
+                    ⬇ <?= htmlspecialchars(sf_term('btn_export_worksites', $currentUiLang) ?? 'Vie työmaat', ENT_QUOTES, 'UTF-8') ?>
+                </summary>
+                <div class="sf-export-menu-items" role="menu">
+                    <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=csv', ENT_QUOTES, 'UTF-8') ?>"
+                       class="sf-export-btn"
+                       role="menuitem"
+                       download>
+                        📄 <?= htmlspecialchars(sf_term('btn_export_csv', $currentUiLang) ?? 'Lataa CSV', ENT_QUOTES, 'UTF-8') ?>
+                    </a>
+                    <a href="<?= htmlspecialchars($baseUrl . '/app/api/export_worksites.php?format=json', ENT_QUOTES, 'UTF-8') ?>"
+                       class="sf-export-btn"
+                       role="menuitem"
+                       download>
+                        { } <?= htmlspecialchars(sf_term('btn_export_json', $currentUiLang) ?? 'Lataa JSON', ENT_QUOTES, 'UTF-8') ?>
+                    </a>
+                </div>
+            </details>
+        <?php endif; ?>
     </div>
 </div>
-<?php endif; ?>
 
 <?php if (empty($worksites)): ?>
     <p class="sf-notice sf-notice-info">
@@ -241,149 +194,125 @@ action="app/actions/worksites_save.php"
         ) ?>
     </p>
 <?php else: ?>
-<table class="sf-table sf-table-worksites">
-    <thead>
-        <tr>
-            <th>
+<div class="sf-worksites-filters" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
+    <input type="search"
+           id="sfWorksiteSearch"
+           class="sf-input"
+           placeholder="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>"
+           aria-label="<?= htmlspecialchars(sf_term('settings_worksites_filter_search_placeholder', $currentUiLang) ?? 'Hae työmaan nimellä', ENT_QUOTES, 'UTF-8') ?>">
+    <div class="sf-worksites-filter-chips" role="group" aria-label="<?= htmlspecialchars(sf_term('users_filter_toggle', $currentUiLang) ?? 'Suodattimet', ENT_QUOTES, 'UTF-8') ?>">
+        <button type="button" class="sf-filter-chip is-active" data-filter="all"><?= htmlspecialchars(sf_term('settings_worksites_filter_all', $currentUiLang) ?? 'Kaikki', ENT_QUOTES, 'UTF-8') ?></button>
+        <button type="button" class="sf-filter-chip" data-filter="active"><?= htmlspecialchars(sf_term('settings_worksites_filter_active', $currentUiLang) ?? 'Aktiiviset', ENT_QUOTES, 'UTF-8') ?></button>
+        <button type="button" class="sf-filter-chip" data-filter="inactive"><?= htmlspecialchars(sf_term('settings_worksites_filter_inactive', $currentUiLang) ?? 'Passiiviset', ENT_QUOTES, 'UTF-8') ?></button>
+        <button type="button" class="sf-filter-chip" data-filter="lists"><?= htmlspecialchars(sf_term('settings_worksites_filter_lists', $currentUiLang) ?? 'Näytetään työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></button>
+        <button type="button" class="sf-filter-chip" data-filter="displays"><?= htmlspecialchars(sf_term('settings_worksites_filter_displays', $currentUiLang) ?? 'Näytetään infonäytöissä', ENT_QUOTES, 'UTF-8') ?></button>
+    </div>
+    <p id="sfWorksiteFilterStatus" class="sf-visually-hidden" aria-live="polite"></p>
+</div>
+
+<div class="sf-worksite-grid" id="sfWorksiteGrid">
+    <?php foreach ($worksites as $ws): ?>
+        <?php
+        $siteTypeKey = $ws['site_type'] ?? null;
+        if ($siteTypeKey === 'tunnel') {
+            $siteTypeLabel = sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa';
+        } elseif ($siteTypeKey === 'opencast') {
+            $siteTypeLabel = sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos';
+        } elseif ($siteTypeKey === 'other') {
+            $siteTypeLabel = sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet';
+        } else {
+            $siteTypeLabel = sf_term('site_type_unspecified', $currentUiLang) ?? 'Määrittämätön';
+        }
+        $flashCount = (int)($ws['active_flash_count'] ?? 0);
+        $isActive = (int)$ws['is_active'] === 1;
+        $showInLists = (int)($ws['show_in_worksite_lists'] ?? 1) === 1;
+        $showInDisplays = (int)($ws['show_in_display_targets'] ?? 1) === 1;
+        ?>
+        <article class="sf-worksite-card <?= $isActive ? '' : 'is-inactive' ?>"
+                 data-name="<?= htmlspecialchars(mb_strtolower((string)$ws['name']), ENT_QUOTES, 'UTF-8') ?>"
+                 data-active="<?= $isActive ? '1' : '0' ?>"
+                 data-lists="<?= $showInLists ? '1' : '0' ?>"
+                 data-displays="<?= $showInDisplays ? '1' : '0' ?>">
+            <header class="sf-worksite-card-header">
+                <h3 class="sf-worksite-card-title"><?= htmlspecialchars($ws['name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                <span class="sf-status-badge <?= $isActive ? 'is-active' : 'is-inactive' ?>">
+                    <?= htmlspecialchars(
+                        $isActive
+                            ? (sf_term('settings_worksites_status_active', $currentUiLang) ?? 'Aktiivinen')
+                            : (sf_term('settings_worksites_status_inactive', $currentUiLang) ?? 'Passiivinen'),
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>
+                </span>
+            </header>
+
+            <p class="sf-worksite-meta">
+                <?= htmlspecialchars($siteTypeLabel, ENT_QUOTES, 'UTF-8') ?>
+                ·
                 <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_name', $currentUiLang) ?? 'Nimi',
+                    sprintf(sf_term('settings_worksites_meta_flash_count', $currentUiLang) ?? '%d ajolistassa', $flashCount),
                     ENT_QUOTES,
                     'UTF-8'
                 ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_site_type', $currentUiLang) ?? 'Tyyppi',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_active', $currentUiLang) ?? 'Aktiivinen',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_show_in_lists', $currentUiLang) ?? 'Työmaalistoissa',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_show_in_displays', $currentUiLang) ?? 'Infonäyttövalinnoissa',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <img src="<?= $baseUrl ?>/assets/img/icons/display.svg" alt="" class="sf-icon" aria-hidden="true" style="width:16px;height:16px;vertical-align:middle;">
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_flashes', $currentUiLang) ?? 'Aktiiviset flashit',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_actions', $currentUiLang) ?? 'Toiminnot',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <img src="<?= $baseUrl ?>/assets/img/icons/playlist.svg" alt="" class="sf-icon" aria-hidden="true" style="width:16px;height:16px;vertical-align:middle;">
-                <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                <?= htmlspecialchars(
-                    sf_term('xibo_col_heading', $currentUiLang) ?? 'Xibo-koodi',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-            <th>
-                🔑 <?= htmlspecialchars(
-                    sf_term('settings_worksites_col_api_key', $currentUiLang) ?? 'API-avain',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($worksites as $ws): ?>
-            <tr class="<?= ((int)$ws['is_active'] === 1) ? '' : 'is-inactive' ?>">
-                <td><?= htmlspecialchars($ws['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td>
-                    <?php
-                    $siteTypeKey = $ws['site_type'] ?? null;
-                    if ($siteTypeKey === 'tunnel') {
-                        echo htmlspecialchars(sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa', ENT_QUOTES, 'UTF-8');
-                    } elseif ($siteTypeKey === 'opencast') {
-                        echo htmlspecialchars(sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos', ENT_QUOTES, 'UTF-8');
-                    } elseif ($siteTypeKey === 'other') {
-                        echo htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8');
-                    } else {
-                        echo '—';
-                    }
-                    ?>
-                </td>
-<td>
-    <?= ((int)$ws['is_active'] === 1)
-        ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
-        : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>
-</td>
-                <td>
-                    <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1)
-                        ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
-                        : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>
-                </td>
-                <td>
-                    <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1)
-                        ? htmlspecialchars(sf_term('common_yes', $currentUiLang) ?? 'Kyllä', ENT_QUOTES, 'UTF-8')
-                        : htmlspecialchars(sf_term('common_no', $currentUiLang) ?? 'Ei', ENT_QUOTES, 'UTF-8') ?>
-                </td>
-                <td>
-                    <span class="sf-flash-count">
-                        <?= (int)($ws['active_flash_count'] ?? 0) ?>
-                    </span>
-                </td>
-                <td>
-                    <form
-                        method="post"
-                        class="sf-inline-form"
-                        action="app/actions/worksites_save.php"
-                        data-sf-ajax="1"
-                    >
-                        <input type="hidden" name="form_action" value="toggle">
-                        <?= sf_csrf_field() ?>
-                        <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
-                        <button type="submit" class="sf-btn sf-btn-sm <?= ((int)$ws['is_active'] === 1) ? 'sf-btn-outline-danger' : 'sf-btn-outline-primary' ?>">
-                            <?php
-                            if ((int)$ws['is_active'] === 1) {
-                                echo htmlspecialchars(
-                                    sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                            } else {
-                                echo htmlspecialchars(
-                                    sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                            }
-                            ?>
+            </p>
+
+            <section class="sf-worksite-section">
+                <strong><?= htmlspecialchars(sf_term('settings_worksites_visibility_heading', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>:</strong>
+                <div class="sf-worksite-visibility-toggles">
+                    <label class="sf-toggle-row" for="ws-toggle-lists-<?= (int)$ws['id'] ?>">
+                        <input type="checkbox"
+                               id="ws-toggle-lists-<?= (int)$ws['id'] ?>"
+                               class="sf-worksite-visibility-toggle"
+                               data-worksite-id="<?= (int)$ws['id'] ?>"
+                               data-field="show_in_worksite_lists"
+                               <?= $showInLists ? 'checked' : '' ?>>
+                        <span><?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                    <label class="sf-toggle-row" for="ws-toggle-displays-<?= (int)$ws['id'] ?>">
+                        <input type="checkbox"
+                               id="ws-toggle-displays-<?= (int)$ws['id'] ?>"
+                               class="sf-worksite-visibility-toggle"
+                               data-worksite-id="<?= (int)$ws['id'] ?>"
+                               data-field="show_in_display_targets"
+                               <?= $showInDisplays ? 'checked' : '' ?>>
+                        <span><?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="sf-worksite-section">
+                <strong>🔑 <?= htmlspecialchars(sf_term('settings_worksites_col_api_key', $currentUiLang) ?? 'API-avain', ENT_QUOTES, 'UTF-8') ?></strong>
+                <?php if (!empty($ws['display_api_key'])): ?>
+                    <div class="sf-api-key-cell">
+                        <code class="sf-api-key-code"
+                              id="apiKey<?= (int)$ws['id'] ?>"
+                              title="<?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?>">
+                            <?= htmlspecialchars(
+                                mb_strlen($ws['display_api_key']) > 20
+                                    ? mb_substr($ws['display_api_key'], 0, 18) . '…'
+                                    : $ws['display_api_key'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </code>
+                        <button type="button"
+                                class="sf-api-key-copy-btn sf-xibo-copy-btn"
+                                data-copy-target="apiKeyFull<?= (int)$ws['id'] ?>"
+                                data-ws-id="<?= (int)$ws['id'] ?>-apikey">
+                            📋 <?= htmlspecialchars(sf_term('btn_copy_api_key', $currentUiLang) ?? 'Kopioi', ENT_QUOTES, 'UTF-8') ?>
                         </button>
-                    </form>
+                        <span id="apiKeyFull<?= (int)$ws['id'] ?>" style="display:none;"><?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="sf-api-key-copied" id="xiboCopied<?= (int)$ws['id'] ?>-apikey">
+                            ✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </div>
+                <?php else: ?>
+                    <span class="sf-api-key-none"><?= htmlspecialchars(sf_term('settings_worksites_no_api_key', $currentUiLang) ?? 'Ei avainta', ENT_QUOTES, 'UTF-8') ?></span>
+                <?php endif; ?>
+            </section>
+
+            <footer class="sf-worksite-card-actions">
+                <div class="sf-worksite-primary-actions">
                     <button type="button"
                         class="sf-btn sf-btn-sm sf-btn-outline-secondary sf-ws-edit-btn"
                         data-ws-id="<?= (int)$ws['id'] ?>"
@@ -391,103 +320,217 @@ action="app/actions/worksites_save.php"
                         data-ws-site-type="<?= htmlspecialchars($ws['site_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                         ✏️ <?= htmlspecialchars(sf_term('settings_worksites_action_edit', $currentUiLang) ?? 'Muokkaa', ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                    <form
-                        method="post"
-                        class="sf-inline-form"
-                        action="app/actions/worksites_save.php"
-                        data-sf-ajax="1"
-                    >
-                        <input type="hidden" name="form_action" value="toggle_show_in_lists">
-                        <?= sf_csrf_field() ?>
-                        <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
-                        <button type="submit" class="sf-btn sf-btn-sm <?= ((int)($ws['show_in_worksite_lists'] ?? 1) === 1) ? 'sf-btn-outline-secondary' : 'sf-btn-outline-primary' ?>">
-                            <?= htmlspecialchars(
-                                sf_term('settings_worksites_action_toggle_lists', $currentUiLang) ?? 'Työmaalistat',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            ) ?>
-                        </button>
-                    </form>
-                    <form
-                        method="post"
-                        class="sf-inline-form"
-                        action="app/actions/worksites_save.php"
-                        data-sf-ajax="1"
-                    >
-                        <input type="hidden" name="form_action" value="toggle_show_in_displays">
-                        <?= sf_csrf_field() ?>
-                        <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
-                        <button type="submit" class="sf-btn sf-btn-sm <?= ((int)($ws['show_in_display_targets'] ?? 1) === 1) ? 'sf-btn-outline-secondary' : 'sf-btn-outline-primary' ?>">
-                            <?= htmlspecialchars(
-                                sf_term('settings_worksites_action_toggle_displays', $currentUiLang) ?? 'Infonäytöt',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            ) ?>
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <?php if (!empty($ws['display_api_key'])): ?>
-                        <?php if (!empty($ws['display_key_id'])): ?>
-                        <a href="<?= htmlspecialchars(
-                            ($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>"
-                           class="sf-btn sf-btn-outline-primary sf-btn-sm">
+                    <?php if (!empty($ws['display_api_key']) && !empty($ws['display_key_id'])): ?>
+                        <a href="<?= htmlspecialchars(($baseUrl ?? '') . '/index.php?page=playlist_manager&display_key_id=' . (int)$ws['display_key_id'], ENT_QUOTES, 'UTF-8') ?>"
+                           class="sf-btn sf-btn-sm sf-btn-outline-primary">
                             <img src="<?= $baseUrl ?>/assets/img/icons/playlist.svg" alt="" aria-hidden="true" style="width:14px;height:14px;vertical-align:middle;">
                             <?= htmlspecialchars(sf_term('settings_worksites_col_playlist', $currentUiLang) ?? 'Ajolista', ENT_QUOTES, 'UTF-8') ?>
                         </a>
-                        <?php endif; ?>
                     <?php endif; ?>
-                </td>
-                <td>
                     <?php if (!empty($ws['display_api_key'])): ?>
                         <button type="button"
-                            class="sf-btn sf-btn-outline-primary sf-btn-sm"
+                            class="sf-btn sf-btn-sm sf-btn-outline-primary"
                             data-modal-open="#xiboModal<?= (int)$ws['id'] ?>">
                             📋 <?= htmlspecialchars(sf_term('xibo_col_heading', $currentUiLang) ?? 'Xibo-koodi', ENT_QUOTES, 'UTF-8') ?>
                         </button>
                     <?php endif; ?>
-                </td>
-                <!-- API-avain pikakopiointi -->
-                <td>
-                    <?php if (!empty($ws['display_api_key'])): ?>
-                        <div class="sf-api-key-cell">
-                            <code class="sf-api-key-code"
-                                  id="apiKey<?= (int)$ws['id'] ?>"
-                                  title="<?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?>">
-                                <?= htmlspecialchars(
-                                    mb_strlen($ws['display_api_key']) > 14
-                                        ? mb_substr($ws['display_api_key'], 0, 12) . '…'
-                                        : $ws['display_api_key'],
-                                    ENT_QUOTES, 'UTF-8'
-                                ) ?>
-                            </code>
-                            <button type="button"
-                                class="sf-api-key-copy-btn sf-xibo-copy-btn"
-                                data-copy-target="apiKeyFull<?= (int)$ws['id'] ?>"
-                                data-ws-id="<?= (int)$ws['id'] ?>-apikey"
-                                <?php $copyLabel = htmlspecialchars(sf_term('btn_copy_api_key', $currentUiLang) ?? 'Kopioi', ENT_QUOTES, 'UTF-8') ?>
-                                title="<?= $copyLabel ?>">
-                                📋 <?= $copyLabel ?>
-                            </button>
-                            <!-- Hidden full key for copy -->
-                            <span id="apiKeyFull<?= (int)$ws['id'] ?>" style="display:none;"><?= htmlspecialchars($ws['display_api_key'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <span class="sf-api-key-copied" id="xiboCopied<?= (int)$ws['id'] ?>-apikey">
-                                ✅ <?= htmlspecialchars(sf_term('xibo_copied', $currentUiLang) ?? 'Kopioitu!', ENT_QUOTES, 'UTF-8') ?>
-                            </span>
-                        </div>
-                    <?php else: ?>
-                        <span class="sf-api-key-none">
-                            <?= htmlspecialchars(sf_term('settings_worksites_no_api_key', $currentUiLang) ?? 'Ei avainta', ENT_QUOTES, 'UTF-8') ?>
-                        </span>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+                </div>
+                <form method="post" class="sf-inline-form" action="app/actions/worksites_save.php" data-sf-ajax="1">
+                    <input type="hidden" name="form_action" value="toggle">
+                    <?= sf_csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$ws['id'] ?>">
+                    <button type="submit" class="sf-btn sf-btn-sm <?= $isActive ? 'sf-btn-outline-danger' : 'sf-btn-outline-primary' ?>">
+                        <?= htmlspecialchars(
+                            $isActive
+                                ? (sf_term('settings_worksites_action_disable', $currentUiLang) ?? 'Passivoi')
+                                : (sf_term('settings_worksites_action_enable', $currentUiLang) ?? 'Aktivoi'),
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+                    </button>
+                </form>
+            </footer>
+        </article>
+    <?php endforeach; ?>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var baseUrl = <?= json_encode(rtrim($baseUrl, '/'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var csrfToken = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var saveError = <?= json_encode(sf_term('save_error', $currentUiLang) ?? 'Tallennus epäonnistui', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    function showError(message) {
+        if (typeof window.sfToast === 'function') {
+            window.sfToast('error', message || saveError);
+        } else {
+            alert(message || saveError);
+        }
+    }
+
+    document.addEventListener('change', function (event) {
+        var input = event.target;
+        if (!input.classList.contains('sf-worksite-visibility-toggle')) return;
+
+        var previousState = !input.checked;
+        var worksiteId = input.getAttribute('data-worksite-id');
+        var field = input.getAttribute('data-field');
+
+        var card = input.closest('.sf-worksite-card');
+        if (card) card.setAttribute('aria-busy', 'true');
+        input.disabled = true;
+
+        var fd = new FormData();
+        fd.append('action', 'toggle_worksite_visibility');
+        fd.append('worksite_id', worksiteId || '0');
+        fd.append('field', field || '');
+        fd.append('value', input.checked ? '1' : '0');
+        fd.append('csrf_token', csrfToken || '');
+
+        fetch(baseUrl + '/app/actions/worksites_save.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'fetch',
+                'Accept': 'application/json'
+            },
+            body: fd
+        }).then(function (response) {
+            return response.json().then(function (json) {
+                return { ok: response.ok, data: json };
+            });
+        }).then(function (result) {
+            if (!result.ok || !result.data || result.data.ok === false) {
+                throw new Error((result.data && (result.data.error || result.data.message)) || saveError);
+            }
+
+            var normalizedValue = Number(result.data.value) === 1;
+            input.checked = normalizedValue;
+            if (card) {
+                if (field === 'show_in_worksite_lists') card.setAttribute('data-lists', normalizedValue ? '1' : '0');
+                if (field === 'show_in_display_targets') card.setAttribute('data-displays', normalizedValue ? '1' : '0');
+            }
+            applyFilters();
+        }).catch(function (error) {
+            input.checked = previousState;
+            showError(error && error.message ? error.message : saveError);
+        }).finally(function () {
+            if (card) card.removeAttribute('aria-busy');
+            input.disabled = false;
+        });
+    });
+
+    var searchInput = document.getElementById('sfWorksiteSearch');
+    var grid = document.getElementById('sfWorksiteGrid');
+    var filterStatus = document.getElementById('sfWorksiteFilterStatus');
+    if (!grid) return;
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.sf-worksite-card'));
+    var chips = Array.prototype.slice.call(document.querySelectorAll('.sf-filter-chip'));
+    var activeFilter = 'all';
+
+    function matchesFilter(card, filter) {
+        if (filter === 'active') return card.getAttribute('data-active') === '1';
+        if (filter === 'inactive') return card.getAttribute('data-active') === '0';
+        if (filter === 'lists') return card.getAttribute('data-lists') === '1';
+        if (filter === 'displays') return card.getAttribute('data-displays') === '1';
+        return true;
+    }
+
+    function applyFilters() {
+        var term = ((searchInput && searchInput.value) || '').toLowerCase().trim();
+        cards.forEach(function (card) {
+            var name = card.getAttribute('data-name') || '';
+            var matchesSearch = term === '' || name.indexOf(term) !== -1;
+            var matchesChip = matchesFilter(card, activeFilter);
+            var isVisible = matchesSearch && matchesChip;
+            card.style.display = isVisible ? '' : 'none';
+            card.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+        });
+        if (filterStatus) {
+            var visibleCount = cards.filter(function (card) {
+                return card.style.display !== 'none';
+            }).length;
+            filterStatus.textContent = visibleCount + ' / ' + cards.length;
+        }
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (btn) { btn.classList.remove('is-active'); });
+            chip.classList.add('is-active');
+            activeFilter = chip.getAttribute('data-filter') || 'all';
+            applyFilters();
+        });
+    });
+})();
+</script>
+<?php endif; ?>
+
+<!-- Add Worksite Modal -->
+<div class="sf-modal hidden" id="modalAddWorksite" role="dialog" aria-modal="true" aria-labelledby="modalAddWorksiteTitle">
+    <div class="sf-modal-content">
+        <div class="sf-modal-header">
+            <h3 id="modalAddWorksiteTitle">
+                <?= htmlspecialchars(sf_term('settings_worksites_add_modal_title', $currentUiLang) ?? 'Lisää uusi työmaa', ENT_QUOTES, 'UTF-8') ?>
+            </h3>
+            <button type="button" data-modal-close class="sf-modal-close" aria-label="<?= htmlspecialchars(sf_term('btn_close', $currentUiLang) ?? 'Sulje', ENT_QUOTES, 'UTF-8') ?>">✕</button>
+        </div>
+        <form method="post" action="app/actions/worksites_save.php" data-sf-ajax="1" id="formAddWorksite">
+            <div class="sf-modal-body" style="padding:1.25rem;">
+                <input type="hidden" name="form_action" value="add">
+                <input type="hidden" name="has_visibility_fields" value="1">
+                <?= sf_csrf_field() ?>
+                <div style="margin-bottom:1rem;">
+                    <label for="ws-name" style="display:block;margin-bottom:0.35rem;font-weight:500;">
+                        <?= htmlspecialchars(sf_term('settings_worksites_col_name', $currentUiLang) ?? 'Nimi', ENT_QUOTES, 'UTF-8') ?>
+                    </label>
+                    <input type="text" id="ws-name" name="name" required class="sf-input" style="width:100%;">
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <label for="ws-site-type" style="display:block;margin-bottom:0.35rem;font-weight:500;">
+                        <?= htmlspecialchars(sf_term('settings_worksites_site_type', $currentUiLang) ?? 'Työmaan tyyppi', ENT_QUOTES, 'UTF-8') ?>
+                    </label>
+                    <select id="ws-site-type" name="site_type" class="sf-select" style="width:100%;">
+                        <option value=""><?= htmlspecialchars(sf_term('site_type_unspecified', $currentUiLang) ?? 'Määrittämätön', ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="tunnel"><?= htmlspecialchars(sf_term('site_type_tunnel', $currentUiLang) ?? 'Tunnelityömaa', ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="opencast"><?= htmlspecialchars(sf_term('site_type_opencast', $currentUiLang) ?? 'Avolouhos', ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="other"><?= htmlspecialchars(sf_term('site_type_other', $currentUiLang) ?? 'Muut toimipisteet', ENT_QUOTES, 'UTF-8') ?></option>
+                    </select>
+                </div>
+                <div style="margin-bottom:0.25rem;">
+                    <p style="margin:0 0 0.5rem;font-weight:600;">
+                        <?= htmlspecialchars(sf_term('settings_worksites_visibility_heading', $currentUiLang) ?? 'Näkyvyys', ENT_QUOTES, 'UTF-8') ?>
+                    </p>
+                    <div class="sf-worksite-modal-visibility">
+                        <label class="sf-checkbox-label" for="ws-show-in-lists">
+                            <input type="checkbox" id="ws-show-in-lists" name="show_in_worksite_lists" value="1" checked>
+                            <?= htmlspecialchars(sf_term('settings_worksites_show_in_lists_label', $currentUiLang) ?? 'Näytä työmaalistoissa', ENT_QUOTES, 'UTF-8') ?>
+                        </label>
+                        <label class="sf-checkbox-label" for="ws-show-in-displays">
+                            <input type="checkbox" id="ws-show-in-displays" name="show_in_display_targets" value="1" checked>
+                            <?= htmlspecialchars(sf_term('settings_worksites_show_in_displays_label', $currentUiLang) ?? 'Näytä infonäyttövalinnoissa', ENT_QUOTES, 'UTF-8') ?>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="sf-modal-footer" style="padding:1rem 1.25rem;display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button type="button" data-modal-close class="sf-btn sf-btn-secondary">
+                    <?= htmlspecialchars(sf_term('btn_close', $currentUiLang) ?? 'Sulje', ENT_QUOTES, 'UTF-8') ?>
+                </button>
+                <button type="submit" class="sf-btn sf-btn-primary">
+                    <?= htmlspecialchars(sf_term('settings_worksites_add_button', $currentUiLang) ?? 'Lisää uusi työmaa', ENT_QUOTES, 'UTF-8') ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php
 // Xibo modals - one per worksite that has an API key
@@ -729,7 +772,6 @@ foreach ($worksites as $ws):
     }
 })();
 </script>
-<?php endif; ?>
 
 <!-- Edit Worksite Modal -->
 <div class="sf-modal hidden" id="modalEditWorksite" role="dialog" aria-modal="true" aria-labelledby="modalEditWorksiteTitle">
