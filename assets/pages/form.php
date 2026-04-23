@@ -13,7 +13,7 @@ $worksites = [];
 
 try {
     $worksites = Database::fetchAll(
-        "SELECT id, name FROM sf_worksites WHERE is_active = 1 ORDER BY name ASC"
+        "SELECT id, name FROM sf_worksites WHERE is_active = 1 AND show_in_worksite_lists = 1 ORDER BY name ASC"
     );
 } catch (Throwable $e) {
     error_log('form.php worksites error: ' . $e->getMessage());

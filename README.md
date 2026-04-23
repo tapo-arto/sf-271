@@ -422,6 +422,19 @@ Cron must be configured on server.
 
 ---
 
+## Database migrations
+
+Schema changes are stored as SQL files in `/migrations`.
+
+Run new migrations manually against the application database in filename order.
+To apply the worksite visibility migration, run:
+
+```sql
+source migrations/2026_04_worksite_visibility.sql;
+```
+
+---
+
 ## Summary
 
 SafetyFlash provides a structured and automated system for safety communication.

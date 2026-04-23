@@ -101,7 +101,7 @@ $hasAnyFilter = isset($_GET['type']) || isset($_GET['original_type']) || isset($
 $siteIsDefault = !isset($_GET['site']);
 $autoSite = $site;
 // --- Työmaat dropdownia varten (kaikki aktiiviset työmaat) ---
-$sites = $pdo->query("SELECT name FROM sf_worksites WHERE is_active = 1 ORDER BY name ASC")
+$sites = $pdo->query("SELECT name FROM sf_worksites WHERE is_active = 1 AND show_in_worksite_lists = 1 ORDER BY name ASC")
              ->fetchAll(PDO::FETCH_COLUMN);
 
 // --- Build SQL ---

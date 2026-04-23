@@ -32,6 +32,7 @@ try {
         FROM sf_display_api_keys k
         LEFT JOIN sf_worksites w ON w.id = k.worksite_id
         WHERE k.is_active = 1
+          AND (w.id IS NULL OR w.show_in_display_targets = 1)
         ORDER BY k.lang ASC, k.sort_order ASC, k.label ASC
     ");
     $stmtDisplays->execute();

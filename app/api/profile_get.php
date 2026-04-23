@@ -25,7 +25,7 @@ $roleName = $roleResult->fetch_assoc()['name'] ?? '-';
 $roleStmt->close();
 
 // Hae työmaat
-$worksitesRes = $mysqli->query("SELECT id, name FROM sf_worksites WHERE is_active = 1 ORDER BY name ASC");
+$worksitesRes = $mysqli->query("SELECT id, name FROM sf_worksites WHERE is_active = 1 AND show_in_worksite_lists = 1 ORDER BY name ASC");
 $worksites = [];
 while ($w = $worksitesRes->fetch_assoc()) {
     $worksites[] = $w;

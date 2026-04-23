@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 // Hae työmaat (vain aktiiviset, ei passivoituja kotityömaa-valikkoon)
 $worksites = [];
-$worksitesRes = $mysqli->query("SELECT id, name, is_active FROM sf_worksites WHERE is_active = 1 ORDER BY name ASC");
+$worksitesRes = $mysqli->query("SELECT id, name, is_active FROM sf_worksites WHERE is_active = 1 AND show_in_worksite_lists = 1 ORDER BY name ASC");
 while ($w = $worksitesRes->fetch_assoc()) {
     $worksites[] = $w;
 }
