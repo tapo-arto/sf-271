@@ -422,6 +422,8 @@ try {
             grid_bitmap = :grid_bitmap,
             display_snapshot_preview = :display_snapshot_preview,
             display_snapshot_active = :display_snapshot_active,
+            display_duration_seconds = :display_duration_seconds,
+            display_expires_at = :display_expires_at,
             updated_at = NOW()
         WHERE id = :id
     ");
@@ -447,6 +449,8 @@ try {
         ':grid_bitmap' => $copyImages ? ($original['grid_bitmap'] ?? null) : ($investigation['grid_bitmap'] ?? null),
         ':display_snapshot_preview' => $snapshotPreviewForDisplay,
         ':display_snapshot_active' => $displaySnapshotActive,
+        ':display_duration_seconds' => $original['display_duration_seconds'] ?? null,
+        ':display_expires_at' => $original['display_expires_at'] ?? null,
         ':id' => $investigationId,
     ]);
 
@@ -456,6 +460,17 @@ try {
         WHERE flash_id = ?
     ");
     $stmtMoveLogs->execute([$logFlashId, $originalLogFlashId]);
+
+    try {
+        $stmtMoveDisplayTargets = $pdo->prepare("
+            UPDATE sf_flash_display_targets
+            SET flash_id = ?
+            WHERE flash_id = ?
+        ");
+        $stmtMoveDisplayTargets->execute([$investigationId, $originalId]);
+    } catch (Throwable $e) {
+        error_log('merge_investigation_flash.php display targets move (original=' . $originalId . ' -> investigation=' . $investigationId . '): ' . $e->getMessage());
+    }
 
     try {
         $stmtMoveAdditionalInfo = $pdo->prepare("
