@@ -1,12 +1,15 @@
 /**
  * Extra Images View Module
- * Fetches and displays extra images on the View page (Kuvat tab).
+ * Fetches and displays extra images and videos on the View page (Media tab).
  */
 (function () {
     'use strict';
 
     const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
+    const MAX_VIDEO_UPLOAD_SIZE_BYTES = 200 * 1024 * 1024;
     const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+    const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+    const ALLOWED_VIDEO_EXTENSIONS = /\.(mp4|webm|ogv|ogg|mov|avi|mkv)$/i;
     const CONCURRENT_UPLOADS = 3;
     let uploadEnhancementsInitialized = false;
 
@@ -40,10 +43,14 @@
         // Use canAddExtraImages if provided, otherwise fallback to canEdit for backward compatibility
         canAddExtraImages = (canAddExtraImages !== undefined) ? canAddExtraImages : canEdit;
 
+        // Always initialise video modal so it works for all users
+        initVideoModal();
+
         // Show upload actions immediately for better UX (no need to wait API response)
         if (canAddExtraImages && uploadContainer) {
-            uploadContainer.style.display = 'block';
+            uploadContainer.style.display = 'flex';
             initUploadModal(flashId, baseUrl, grid, noImages);
+            initVideoUploadModal(flashId, baseUrl, grid, noImages);
         }
 
         // Fetch extra images from API
@@ -111,64 +118,89 @@
     };
 
     function createViewItem(img, canEdit, baseUrl, onDelete) {
+        const isVideo = (img.media_type === 'video');
         const div = document.createElement('div');
         div.className = 'sf-gallery-item';
 
-        // Add a class to distinguish main images from extra images
+        // Add a class to distinguish main images from extra images/videos
         if (img.isMain) {
             div.classList.add('sf-gallery-item-main');
         }
-
-        const imgEl = document.createElement('img');
-        imgEl.src = img.thumb_url || img.url;
-        imgEl.alt = img.isMain ? 'Main image' : 'Extra image';
-        imgEl.className = 'sf-gallery-img';
-        imgEl.loading = 'lazy';
-
-        // Store full URL on the img element for navigation
-        imgEl.__fullUrl = img.url;
-
-        imgEl.onclick = () => openLightbox(img.url);
-
-        // Handle image load errors
-        imgEl.onerror = function () {
-            console.error('Failed to load image:', img.url);
-            // Try full URL if thumb failed
-            if (this.src === img.thumb_url && img.url !== img.thumb_url) {
-                this.src = img.url;
-            } else {
-                // If both fail, show placeholder
-                div.innerHTML = '<div style="aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; color: #6c757d;">⚠️</div>';
-            }
-        };
-
-        div.appendChild(imgEl);
-
-        // Add caption display/edit functionality
-        const captionDiv = document.createElement('div');
-        captionDiv.className = 'image-caption-display' + (canEdit ? ' editable' : '');
-        const currentCaption = img.caption || '';
-        captionDiv.textContent = currentCaption || 'Lisää kuvateksti...';
-        if (!currentCaption) {
-            captionDiv.classList.add('image-caption-placeholder');
+        if (isVideo) {
+            div.classList.add('sf-gallery-item-video');
         }
 
-        // Add click-to-edit functionality for captions (only if user can edit)
-        if (canEdit) {
-            captionDiv.onclick = (e) => {
-                e.stopPropagation();
-                showCaptionEditor(captionDiv, img, baseUrl);
+        if (isVideo) {
+            // Render a video thumbnail using a <video> element for the native poster frame
+            const videoEl = document.createElement('video');
+            videoEl.src = img.url + '#t=0.1';
+            videoEl.preload = 'metadata';
+            videoEl.className = 'sf-gallery-img';
+            videoEl.muted = true;
+            videoEl.setAttribute('aria-label', img.original_filename || 'Video');
+            div.appendChild(videoEl);
+
+            // Play icon overlay
+            const playOverlay = document.createElement('div');
+            playOverlay.className = 'sf-gallery-play-overlay';
+            playOverlay.innerHTML = '<svg viewBox="0 0 24 24" fill="white" width="40" height="40" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+            div.appendChild(playOverlay);
+
+            div.onclick = () => openVideoModal(img.url, img.original_filename || '');
+        } else {
+            const imgEl = document.createElement('img');
+            imgEl.src = img.thumb_url || img.url;
+            imgEl.alt = img.isMain ? 'Main image' : 'Extra image';
+            imgEl.className = 'sf-gallery-img';
+            imgEl.loading = 'lazy';
+
+            // Store full URL on the img element for navigation
+            imgEl.__fullUrl = img.url;
+
+            imgEl.onclick = () => openLightbox(img.url);
+
+            // Handle image load errors
+            imgEl.onerror = function () {
+                console.error('Failed to load image:', img.url);
+                // Try full URL if thumb failed
+                if (this.src === img.thumb_url && img.url !== img.thumb_url) {
+                    this.src = img.url;
+                } else {
+                    // If both fail, show placeholder
+                    div.innerHTML = '<div style="aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; color: #6c757d;">⚠️</div>';
+                }
             };
+
+            div.appendChild(imgEl);
         }
 
-        div.appendChild(captionDiv);
+        if (!isVideo) {
+            // Add caption display/edit functionality for images only
+            const captionDiv = document.createElement('div');
+            captionDiv.className = 'image-caption-display' + (canEdit ? ' editable' : '');
+            const currentCaption = img.caption || '';
+            captionDiv.textContent = currentCaption || 'Lisää kuvateksti...';
+            if (!currentCaption) {
+                captionDiv.classList.add('image-caption-placeholder');
+            }
 
-        // Only add delete button for extra images (not main images)
+            // Add click-to-edit functionality for captions (only if user can edit)
+            if (canEdit) {
+                captionDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    showCaptionEditor(captionDiv, img, baseUrl);
+                };
+            }
+
+            div.appendChild(captionDiv);
+        }
+
+        // Only add delete button for extra images/videos (not main images)
         if (canEdit && img.id) {
             const delBtn = document.createElement('button');
             delBtn.className = 'sf-gallery-delete';
             delBtn.innerHTML = '&times;';
-            delBtn.setAttribute('aria-label', getTerm('extra_img_remove', 'Poista kuva'));
+            delBtn.setAttribute('aria-label', getTerm('extra_img_remove', 'Poista'));
             delBtn.onclick = (e) => {
                 e.stopPropagation();
                 showDeleteConfirmModal(() => {
@@ -452,8 +484,8 @@
     }
 
     function openLightbox(url) {
-        // Collect all image URLs for navigation
-        const gridImgs = document.querySelectorAll('#imagesGrid .sf-gallery-img');
+        // Collect only image (not video) URLs for navigation
+        const gridImgs = document.querySelectorAll('#imagesGrid .sf-gallery-item:not(.sf-gallery-item-video) .sf-gallery-img');
         allImageUrls = [];
         gridImgs.forEach(img => {
             allImageUrls.push(img.__fullUrl || img.src);
@@ -533,6 +565,80 @@
             lightbox.classList.remove('active');
             document.body.style.overflow = '';
         }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Video Modal
+    // ---------------------------------------------------------------------------
+
+    let videoModalKeyListenerAdded = false;
+
+    function openVideoModal(url, title) {
+        const modal = document.getElementById('sfVideoModal');
+        const player = document.getElementById('sfVideoModalPlayer');
+        const source = document.getElementById('sfVideoModalSource');
+
+        if (!modal || !player || !source) return;
+
+        // Detect MIME type from extension
+        const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+        const mimeMap = { mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg', mov: 'video/quicktime', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
+        source.type = mimeMap[ext] || 'video/mp4';
+        source.src = url;
+        player.load();
+
+        modal.showModal();
+        player.focus();
+
+        if (!videoModalKeyListenerAdded) {
+            videoModalKeyListenerAdded = true;
+            document.addEventListener('keydown', (e) => {
+                const m = document.getElementById('sfVideoModal');
+                if (m && m.open && e.key === 'Escape') {
+                    closeVideoModal();
+                }
+            });
+        }
+    }
+
+    function closeVideoModal() {
+        const modal = document.getElementById('sfVideoModal');
+        const player = document.getElementById('sfVideoModalPlayer');
+        const source = document.getElementById('sfVideoModalSource');
+
+        if (!modal) return;
+        if (player) {
+            player.pause();
+            player.currentTime = 0;
+        }
+        if (source) {
+            source.src = '';
+        }
+        if (player) {
+            player.load();
+        }
+        if (modal.open) {
+            modal.close();
+        }
+    }
+
+    function initVideoModal() {
+        const modal = document.getElementById('sfVideoModal');
+        const closeBtn = document.getElementById('sfVideoModalClose');
+        if (!modal) return;
+        if (modal.dataset.sfVideoModalInit === '1') return;
+        modal.dataset.sfVideoModalInit = '1';
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeVideoModal);
+        }
+
+        // Close on backdrop click (clicking outside the inner dialog content)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        });
     }
 
     function navigateLightbox(direction) {
@@ -663,6 +769,56 @@
             uploadEnhancementsInitialized = true;
             initUploadEnhancements(tabContent, grid, flashId, baseUrl, noImages);
         }
+    }
+
+    function initVideoUploadModal(flashId, baseUrl, grid, noImages) {
+        const videoBtn = document.getElementById('imagesUploadVideoBtn');
+        const modal = document.getElementById('videoUploadModal');
+        const modalClose = document.getElementById('videoUploadModalClose');
+        const backdrop = modal ? modal.querySelector('.sf-modal-backdrop') : null;
+        const dropZone = document.getElementById('videoUploadDropZone');
+        const browseBtn = document.getElementById('videoUploadBrowseBtn');
+        const fileInput = document.getElementById('videoUploadFileInput');
+
+        if (!videoBtn || !modal || !dropZone || !browseBtn || !fileInput) return;
+        if (modal.dataset.sfVideoUploadInit === '1') return;
+        modal.dataset.sfVideoUploadInit = '1';
+
+        videoBtn.onclick = () => { modal.classList.remove('hidden'); };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            fileInput.value = '';
+        };
+
+        if (modalClose) modalClose.onclick = closeModal;
+        if (backdrop) backdrop.onclick = closeModal;
+
+        browseBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+            handleVideoFiles(files, flashId, baseUrl, grid, noImages, modal);
+            fileInput.value = '';
+        };
+
+        // Drag and drop for videos
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        };
+        dropZone.ondragleave = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files || []);
+            if (files.length === 0) return;
+            handleVideoFiles(files, flashId, baseUrl, grid, noImages, modal);
+        };
     }
 
     function initUploadEnhancements(tabContent, grid, flashId, baseUrl, noImages) {
@@ -1028,6 +1184,208 @@
             if (pendingItem.objectUrl) {
                 URL.revokeObjectURL(pendingItem.objectUrl);
             }
+        } else {
+            grid.appendChild(item);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Video upload helpers
+    // ---------------------------------------------------------------------------
+
+    function isAllowedVideoFile(file) {
+        const type = String(file.type || '').toLowerCase();
+        if (ALLOWED_VIDEO_MIME_TYPES.includes(type)) return true;
+        const name = String(file.name || '').toLowerCase();
+        return ALLOWED_VIDEO_EXTENSIONS.test(name);
+    }
+
+    function createVideoPendingItem(file, grid, noImages) {
+        const pendingDiv = document.createElement('div');
+        pendingDiv.className = 'sf-gallery-item sf-gallery-item-pending sf-gallery-item-video';
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'sf-gallery-video-placeholder';
+        iconDiv.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+        pendingDiv.appendChild(iconDiv);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'sf-gallery-pending-overlay';
+
+        const status = document.createElement('div');
+        status.className = 'sf-gallery-pending-status';
+        status.setAttribute('role', 'status');
+        status.textContent = getTerm('extra_img_processing', 'Ladataan...');
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'sf-gallery-progress-line';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'sf-gallery-progress-line-fill';
+        progressFill.style.width = '0%';
+        progressBar.appendChild(progressFill);
+
+        const progressText = document.createElement('div');
+        progressText.className = 'sf-gallery-pending-progress-text';
+        progressText.textContent = '0%';
+
+        overlay.appendChild(status);
+        overlay.appendChild(progressBar);
+        overlay.appendChild(progressText);
+        pendingDiv.appendChild(overlay);
+
+        grid.appendChild(pendingDiv);
+        grid.style.display = 'grid';
+        if (noImages) noImages.style.display = 'none';
+
+        return { element: pendingDiv, status, progressBar: progressFill, progressText };
+    }
+
+    async function handleVideoFiles(files, flashId, baseUrl, grid, noImages, modal) {
+        const validFiles = [];
+
+        files.forEach((file) => {
+            if (!isAllowedVideoFile(file)) {
+                showUploadError(getTerm('video_upload_invalid_type', 'Virheellinen videomuoto. Sallitut: MP4, WebM, OGG, MOV'));
+                return;
+            }
+            if (file.size > MAX_VIDEO_UPLOAD_SIZE_BYTES) {
+                showUploadError(getTerm('video_upload_too_large', 'Videotiedosto on liian suuri. Maksimikoko: 200 Mt'));
+                return;
+            }
+            validFiles.push(file);
+        });
+
+        if (validFiles.length === 0) return;
+
+        const progress = document.getElementById('videoUploadProgress');
+        const progressFill = document.getElementById('videoUploadProgressFill');
+        const progressText = document.getElementById('videoUploadProgressText');
+
+        let completed = 0;
+        const total = validFiles.length;
+        let failedCount = 0;
+        let cursor = 0;
+
+        if (progress) {
+            progress.classList.add('active');
+            updateProgress(0, total, progressFill, progressText);
+        }
+
+        // Upload videos one by one (no concurrent uploads for large files)
+        while (cursor < total) {
+            const file = validFiles[cursor++];
+            const pendingItem = createVideoPendingItem(file, grid, noImages);
+            try {
+                await uploadVideo(file, flashId, baseUrl, grid, noImages, pendingItem);
+            } catch (err) {
+                failedCount++;
+                if (pendingItem.element && pendingItem.element.parentNode) {
+                    pendingItem.element.remove();
+                }
+            } finally {
+                completed++;
+                updateProgress(completed, total, progressFill, progressText);
+            }
+        }
+
+        if (failedCount > 0) {
+            showUploadError(getTerm('upload_error', 'Videon lataus epäonnistui'));
+        }
+
+        setTimeout(() => {
+            if (progress) progress.classList.remove('active');
+            if (modal) modal.classList.add('hidden');
+        }, 1000);
+    }
+
+    function uploadVideoTempWithXhr(file, baseUrl, pendingItem) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('video', file);
+            const csrfToken = getCsrfToken();
+            if (csrfToken) formData.append('csrf_token', csrfToken);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${baseUrl}/app/api/upload_extra_video.php`, true);
+            xhr.withCredentials = true;
+            xhr.responseType = 'json';
+
+            xhr.upload.onprogress = (event) => {
+                if (!event.lengthComputable) return;
+                const percent = Math.round((event.loaded / event.total) * 100);
+                updatePendingProgress(pendingItem, percent);
+            };
+
+            xhr.onload = () => {
+                const responseData = xhr.response || {};
+                if (xhr.status >= 200 && xhr.status < 300 && responseData && responseData.ok) {
+                    resolve(responseData);
+                    return;
+                }
+                const error = new Error((responseData && responseData.error) || getTerm('upload_error', 'Lataus epäonnistui'));
+                error.status = xhr.status;
+                reject(error);
+            };
+
+            xhr.onerror = () => {
+                const error = new Error(getTerm('upload_error', 'Lataus epäonnistui'));
+                error.status = 0;
+                reject(error);
+            };
+
+            xhr.send(formData);
+        });
+    }
+
+    async function uploadVideo(file, flashId, baseUrl, grid, noImages, pendingItem) {
+        if (pendingItem && pendingItem.status) {
+            pendingItem.status.textContent = getTerm('extra_img_processing', 'Ladataan...');
+        }
+
+        const uploadResult = await uploadVideoTempWithXhr(file, baseUrl, pendingItem);
+        updatePendingProgress(pendingItem, 100);
+
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            throw new Error(getTerm('csrf_invalid_token', 'Virheellinen CSRF token'));
+        }
+
+        const addData = new URLSearchParams();
+        addData.append('flash_id', flashId);
+        addData.append('temp_filename', uploadResult.filename);
+        addData.append('original_filename', uploadResult.original_filename || file.name);
+        addData.append('csrf_token', csrfToken);
+
+        const addResponse = await fetch(`${baseUrl}/app/api/add_extra_video.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: addData.toString(),
+            credentials: 'same-origin'
+        });
+        const addResult = await addResponse.json();
+
+        if (!addResult.ok) {
+            throw new Error(addResult.error || 'Failed to save video');
+        }
+
+        const newVideo = {
+            id: addResult.id,
+            url: addResult.url,
+            thumb_url: null,
+            filename: addResult.filename,
+            original_filename: addResult.original_filename,
+            media_type: 'video'
+        };
+
+        const item = createViewItem(newVideo, true, baseUrl, () => {
+            if (grid.querySelectorAll('.sf-gallery-item').length === 0) {
+                grid.style.display = 'none';
+                if (noImages) noImages.style.display = 'block';
+            }
+        });
+
+        if (pendingItem && pendingItem.element && pendingItem.element.parentNode) {
+            pendingItem.element.replaceWith(item);
         } else {
             grid.appendChild(item);
         }

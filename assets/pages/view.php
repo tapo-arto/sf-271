@@ -1041,7 +1041,7 @@ $iconBase = $base .'/assets/img/icons/';
                     </button>
                     <button class="sf-activity-tab" data-tab="images" id="imagesTabBtn">
                         <img src="<?= $base ?>/assets/img/icons/image.svg" alt="" class="sf-tab-icon">
-                        <span><?= htmlspecialchars(sf_term('activity_tab_images', $currentUiLang) ?: 'Kuvat', ENT_QUOTES, 'UTF-8') ?></span>
+                        <span><?= htmlspecialchars(sf_term('activity_tab_images', $currentUiLang) ?: 'Media', ENT_QUOTES, 'UTF-8') ?></span>
                     </button>
                 </div>
 
@@ -1758,9 +1758,12 @@ $iconBase = $base .'/assets/img/icons/';
                             <div class="images-spinner" role="status" aria-live="polite" aria-label="<?= htmlspecialchars(sf_term('images_loading', $currentUiLang) ?: 'Ladataan kuvia...', ENT_QUOTES, 'UTF-8') ?>"></div>
                             <p><?= htmlspecialchars(sf_term('images_loading', $currentUiLang) ?: 'Ladataan kuvia...', ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
-                        <div id="imagesUploadContainer" style="display: <?= !empty($canAddExtraImages) ? 'block' : 'none' ?>; margin-bottom: 1rem;">
+                        <div id="imagesUploadContainer" style="display: <?= !empty($canAddExtraImages) ? 'flex' : 'none' ?>; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
                             <button type="button" id="imagesUploadBtn" class="sf-btn sf-btn-primary" aria-label="<?= htmlspecialchars(sf_term('add_images_btn', $currentUiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>">
                                 <?= htmlspecialchars(sf_term('add_images_btn', $currentUiLang) ?: 'Lisää kuvia', ENT_QUOTES, 'UTF-8') ?>
+                            </button>
+                            <button type="button" id="imagesUploadVideoBtn" class="sf-btn sf-btn-secondary" aria-label="<?= htmlspecialchars(sf_term('add_video_btn', $currentUiLang) ?: 'Lisää video', ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars(sf_term('add_video_btn', $currentUiLang) ?: 'Lisää video', ENT_QUOTES, 'UTF-8') ?>
                             </button>
                         </div>
                         <div class="images-drop-overlay" id="imagesDropOverlay" aria-hidden="true">
@@ -1770,7 +1773,7 @@ $iconBase = $base .'/assets/img/icons/';
                             <!-- Images will be loaded here by JavaScript -->
                         </div>
                         <div class="no-images-message" id="noImagesMessage" style="display: none;">
-                            <p><?= htmlspecialchars(sf_term('no_images_message', $currentUiLang) ?: 'Ei kuvia.', ENT_QUOTES, 'UTF-8') ?></p>
+                            <p><?= htmlspecialchars(sf_term('no_media_message', $currentUiLang) ?: 'Ei mediaa saatavilla.', ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
                     </div>
                 </div>
@@ -4132,6 +4135,48 @@ document.addEventListener('keydown', function(e) {
         </div>
     </div>
 </div>
+
+<!-- Video Upload Modal -->
+<div class="sf-modal hidden" id="videoUploadModal" role="dialog" aria-modal="true" aria-labelledby="videoUploadModalTitle">
+    <div class="sf-modal-backdrop"></div>
+    <div class="sf-modal-content sf-upload-modal-content">
+        <div class="sf-modal-header">
+            <h3 id="videoUploadModalTitle"><?= htmlspecialchars(sf_term('add_video_btn', $currentUiLang) ?: 'Lisää video', ENT_QUOTES, 'UTF-8') ?></h3>
+            <button class="sf-modal-close" id="videoUploadModalClose" aria-label="<?= htmlspecialchars(sf_term('btn_close', $currentUiLang) ?: 'Sulje', ENT_QUOTES, 'UTF-8') ?>">&times;</button>
+        </div>
+        <div class="sf-modal-body">
+            <div class="sf-upload-drop-zone" id="videoUploadDropZone">
+                <div class="sf-upload-drop-icon">🎬</div>
+                <div class="sf-upload-drop-text"><?= htmlspecialchars(sf_term('upload_drag_text', $currentUiLang) ?: 'Vedä ja pudota video tähän', ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="sf-upload-drop-hint"><?= htmlspecialchars(sf_term('or', $currentUiLang) ?: 'tai', ENT_QUOTES, 'UTF-8') ?></div>
+                <button type="button" class="sf-btn sf-btn-primary" id="videoUploadBrowseBtn">
+                    <?= htmlspecialchars(sf_term('upload_browse_btn', $currentUiLang) ?: 'Valitse tiedosto', ENT_QUOTES, 'UTF-8') ?>
+                </button>
+                <input type="file" id="videoUploadFileInput" accept=".mp4,.webm,.ogv,.ogg,.mov,.avi,.mkv" style="display: none;">
+            </div>
+            <div class="sf-upload-progress" id="videoUploadProgress">
+                <div class="sf-upload-progress-bar">
+                    <div class="sf-upload-progress-fill" id="videoUploadProgressFill">0%</div>
+                </div>
+                <div class="sf-upload-progress-text" id="videoUploadProgressText" aria-live="polite"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Player Modal (native <dialog>) -->
+<dialog id="sfVideoModal" class="sf-video-modal" aria-labelledby="sfVideoModalLabel">
+    <div class="sf-video-modal-inner">
+        <div class="sf-video-modal-header">
+            <span id="sfVideoModalLabel" class="sf-video-modal-title"><?= htmlspecialchars(sf_term('video_modal_title', $currentUiLang) ?: 'Videotoisto', ENT_QUOTES, 'UTF-8') ?></span>
+            <button type="button" class="sf-video-modal-close" id="sfVideoModalClose" aria-label="<?= htmlspecialchars(sf_term('btn_close', $currentUiLang) ?: 'Sulje', ENT_QUOTES, 'UTF-8') ?>">&times;</button>
+        </div>
+        <video id="sfVideoModalPlayer" class="sf-video-modal-player" controls playsinline preload="metadata">
+            <source id="sfVideoModalSource" src="" type="video/mp4">
+            <?= htmlspecialchars(sf_term('browser_no_video', $currentUiLang) ?: 'Selaimesi ei tue videotoistoa.', ENT_QUOTES, 'UTF-8') ?>
+        </video>
+    </div>
+</dialog>
 
 <!-- Images Tab JavaScript -->
 <?php

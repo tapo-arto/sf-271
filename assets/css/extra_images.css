@@ -883,3 +883,142 @@
 .image-caption-placeholder {
     color: #aaa;
 }
+
+/* =========================================================================
+   Video Gallery Item
+   ========================================================================= */
+
+/* Video items show video element as thumbnail */
+.sf-gallery-item-video .sf-gallery-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* Play icon overlay over video thumbnails */
+.sf-gallery-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    transition: background 0.2s;
+    pointer-events: none;
+}
+
+.sf-gallery-item-video:hover .sf-gallery-play-overlay {
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.sf-gallery-play-overlay svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Placeholder for videos in form's upload preview */
+.sf-gallery-video-placeholder,
+.extra-video-preview {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a2e;
+    color: #ccc;
+}
+
+.extra-video-item .extra-image-preview {
+    background: #1a1a2e;
+    color: #ccc;
+}
+
+/* =========================================================================
+   Video Player Modal (native <dialog>)
+   ========================================================================= */
+
+dialog.sf-video-modal {
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 92vw;
+    max-height: 92vh;
+    background: #000;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+dialog.sf-video-modal::backdrop {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+}
+
+.sf-video-modal-inner {
+    display: flex;
+    flex-direction: column;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.sf-video-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: #111;
+    color: #fff;
+    gap: 1rem;
+}
+
+.sf-video-modal-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sf-video-modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.sf-video-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sf-video-modal-player {
+    display: block;
+    max-width: 90vw;
+    max-height: calc(90vh - 52px);
+    width: 100%;
+    background: #000;
+    outline: none;
+}
+
+@media (max-width: 600px) {
+    dialog.sf-video-modal {
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .sf-video-modal-player {
+        max-width: 100vw;
+        max-height: calc(100vh - 52px);
+    }
+}
