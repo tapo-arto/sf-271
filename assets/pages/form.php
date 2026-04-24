@@ -1255,7 +1255,7 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
         </button>
         <input type="file" id="extra-image-input" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" multiple style="display: none;">
         <input type="file" id="extra-image-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
-        <input type="file" id="extra-video-input" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.ogv,.mov,.avi,.mkv" style="display: none;">
+        <input type="file" id="extra-video-input" accept=".mp4,.webm,.ogv,.ogg,.mov,.avi,.mkv" style="display: none;">
       </div>
       <div class="extra-images-progress" id="extra-images-progress" aria-live="polite" aria-atomic="true">
         <div class="extra-images-progress-bar">

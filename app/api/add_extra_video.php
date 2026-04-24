@@ -91,8 +91,14 @@ try {
         exit;
     }
 
-    // Validate extension against allowlist
-    $ext = strtolower(pathinfo($tempFilename, PATHINFO_EXTENSION) ?: 'mp4');
+    // Validate extension against allowlist (reject files with no extension)
+    $rawExt = pathinfo($tempFilename, PATHINFO_EXTENSION);
+    if ($rawExt === '' || $rawExt === false) {
+        @unlink($tempPath);
+        echo json_encode(['ok' => false, 'error' => 'Video file must have a valid extension']);
+        exit;
+    }
+    $ext = strtolower($rawExt);
     $allowedExtensions = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv'];
     if (!in_array($ext, $allowedExtensions, true)) {
         @unlink($tempPath);

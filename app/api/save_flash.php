@@ -179,7 +179,12 @@ function sf_handle_extra_videos(array $post, int $flashId, PDO $pdo): void
             continue;
         }
 
-        $ext = strtolower(pathinfo($tempFilename, PATHINFO_EXTENSION) ?: 'mp4');
+        $rawExt = pathinfo($tempFilename, PATHINFO_EXTENSION);
+        if ($rawExt === '' || $rawExt === false) {
+            @unlink($tempPath);
+            continue;
+        }
+        $ext = strtolower($rawExt);
         if (!in_array($ext, $allowedExtensions, true)) {
             @unlink($tempPath);
             continue;

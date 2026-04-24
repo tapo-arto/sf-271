@@ -4152,7 +4152,7 @@ document.addEventListener('keydown', function(e) {
                 <button type="button" class="sf-btn sf-btn-primary" id="videoUploadBrowseBtn">
                     <?= htmlspecialchars(sf_term('upload_browse_btn', $currentUiLang) ?: 'Valitse tiedosto', ENT_QUOTES, 'UTF-8') ?>
                 </button>
-                <input type="file" id="videoUploadFileInput" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.ogv,.mov,.avi,.mkv" style="display: none;">
+                <input type="file" id="videoUploadFileInput" accept=".mp4,.webm,.ogv,.ogg,.mov,.avi,.mkv" style="display: none;">
             </div>
             <div class="sf-upload-progress" id="videoUploadProgress">
                 <div class="sf-upload-progress-bar">

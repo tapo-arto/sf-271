@@ -581,8 +581,8 @@
         if (!modal || !player || !source) return;
 
         // Detect MIME type from extension
-        const ext = (url.split('?')[0].split('.').pop() || 'mp4').toLowerCase();
-        const mimeMap = { mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg', mov: 'video/mp4', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
+        const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+        const mimeMap = { mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg', mov: 'video/quicktime', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
         source.type = mimeMap[ext] || 'video/mp4';
         source.src = url;
         player.load();
