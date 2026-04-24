@@ -132,6 +132,76 @@ function sf_handle_extra_images(array $post, int $flashId, PDO $pdo): void
     }
 }
 
+/**
+ * Handle extra videos (additional videos feature)
+ * Moves uploaded videos from temp to permanent storage and inserts records into database
+ *
+ * @param array $post POST data containing extra_videos JSON
+ * @param int $flashId Flash ID to associate videos with
+ * @param PDO $pdo Database connection
+ * @return void
+ */
+function sf_handle_extra_videos(array $post, int $flashId, PDO $pdo): void
+{
+    $extraVideosJson = trim((string)($post['extra_videos'] ?? ''));
+    if ($extraVideosJson === '') {
+        return;
+    }
+
+    $extraVideos = json_decode($extraVideosJson, true);
+    if (!is_array($extraVideos) || empty($extraVideos)) {
+        return;
+    }
+
+    // Create extra images directory if needed (videos share the same dir)
+    $extraImagesDir = __DIR__ . '/../../uploads/extra_images/';
+    if (!is_dir($extraImagesDir)) {
+        @mkdir($extraImagesDir, 0755, true);
+    }
+
+    $tempDir = __DIR__ . '/../../uploads/temp/';
+
+    $allowedExtensions = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv'];
+
+    foreach ($extraVideos as $extraVideo) {
+        $tempFilename     = trim((string)($extraVideo['filename'] ?? ''));
+        $originalFilename = trim((string)($extraVideo['original_filename'] ?? ''));
+
+        // Security: validate filename is from temp and use basename
+        if ($tempFilename === '' || strpos($tempFilename, 'temp_video_') !== 0) {
+            continue;
+        }
+
+        $tempFilename = basename($tempFilename);
+        $tempPath     = $tempDir . $tempFilename;
+
+        if (!is_file($tempPath)) {
+            continue;
+        }
+
+        $ext = strtolower(pathinfo($tempFilename, PATHINFO_EXTENSION) ?: 'mp4');
+        if (!in_array($ext, $allowedExtensions, true)) {
+            @unlink($tempPath);
+            continue;
+        }
+
+        $permanentFilename = 'video_' . $flashId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $permanentPath     = $extraImagesDir . $permanentFilename;
+
+        if (rename($tempPath, $permanentPath)) {
+            $insertStmt = $pdo->prepare("
+                INSERT INTO sf_flash_images (flash_id, filename, original_filename, media_type, created_at)
+                VALUES (:flash_id, :filename, :original_filename, 'video', NOW())
+            ");
+            $insertStmt->execute([
+                ':flash_id'          => $flashId,
+                ':filename'          => $permanentFilename,
+                ':original_filename' => $originalFilename,
+            ]);
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Request validation
 // -----------------------------------------------------------------------------
@@ -370,6 +440,7 @@ try {
             
             // Handle extra images for EDIT path
             sf_handle_extra_images($post, $newId, $pdo);
+            sf_handle_extra_videos($post, $newId, $pdo);
             
         } catch (PermissionException $e) {
             if ($pdo->inTransaction()) {
@@ -535,6 +606,7 @@ try {
         
         // Handle extra images for Investigation Update path
         sf_handle_extra_images($post, $newId, $pdo);
+        sf_handle_extra_videos($post, $newId, $pdo);
 
     // =========================================================================
     // NORMAALI: Uuden luonti
@@ -680,6 +752,7 @@ try {
         
         // Handle extra images for CREATE path
         sf_handle_extra_images($post, $newId, $pdo);
+        sf_handle_extra_videos($post, $newId, $pdo);
     }
 
     // =========================================================================

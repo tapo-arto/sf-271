@@ -37,13 +37,14 @@ try {
         exit;
     }
     
-    // Get images for this flash
+    // Get images and videos for this flash
     $stmt = $pdo->prepare("
         SELECT 
             id,
             flash_id,
             filename,
             original_filename,
+            COALESCE(media_type, 'image') AS media_type,
             caption,
             created_at,
             DATE_FORMAT(created_at, '%d.%m.%Y %H:%i') as created_at_formatted
@@ -54,11 +55,18 @@ try {
     $stmt->execute([$flashId]);
     $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Build URLs for each image
+    // Build URLs for each item
     $basePath = rtrim($config['base_url'] ?? '', '/');
     foreach ($images as &$image) {
+        $mediaType = $image['media_type'] ?? 'image';
+        $image['media_type'] = $mediaType;
         $image['url'] = $basePath . '/uploads/extra_images/' . $image['filename'];
-        $image['thumb_url'] = $basePath . '/uploads/extra_images/thumb_' . $image['filename'];
+        // Videos don't have thumbnails; images may have a thumb_ variant
+        if ($mediaType === 'video') {
+            $image['thumb_url'] = null;
+        } else {
+            $image['thumb_url'] = $basePath . '/uploads/extra_images/thumb_' . $image['filename'];
+        }
     }
     unset($image); // Break reference
     
