@@ -327,9 +327,9 @@ $availableActions = $actionsResult ? $actionsResult->fetch_all(MYSQLI_ASSOC) : [
 
 <!-- DETAILS MODAALI -->
 <div class="sf-modal hidden" id="sfDetailsModal">
-    <div class="sf-modal-content">
+    <div class="sf-modal-content" style="max-width: 600px; width: 95%;">
         <h3>Lisätiedot</h3>
-        <pre id="sfDetailsContent" class="sf-details-pre"></pre>
+        <div id="sfDetailsContent" style="margin: 16px 0; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; max-height: 50vh; overflow-y: auto;"></div>
         <div class="sf-modal-actions">
             <button
                 type="button"
@@ -344,8 +344,51 @@ $availableActions = $actionsResult ? $actionsResult->fetch_all(MYSQLI_ASSOC) : [
 
 <script>
 function sfShowDetails(btn) {
-    const details = btn.dataset.details;
-    document.getElementById('sfDetailsContent').textContent = details;
+    const rawData = btn.dataset.details;
+    const contentContainer = document.getElementById('sfDetailsContent');
+    
+    try {
+        const data = JSON.parse(rawData);
+        let html = '<table class="sf-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 0; border: none;"><tbody>';
+        
+        function renderRows(obj, prefix = '') {
+            for (const [key, value] of Object.entries(obj)) {
+                const displayKey = prefix ? prefix + '.' + key : key;
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    renderRows(value, displayKey);
+                } else {
+                    let displayVal = value;
+                    if (value === null || value === '') {
+                        displayVal = '<span style="color: #9ca3af; font-style: italic;">-</span>';
+                    } else if (typeof value === 'boolean') {
+                        displayVal = value ? 'Kyllä' : 'Ei';
+                    } else if (Array.isArray(value)) {
+                        displayVal = value.join(', ');
+                    } else {
+                        // Escape HTML content to prevent XSS
+                        const div = document.createElement('div');
+                        div.textContent = String(value);
+                        displayVal = div.innerHTML;
+                    }
+                    
+                    html += `<tr>
+                        <th style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #4b5563; width: 35%; background: transparent;">${displayKey}</th>
+                        <td style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; word-break: break-word; background: transparent;">${displayVal}</td>
+                    </tr>`;
+                }
+            }
+        }
+        
+        renderRows(data);
+        html += '</tbody></table>';
+        contentContainer.innerHTML = html;
+    } catch (e) {
+        // Fallback for non-JSON or parsing error
+        contentContainer.innerHTML = '<pre style="white-space: pre-wrap; font-size: 0.875rem; padding: 16px; margin: 0;">' + 
+            rawData.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
+            '</pre>';
+    }
+    
     document.getElementById('sfDetailsModal').classList.remove('hidden');
 }
 
