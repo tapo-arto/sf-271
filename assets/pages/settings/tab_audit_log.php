@@ -343,6 +343,40 @@ $availableActions = $actionsResult ? $actionsResult->fetch_all(MYSQLI_ASSOC) : [
 </div>
 
 <script>
+const sfAuditDict = {
+    keys: {
+        'timestamp': '<?= htmlspecialchars(sf_term('audit_col_time', $currentUiLang) ?? 'Aika', ENT_QUOTES, 'UTF-8') ?>',
+        'action': '<?= htmlspecialchars(sf_term('audit_col_action', $currentUiLang) ?? 'Toiminto', ENT_QUOTES, 'UTF-8') ?>',
+        'target_type': '<?= htmlspecialchars(sf_term('audit_target_type', $currentUiLang) ?? 'Kohteen tyyppi', ENT_QUOTES, 'UTF-8') ?>',
+        'target_id': '<?= htmlspecialchars(sf_term('audit_target_id', $currentUiLang) ?? 'Kohteen ID', ENT_QUOTES, 'UTF-8') ?>',
+        'ip_address': '<?= htmlspecialchars(sf_term('audit_col_ip', $currentUiLang) ?? 'IP-osoite', ENT_QUOTES, 'UTF-8') ?>',
+        'request_uri': 'Sivu (URI)',
+        'request_method': 'Pyyntö (Method)',
+        'custom_details.email': '<?= htmlspecialchars(sf_term('email_label', $currentUiLang) ?? 'Sähköposti', ENT_QUOTES, 'UTF-8') ?>',
+        'custom_details.user_agent': 'Selain/laite',
+        'email': '<?= htmlspecialchars(sf_term('email_label', $currentUiLang) ?? 'Sähköposti', ENT_QUOTES, 'UTF-8') ?>',
+        'user_agent': 'Selain/laite',
+        'reason': 'Syy',
+        'attempted_email': 'Yritetty sähköposti',
+        'locked_until': 'Lukittu saakka',
+        'ip': '<?= htmlspecialchars(sf_term('audit_col_ip', $currentUiLang) ?? 'IP-osoite', ENT_QUOTES, 'UTF-8') ?>'
+    },
+    actions: {
+        <?php foreach ($availableActions as $a): ?>
+        "<?= htmlspecialchars($a['action'], ENT_QUOTES, 'UTF-8') ?>": "<?= htmlspecialchars(sf_audit_action_label($a['action'], $currentUiLang), ENT_QUOTES, 'UTF-8') ?>",
+        <?php endforeach; ?>
+        "login_success": "<?= htmlspecialchars(sf_audit_action_label('login_success', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>",
+        "login_failed": "<?= htmlspecialchars(sf_audit_action_label('login_failed', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>"
+    },
+    values: {
+        'wrong_password': 'Väärä salasana',
+        'user_not_found': 'Käyttäjää ei löytynyt',
+        'inactive': 'Käyttäjätili ei ole aktiivinen',
+        'csrf': 'Istunto vanhentunut (CSRF)',
+        'rate_limit': 'Liikaa yrityksiä (Rate limit)'
+    }
+};
+
 function sfShowDetails(btn) {
     const rawData = btn.dataset.details;
     const contentContainer = document.getElementById('sfDetailsContent');
@@ -353,9 +387,16 @@ function sfShowDetails(btn) {
         
         function renderRows(obj, prefix = '') {
             for (const [key, value] of Object.entries(obj)) {
-                const displayKey = prefix ? prefix + '.' + key : key;
+                const displayKeyPath = prefix ? prefix + '.' + key : key;
+                const lowerPath = displayKeyPath.toLowerCase();
+                
+                // Käännetään avain jos se löytyy sanakirjasta, muuten muotoillaan paremmin
+                let displayKeyName = sfAuditDict.keys[lowerPath] || key.replace(/_/g, ' ');
+                // Ensimmäinen kirjain isoksi
+                displayKeyName = displayKeyName.charAt(0).toUpperCase() + displayKeyName.slice(1);
+                
                 if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-                    renderRows(value, displayKey);
+                    renderRows(value, displayKeyPath);
                 } else {
                     let displayVal = value;
                     if (value === null || value === '') {
@@ -365,14 +406,21 @@ function sfShowDetails(btn) {
                     } else if (Array.isArray(value)) {
                         displayVal = value.join(', ');
                     } else {
-                        // Escape HTML content to prevent XSS
+                        // Käännetään arvo tarvittaessa
+                        if (lowerPath === 'action' || lowerPath === 'custom_details.action') {
+                            displayVal = sfAuditDict.actions[value] || value;
+                        } else if (lowerPath === 'reason' || lowerPath === 'custom_details.reason') {
+                            displayVal = sfAuditDict.values[value] || value;
+                        }
+                        
+                        // Estetään XSS
                         const div = document.createElement('div');
-                        div.textContent = String(value);
+                        div.textContent = String(displayVal);
                         displayVal = div.innerHTML;
                     }
                     
                     html += `<tr>
-                        <th style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #4b5563; width: 35%; background: transparent;">${displayKey}</th>
+                        <th style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #4b5563; width: 35%; background: transparent; text-transform: none;">${displayKeyName}</th>
                         <td style="padding: 10px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; word-break: break-word; background: transparent;">${displayVal}</td>
                     </tr>`;
                 }
@@ -383,7 +431,7 @@ function sfShowDetails(btn) {
         html += '</tbody></table>';
         contentContainer.innerHTML = html;
     } catch (e) {
-        // Fallback for non-JSON or parsing error
+        // Fallback
         contentContainer.innerHTML = '<pre style="white-space: pre-wrap; font-size: 0.875rem; padding: 16px; margin: 0;">' + 
             rawData.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
             '</pre>';
