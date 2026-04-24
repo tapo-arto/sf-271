@@ -25,6 +25,7 @@ if (!sf_csrf_validate($_POST['csrf_token'] ?? null)) {
     sf_audit_log('login_failed', 'user', null, [
         'reason' => 'csrf',
         'attempted_email' => trim($_POST['email'] ?? ''),
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
     ]);
 
     header('Location: ' . $base . '/assets/pages/login.php?error=csrf&lang=' . urlencode($lang));
@@ -53,7 +54,8 @@ if (!$rateCheck['allowed']) {
         'reason' => 'rate_limit',
         'email' => $email,
         'ip' => $clientIp,
-        'locked_until' => $rateCheck['locked_until']
+        'locked_until' => $rateCheck['locked_until'],
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
     ]);
     
     // Calculate wait time in minutes for user-friendly message
@@ -110,6 +112,7 @@ if (!$valid) {
     sf_audit_log('login_failed', 'user', $user ? (int)$user['id'] : null, [
         'attempted_email' => $email,
         'reason' => $reason,
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
     ]);
 
     // Record failed login attempt for rate limiting
@@ -163,6 +166,7 @@ $mysqli->close();
 // Audit success
 sf_audit_log('login_success', 'user', (int)$user['id'], [
     'email' => $email,
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
 ]);
 
 // Record successful login attempt (clears failed attempts)
