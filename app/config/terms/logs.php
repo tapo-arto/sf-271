@@ -589,7 +589,7 @@ return [
     'sv' => 'Den ursprungliga SafetyFlashen "{title}" (ID {id}, typ {type}, status {state}) sammanfogades med utredningsrapporten. Sammanfogad av: {user}.',
     'en' => 'Original SafetyFlash "{title}" (ID {id}, type {type}, state {state}) was merged into the investigation report. Merged by: {user}.',
     'it' => 'Il SafetyFlash originale "{title}" (ID {id}, tipo {type}, stato {state}) è stato unito al rapporto di indagine. Unito da: {user}.',
-    'el' => 'Το αρχικό SafetyFlash "{title}" (ID {id}, τύπος {type}, κατάσταση {state}) συνδέθηκε με την αναφορά έρευνας. Εκτελέστηκε [...]
+    'el' => 'Το αρχικό SafetyFlash "{title}" (ID {id}, τύπος {type}, κατάσταση {state}) συνδέθηκε με την αναφορά έρευνας. Εκτελέστηκε από: {user}.',
 ],
 'log_title_short_changed' => [
     'fi' => 'Lyhyt otsikko muutettu',
