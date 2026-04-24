@@ -188,12 +188,12 @@ try {
     $stmt = $pdo->prepare("
         SELECT
             f.id,
+            grp.parent_id,
             f.type,
             COALESCE(NULLIF(f.title_short, ''), f.title) AS title,
             f.site,
             f.updated_at
         FROM sf_flashes f
-        INNER JOIN incident_body_part ibp ON ibp.incident_id = f.id
         INNER JOIN (
             SELECT
                 COALESCE(translation_group_id, id) AS group_id,
@@ -205,6 +205,7 @@ try {
             WHERE state = 'published'
             GROUP BY COALESCE(translation_group_id, id)
         ) grp ON f.id = COALESCE(grp.ui_lang_id, grp.parent_id, grp.any_id)
+        INNER JOIN incident_body_part ibp ON ibp.incident_id = grp.parent_id
         WHERE f.state = 'published'
         ORDER BY f.updated_at DESC
         LIMIT 200
@@ -212,28 +213,29 @@ try {
     $stmt->execute([':ui_lang' => $uiLang]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if (!empty($rows)) {
-        $ids          = array_map(static fn($r) => (int)$r['id'], $rows);
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $parentIds    = array_values(array_unique(array_map(static fn($r) => (int)$r['parent_id'], $rows)));
+        $placeholders = implode(',', array_fill(0, count($parentIds), '?'));
         $bpStmt       = $pdo->prepare("
             SELECT ibp.incident_id, bp.svg_id
             FROM   incident_body_part ibp
             INNER JOIN body_parts bp ON bp.id = ibp.body_part_id
             WHERE  ibp.incident_id IN ($placeholders)
         ");
-        $bpStmt->execute($ids);
+        $bpStmt->execute($parentIds);
         $bpMap = [];
         foreach ($bpStmt->fetchAll(PDO::FETCH_ASSOC) as $bpRow) {
             $bpMap[(int)$bpRow['incident_id']][] = $bpRow['svg_id'];
         }
         foreach ($rows as $row) {
             $fid                   = (int)$row['id'];
+            $parentId              = (int)$row['parent_id'];
             $injuryRecentFlashes[] = [
                 'id'         => $fid,
                 'type'       => $row['type']       ?? '',
                 'title'      => $row['title']      ?? '',
                 'site'       => $row['site']       ?? '',
                 'updated_at' => $row['updated_at'] ?? '',
-                'body_parts' => $bpMap[$fid]       ?? [],
+                'body_parts' => $bpMap[$parentId]  ?? [],
             ];
         }
     }
