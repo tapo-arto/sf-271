@@ -622,6 +622,10 @@
     color: #16a34a;
 }
 
+.fb-publish .btn-label {
+    hyphens: none;
+}
+
 .fb-publish:hover::before {
     background: #16a34a;
 }
