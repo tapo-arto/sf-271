@@ -2585,21 +2585,50 @@ include __DIR__ . '/../partials/body_map_modal.php';
             <input type="hidden" name="publish_mode" value="single">
 
             <div class="sf-modal-body">
-                <!-- TTL valitsin -->
-                <?php require __DIR__ . '/../partials/publish_display_ttl.php'; ?>
+                <!-- Tab-navigaatio -->
+                <div class="sf-dt-tabs" role="tablist" aria-label="<?= htmlspecialchars(sf_term('publish_language_version', $currentUiLang) ?? 'Julkaise kieliversio', ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="button"
+                            class="sf-dt-tab sf-dt-tab-active"
+                            id="psTabTiming"
+                            data-tab="timing"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="psPanelTiming">
+                        <?= htmlspecialchars(sf_term('display_tab_timing', $currentUiLang) ?? 'Kestoasetukset', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                    <button type="button"
+                            class="sf-dt-tab"
+                            id="psTabTargets"
+                            data-tab="targets"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="psPanelTargets"
+                            tabindex="-1">
+                        <?= htmlspecialchars(sf_term('display_tab_targets', $currentUiLang) ?? 'Infonäyttökohteet', ENT_QUOTES, 'UTF-8') ?>
+                    </button>
+                </div>
 
-                <!-- Kesto valitsin -->
-                <?php require __DIR__ . '/../partials/publish_display_duration.php'; ?>
+                <!-- Välilehti: Kestoasetukset -->
+                <div class="sf-dt-tab-panel sf-dt-tab-panel-active" id="psPanelTiming" data-tab-panel="timing" role="tabpanel" aria-labelledby="psTabTiming" tabindex="0">
+                    <div class="sf-dt-compact-row">
+                        <div class="sf-dt-section">
+                            <?php require __DIR__ . '/../partials/publish_display_ttl.php'; ?>
+                        </div>
+                        <div class="sf-dt-section">
+                            <?php require __DIR__ . '/../partials/publish_display_duration.php'; ?>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Näyttövalitsin — kaikki aktiiviset näytöt -->
-                <div class="sf-lang-display-section">
+                <!-- Välilehti: Infonäyttökohteet -->
+                <div class="sf-dt-tab-panel" id="psPanelTargets" data-tab-panel="targets" role="tabpanel" aria-labelledby="psTabTargets" tabindex="0">
                     <?php
                         $context = 'publish';
                         require __DIR__ . '/../partials/display_target_selector.php';
                     ?>
                 </div>
 
-                <!-- Henkilövahinko -->
+                <!-- Henkilövahinko (ei tab-paneelin sisään) -->
                 <?php if (($flash['type'] ?? '') === 'red'): ?>
                 <div class="sf-checkbox-option sf-checkbox-warning" style="margin-top:1rem;">
                     <label>
@@ -4325,24 +4354,71 @@ window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
 })();
 
 // ===== PUBLISH SINGLE LANGUAGE VERSION MODAL =====
-function openPublishSingleModal() {
-    const modal = document.getElementById('publishSingleModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('sf-modal-open');
-    }
-}
+(function () {
+    var _psTabsInited = false;
 
-function closePublishSingleModal() {
-    const modal = document.getElementById('publishSingleModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        const openModals = document.querySelectorAll('.sf-modal:not(.hidden)');
-        if (openModals.length === 0) {
-            document.body.classList.remove('sf-modal-open');
-        }
+    function psSetActiveTab(tabName) {
+        var modal = document.getElementById('publishSingleModal');
+        if (!modal) return;
+        modal.querySelectorAll('.sf-dt-tab').forEach(function (tab) {
+            var isActive = tab.getAttribute('data-tab') === tabName;
+            tab.classList.toggle('sf-dt-tab-active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+        });
+        modal.querySelectorAll('.sf-dt-tab-panel').forEach(function (panel) {
+            var isActive = panel.getAttribute('data-tab-panel') === tabName;
+            panel.classList.toggle('sf-dt-tab-panel-active', isActive);
+        });
     }
-}
+
+    function psInitTabs() {
+        if (_psTabsInited) return;
+        var modal = document.getElementById('publishSingleModal');
+        if (!modal) return;
+        var tabs = modal.querySelectorAll('.sf-dt-tab');
+        if (!tabs.length) return;
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                psSetActiveTab(tab.getAttribute('data-tab') || 'timing');
+            });
+            tab.addEventListener('keydown', function (e) {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                e.preventDefault();
+                var ordered = Array.from(tabs);
+                var idx = ordered.indexOf(tab);
+                if (idx < 0) return;
+                var next = e.key === 'ArrowRight'
+                    ? (idx + 1) % ordered.length
+                    : (idx - 1 + ordered.length) % ordered.length;
+                psSetActiveTab(ordered[next].getAttribute('data-tab') || 'timing');
+                ordered[next].focus();
+            });
+        });
+        _psTabsInited = true;
+    }
+
+    window.openPublishSingleModal = function () {
+        var modal = document.getElementById('publishSingleModal');
+        if (modal) {
+            psInitTabs();
+            psSetActiveTab('timing');
+            modal.classList.remove('hidden');
+            document.body.classList.add('sf-modal-open');
+        }
+    };
+
+    window.closePublishSingleModal = function () {
+        var modal = document.getElementById('publishSingleModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            var openModals = document.querySelectorAll('.sf-modal:not(.hidden)');
+            if (openModals.length === 0) {
+                document.body.classList.remove('sf-modal-open');
+            }
+        }
+    };
+})();
 </script>
 
 <?php if ($canMergeOriginalFlash): ?>

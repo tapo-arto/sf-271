@@ -1138,6 +1138,13 @@
     }
 }
 
+/* Prevent horizontal scroll for chips inside tab panels */
+.sf-dt-tab-panel .sf-ttl-chips,
+.sf-dt-tab-panel .sf-duration-chips {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .sf-dt-displays-header {
     display: flex;
     align-items: center;
