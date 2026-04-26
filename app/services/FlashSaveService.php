@@ -594,8 +594,12 @@ class FlashSaveService
             return;
         }
         
-        // Try background execution first (non-blocking)
-        if (function_exists('shell_exec')) {
+        // Try background execution first (non-blocking).
+        // Also verify shell_exec is not in the disable_functions list (shared hosting).
+        $shellExecDisabled = !function_exists('shell_exec')
+            || in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true);
+
+        if (!$shellExecDisabled) {
             $phpBinary = PHP_BINARY ?: 'php';
             $cmd = escapeshellarg($phpBinary) . " " . escapeshellarg($workerPath) . " " . escapeshellarg((string)$flashId) . " > /dev/null 2>&1 &";
             
@@ -612,7 +616,17 @@ class FlashSaveService
         if (!defined('SF_ALLOW_WEB_WORKER')) {
             define('SF_ALLOW_WEB_WORKER', true);
         }
-        
+
+        // CRITICAL: Force a fresh DB connection for the worker.
+        // The current request may have held the singleton PDO connection long enough
+        // that MySQL's wait_timeout has closed it, causing error 2006 on the worker's
+        // first prepare(). Reconnect here so the worker starts with a live connection.
+        try {
+            Database::reconnect();
+        } catch (Throwable $e) {
+            error_log("FlashSaveService: Failed to refresh DB connection before worker: " . $e->getMessage());
+        }
+
         // Save and restore GET to avoid side effects
         $originalGet = $_GET;
         $_GET['flash_id'] = $flashId;
