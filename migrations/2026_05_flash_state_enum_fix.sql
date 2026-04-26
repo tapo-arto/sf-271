@@ -58,5 +58,6 @@ WHERE  (f.state = '' OR f.state IS NULL)
 
 -- Remaining rows with empty state → draft (safe fallback).
 UPDATE sf_flashes
-SET    state = 'draft'
+SET    state  = 'draft',
+       status = 'LUONNOS'
 WHERE  state = '' OR state IS NULL;
