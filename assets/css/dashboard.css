@@ -1161,6 +1161,10 @@
     background: var(--status-comms-bg, #3b82f6);
 }
 
+.sf-dashboard-status-dot.sf-status--awaiting-publish {
+    background: var(--status-awaiting-publish-bg, #0d9488);
+}
+
 .sf-dashboard-status-dot.sf-status--published {
     background: var(--status-published-bg, #16a34a);
 }

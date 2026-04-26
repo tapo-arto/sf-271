@@ -600,6 +600,13 @@ case 'request_info':
         }
         break;
 
+    case 'awaiting_publish':
+        if ($isComms || $isAdmin || $isSafety) {
+            $actions[] = 'edit';
+            $actions[] = 'publish_single';
+        }
+        break;
+
     case 'published': 
         if ($isAdmin || $isSafety || $isComms) {
             $actions[] = 'edit';
@@ -762,6 +769,13 @@ $iconBase = $base .'/assets/img/icons/';
                 <button class="footer-btn fb-publish" id="footerPublish" type="button" aria-label="<?= htmlspecialchars(sf_term('footer_publish', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
                     <img src="<?= $iconBase ?>publish_icon.svg" alt="" class="footer-icon">
                     <span class="btn-label"><?= htmlspecialchars(sf_term('footer_publish', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
+            <?php endif; ?>
+
+            <?php if (in_array('publish_single', $actions)): ?>
+                <button class="footer-btn fb-publish" id="footerPublishSingle" type="button" onclick="openPublishSingleModal()" aria-label="<?= htmlspecialchars(sf_term('btn_publish_language_version', $currentUiLang) ?? 'Julkaise tämä kieliversio', ENT_QUOTES, 'UTF-8') ?>">
+                    <img src="<?= $iconBase ?>publish_icon.svg" alt="" class="footer-icon">
+                    <span class="btn-label"><?= htmlspecialchars(sf_term('btn_publish_language_version', $currentUiLang) ?? 'Julkaise tämä kieliversio', ENT_QUOTES, 'UTF-8') ?></span>
                 </button>
             <?php endif; ?>
 
@@ -1798,9 +1812,13 @@ $iconBase = $base .'/assets/img/icons/';
             <?php /* Kieliversiot-osio poistettu sidebarista — tuplatieto, näkyy jo yläosan välilehtinä */ ?>
 
             <?php
-            // Tarkista onko tämä julkaisematon kieliversio jonka ryhmässä on jo julkaistuja
+            // Tarkista onko tämä julkaisematon kieliversio jonka ryhmässä on jo julkaistuja,
+            // tai kieliversio awaiting_publish-tilassa (odottaa erillistä julkaisua)
             $isUnpublishedTranslation = false;
-            if ($flash['state'] === 'draft' && !empty($flash['translation_group_id'])) {
+            if ($flash['state'] === 'awaiting_publish') {
+                // awaiting_publish-tilassa näytetään aina julkaisupainike
+                $isUnpublishedTranslation = true;
+            } elseif ($flash['state'] === 'draft' && !empty($flash['translation_group_id'])) {
                 $stmtGroupPublished = $pdo->prepare("
                     SELECT COUNT(*) FROM sf_flashes
                     WHERE (id = ? OR translation_group_id = ?)

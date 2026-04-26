@@ -42,7 +42,7 @@ class FlashPermissionService
         }
         
         // Communications permissions
-        if ($isComms && in_array($state, ['to_comms', 'published'], true)) {
+        if ($isComms && in_array($state, ['to_comms', 'awaiting_publish', 'published'], true)) {
             return true;
         }
         
@@ -136,7 +136,7 @@ class FlashPermissionService
                 return ['request_info', 'pending_supervisor', 'pending_review', 'reviewed', 'to_comms', 'published'];
             
             case 4: // Communications
-                return ['to_comms', 'published'];
+                return ['to_comms', 'awaiting_publish', 'published'];
             
             default:
                 return ['draft', 'request_info']; // Creator only

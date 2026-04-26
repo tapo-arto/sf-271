@@ -208,7 +208,7 @@ if (!$isAdmin) {
         f.state = 'published'
         OR f.created_by = :vis_uid
         OR ({$isSafetyInt} = 1 AND f.state != 'draft')
-        OR ({$isCommsInt} = 1 AND f.state = 'to_comms')
+        OR ({$isCommsInt} = 1 AND f.state IN ('to_comms', 'awaiting_publish'))
         OR (
             f.selected_approvers IS NOT NULL
             AND JSON_VALID(f.selected_approvers)
@@ -345,6 +345,7 @@ foreach ($fetched as $r) {
 
 $statePriority = [
     'published'         => 100,
+    'awaiting_publish'  => 95,
     'to_comms'          => 90,
     'pending_supervisor'=> 85,
     'request_info'      => 80,
@@ -709,6 +710,9 @@ $currentUiLang = $uiLang ?? DEFAULT_LANG;
         </option>
         <option value="to_comms" <?= $state==='to_comms' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('to_comms', $currentUiLang)) ?>
+        </option>
+        <option value="awaiting_publish" <?= $state==='awaiting_publish' ? 'selected' : '' ?>>
+            <?= htmlspecialchars(sf_status_label('awaiting_publish', $currentUiLang)) ?>
         </option>
         <option value="published" <?= $state==='published' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('published', $currentUiLang)) ?>
