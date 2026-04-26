@@ -21,25 +21,55 @@ require_once __DIR__ . '/../includes/log_app.php';
 // =========================================================================
 
 // BUG FIX 3: Constants for filename generation
-define('SF_ALLOWED_LANGUAGES', ['fi', 'sv', 'en', 'it', 'el']);
-define('SF_MAX_SITE_NAME_LENGTH', 30);
-define('SF_MAX_TITLE_LENGTH', 50);
-define('SF_FILENAME_SANITIZE_PATTERN', '/[^a-zA-Z0-9\-_]/'); // Keep only alphanumeric, hyphens, underscores
-define('SF_DEFAULT_FLASH_TYPE', 'yellow');
+if (!defined('SF_ALLOWED_LANGUAGES')) {
+    define('SF_ALLOWED_LANGUAGES', ['fi', 'sv', 'en', 'it', 'el']);
+}
+if (!defined('SF_MAX_SITE_NAME_LENGTH')) {
+    define('SF_MAX_SITE_NAME_LENGTH', 30);
+}
+if (!defined('SF_MAX_TITLE_LENGTH')) {
+    define('SF_MAX_TITLE_LENGTH', 50);
+}
+if (!defined('SF_FILENAME_SANITIZE_PATTERN')) {
+    define('SF_FILENAME_SANITIZE_PATTERN', '/[^a-zA-Z0-9\-_]/'); // Keep only alphanumeric, hyphens, underscores
+}
+if (!defined('SF_DEFAULT_FLASH_TYPE')) {
+    define('SF_DEFAULT_FLASH_TYPE', 'yellow');
+}
 
 // Content length thresholds for determining if green flash needs two slides
-define('SF_GREEN_MAX_TOTAL_CONTENT_LENGTH', 900);
-define('SF_GREEN_MAX_ROOT_CAUSES_LENGTH', 500);
-define('SF_GREEN_MAX_ACTIONS_LENGTH', 500);
-define('SF_GREEN_MAX_DESCRIPTION_LENGTH', 400);
-define('SF_GREEN_MAX_ROOT_CAUSES_ACTIONS_COMBINED_LENGTH', 800);
+if (!defined('SF_GREEN_MAX_TOTAL_CONTENT_LENGTH')) {
+    define('SF_GREEN_MAX_TOTAL_CONTENT_LENGTH', 900);
+}
+if (!defined('SF_GREEN_MAX_ROOT_CAUSES_LENGTH')) {
+    define('SF_GREEN_MAX_ROOT_CAUSES_LENGTH', 500);
+}
+if (!defined('SF_GREEN_MAX_ACTIONS_LENGTH')) {
+    define('SF_GREEN_MAX_ACTIONS_LENGTH', 500);
+}
+if (!defined('SF_GREEN_MAX_DESCRIPTION_LENGTH')) {
+    define('SF_GREEN_MAX_DESCRIPTION_LENGTH', 400);
+}
+if (!defined('SF_GREEN_MAX_ROOT_CAUSES_ACTIONS_COMBINED_LENGTH')) {
+    define('SF_GREEN_MAX_ROOT_CAUSES_ACTIONS_COMBINED_LENGTH', 800);
+}
 
 // Line-based calculation constants for better accuracy
-define('SF_GREEN_MAX_COLUMN_LINES', 14);  // Max lines that fit in a column on single-slide layout
-define('SF_GREEN_CHARS_PER_LINE', 45);    // Average characters per line
-define('SF_FONT_SIZE_OVERRIDE_MIN', 14);
-define('SF_FONT_SIZE_OVERRIDE_MAX', 24);
-define('SF_FONT_SIZE_REFERENCE', 20.0);   // Legacy L preset base size for multiplier 1.0
+if (!defined('SF_GREEN_MAX_COLUMN_LINES')) {
+    define('SF_GREEN_MAX_COLUMN_LINES', 14);  // Max lines that fit in a column on single-slide layout
+}
+if (!defined('SF_GREEN_CHARS_PER_LINE')) {
+    define('SF_GREEN_CHARS_PER_LINE', 45);    // Average characters per line
+}
+if (!defined('SF_FONT_SIZE_OVERRIDE_MIN')) {
+    define('SF_FONT_SIZE_OVERRIDE_MIN', 14);
+}
+if (!defined('SF_FONT_SIZE_OVERRIDE_MAX')) {
+    define('SF_FONT_SIZE_OVERRIDE_MAX', 24);
+}
+if (!defined('SF_FONT_SIZE_REFERENCE')) {
+    define('SF_FONT_SIZE_REFERENCE', 20.0);   // Legacy L preset base size for multiplier 1.0
+}
 
 /**
  * Estimate the number of lines needed to display text
@@ -601,7 +631,9 @@ try {
     }
 
     // Käsittele ladatut kuvat
-    define('UPLOADS_IMAGES_DIR', __DIR__ . '/../../uploads/images/');
+    if (!defined('UPLOADS_IMAGES_DIR')) {
+        define('UPLOADS_IMAGES_DIR', __DIR__ . '/../../uploads/images/');
+    }
     if (!is_dir(UPLOADS_IMAGES_DIR)) @mkdir(UPLOADS_IMAGES_DIR, 0755, true);
 
     foreach (['image1' => 'image_main', 'image2' => 'image_2', 'image3' => 'image_3'] as $field => $dbcol) {

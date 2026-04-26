@@ -375,6 +375,7 @@ try {
             
             // 1) Save content changes (service does NOT change state)
             $result = $saveService->save($id, $normalizedPost, $user);
+            $pendingWorkerIds = $result['pending_worker_ids'] ?? [];
 
             // After FlashSaveService::save(), the temp grid bitmap file has been
             // moved to its permanent location and the DB has been updated.
@@ -1034,16 +1035,30 @@ try {
 
     @ignore_user_abort(true);
 
+    // Collect all flash IDs that need worker processing.
+    // EDIT path: FlashSaveService::save() returns pending_worker_ids (main flash + siblings).
+    // CREATE / INVESTIGATION paths: $pendingWorkerIds is not set; fall back to $newId.
+    $workerIds = [];
+    if (empty($pendingWorkerIds)) {
+        $workerIds[] = (int)$newId;
+    } else {
+        foreach ($pendingWorkerIds as $wid) {
+            $workerIds[] = (int)$wid;
+        }
+    }
+    $workerIds = array_values(array_unique($workerIds));
+
     if ($useShell) {
         $workerScript  = __DIR__ . '/process_flash_worker.php';
         $phpExecutable = PHP_BINARY ?: 'php';
 
-        $command = escapeshellcmd($phpExecutable)
-            . ' ' . escapeshellarg($workerScript)
-            . ' ' . escapeshellarg((string) $newId)
-            . ' > /dev/null 2>&1 &';
-
-        @shell_exec($command);
+        foreach ($workerIds as $wid) {
+            $command = escapeshellcmd($phpExecutable)
+                . ' ' . escapeshellarg($workerScript)
+                . ' ' . escapeshellarg((string)$wid)
+                . ' > /dev/null 2>&1 &';
+            @shell_exec($command);
+        }
         exit;
     }
 
@@ -1052,8 +1067,15 @@ try {
         define('SF_ALLOW_WEB_WORKER', true);
     }
 
-    $_GET['flash_id'] = (string) $newId;
-    require __DIR__ . '/process_flash_worker.php';
+    // Inline fallback: run one worker per ID. Transaction is already committed, so no locks.
+    foreach ($workerIds as $wid) {
+        $_GET['flash_id'] = (string)$wid;
+        try {
+            require __DIR__ . '/process_flash_worker.php';
+        } catch (Throwable $e) {
+            error_log("save_flash: Inline worker for flash {$wid} failed: " . $e->getMessage());
+        }
+    }
     exit;
 
 } catch (Throwable $e) {
