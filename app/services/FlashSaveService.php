@@ -86,6 +86,119 @@ class FlashSaveService
         // Generate a single batch_id for all log entries of this save operation
         $batchId = sf_log_generate_batch_id();
 
+        // Propagate type change to all sibling language versions in the same translation group
+        if (isset($data['type']) && $data['type'] !== $flash['type']) {
+            try {
+                $newTypeForGroup = trim((string)$data['type']);
+                $groupId = !empty($flash['translation_group_id'])
+                    ? (int)$flash['translation_group_id']
+                    : (int)$flashId;
+
+                // Compute original_type the same way updateFlash() does
+                $originalTypeForGroup = $flash['original_type'] ?? null;
+                if ($originalTypeForGroup === null) {
+                    $originalTypeForGroup = $flash['type'];
+                }
+
+                // Collect sibling IDs and their current (old) types BEFORE the UPDATE
+                // so we can log the accurate before/after transition for each sibling.
+                $sibStmt = $pdo->prepare("
+                    SELECT id, type FROM sf_flashes
+                    WHERE (id = :group_id OR translation_group_id = :group_id2)
+                      AND id != :flash_id
+                ");
+                $sibStmt->execute([
+                    ':group_id'  => $groupId,
+                    ':group_id2' => $groupId,
+                    ':flash_id'  => $flashId,
+                ]);
+                $siblings = $sibStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $syncStmt = $pdo->prepare("
+                    UPDATE sf_flashes
+                    SET type = :type,
+                        original_type = COALESCE(original_type, :original_type),
+                        processing_status = 'pending',
+                        is_processing = 1,
+                        preview_status = 'pending',
+                        updated_at = NOW()
+                    WHERE (id = :group_id OR translation_group_id = :group_id2)
+                      AND id != :flash_id
+                ");
+                $syncStmt->execute([
+                    ':type'          => $newTypeForGroup,
+                    ':original_type' => $originalTypeForGroup,
+                    ':group_id'      => $groupId,
+                    ':group_id2'     => $groupId,
+                    ':flash_id'      => $flashId,
+                ]);
+
+                foreach ($siblings as $sib) {
+                    $sibId      = (int)$sib['id'];
+                    $sibOldType = (string)$sib['type'];
+
+                    // Fetch sibling's own DB data to use its language-specific content
+                    $sibFlashStmt = $pdo->prepare("SELECT * FROM sf_flashes WHERE id = ? LIMIT 1");
+                    $sibFlashStmt->execute([$sibId]);
+                    $sibFlash = $sibFlashStmt->fetch(PDO::FETCH_ASSOC);
+                    if (!$sibFlash) {
+                        continue;
+                    }
+
+                    $this->logService->logTypeChange(
+                        $sibId,
+                        $sibOldType,
+                        $newTypeForGroup,
+                        (int)($user['id'] ?? 0),
+                        $batchId
+                    );
+
+                    // Build job data from the sibling's own content so the worker
+                    // renders its language-specific text with the new type/template.
+                    // Both 'short_text' and 'title_short' are provided because the
+                    // worker reads $post['short_text'] ?? $post['title_short'].
+                    $sibJobData = [
+                        'id'                 => $sibId,
+                        'user_id'            => $user['id'] ?? null,
+                        'type'               => $newTypeForGroup,
+                        'lang'               => $sibFlash['lang'] ?? 'fi',
+                        'title'              => $sibFlash['title'] ?? '',
+                        'title_short'        => $sibFlash['title_short'] ?? '',
+                        'short_text'         => $sibFlash['title_short'] ?? '',
+                        'summary'            => $sibFlash['summary'] ?? '',
+                        'description'        => $sibFlash['description'] ?? '',
+                        'site'               => $sibFlash['site'] ?? '',
+                        'site_detail'        => $sibFlash['site_detail'] ?? '',
+                        'occurred_at'        => $sibFlash['occurred_at'] ?? '',
+                        'root_causes'        => $sibFlash['root_causes'] ?? '',
+                        'actions'            => $sibFlash['actions'] ?? '',
+                        'annotations_data'   => $sibFlash['annotations_data'] ?? '[]',
+                        'grid_layout'        => $sibFlash['grid_layout'] ?? 'grid-1',
+                        'grid_bitmap'        => $sibFlash['grid_bitmap'] ?? '',
+                        'font_size_override' => $sibFlash['font_size_override'] ?? '',
+                        'layout_mode'        => $sibFlash['layout_mode'] ?? 'auto',
+                        'image_main'         => $sibFlash['image_main'] ?? '',
+                        'image_2'            => $sibFlash['image_2'] ?? '',
+                        'image_3'            => $sibFlash['image_3'] ?? '',
+                        'image1_caption'     => $sibFlash['image1_caption'] ?? '',
+                        'image2_caption'     => $sibFlash['image2_caption'] ?? '',
+                        'image3_caption'     => $sibFlash['image3_caption'] ?? '',
+                        'image1_transform'   => $sibFlash['image1_transform'] ?? '',
+                        'image2_transform'   => $sibFlash['image2_transform'] ?? '',
+                        'image3_transform'   => $sibFlash['image3_transform'] ?? '',
+                    ];
+                    $this->createJobFile($sibId, $sibJobData);
+                    $this->triggerWorker($sibId);
+                }
+
+                if (function_exists('sf_app_log')) {
+                    sf_app_log("[FlashSaveService] Propagated type change ({$flash['type']} → {$newTypeForGroup}) to " . count($siblings) . " sibling(s) in group {$groupId}");
+                }
+            } catch (Throwable $e) {
+                error_log("FlashSaveService: Failed to propagate type change to siblings: " . $e->getMessage());
+            }
+        }
+
         // 6. Log changes
         if (isset($changes['type'])) {
             $this->logService->logTypeChange(
