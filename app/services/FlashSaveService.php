@@ -133,17 +133,57 @@ class FlashSaveService
 
                 foreach ($siblingIds as $sibId) {
                     $sibId = (int)$sibId;
+
+                    // Fetch sibling's own DB data to use its language-specific content
+                    $sibFlashStmt = $pdo->prepare("SELECT * FROM sf_flashes WHERE id = ? LIMIT 1");
+                    $sibFlashStmt->execute([$sibId]);
+                    $sibFlash = $sibFlashStmt->fetch(PDO::FETCH_ASSOC);
+                    if (!$sibFlash) {
+                        continue;
+                    }
+
+                    $sibOldType = (string)($sibFlash['type'] ?? $flash['type']);
                     $this->logService->logTypeChange(
                         $sibId,
-                        $flash['type'],
+                        $sibOldType,
                         $newTypeForGroup,
                         (int)($user['id'] ?? 0),
                         $batchId
                     );
-                    $this->createJobFile($sibId, array_merge($data, [
-                        'id'      => $sibId,
-                        'user_id' => $user['id'] ?? null,
-                    ]));
+
+                    // Build job data from the sibling's own content so the worker
+                    // renders its language-specific text with the new type/template.
+                    $sibJobData = [
+                        'id'                 => $sibId,
+                        'user_id'            => $user['id'] ?? null,
+                        'type'               => $newTypeForGroup,
+                        'lang'               => $sibFlash['lang'] ?? 'fi',
+                        'title'              => $sibFlash['title'] ?? '',
+                        'title_short'        => $sibFlash['title_short'] ?? '',
+                        'short_text'         => $sibFlash['title_short'] ?? '',
+                        'summary'            => $sibFlash['summary'] ?? '',
+                        'description'        => $sibFlash['description'] ?? '',
+                        'site'               => $sibFlash['site'] ?? '',
+                        'site_detail'        => $sibFlash['site_detail'] ?? '',
+                        'occurred_at'        => $sibFlash['occurred_at'] ?? '',
+                        'root_causes'        => $sibFlash['root_causes'] ?? '',
+                        'actions'            => $sibFlash['actions'] ?? '',
+                        'annotations_data'   => $sibFlash['annotations_data'] ?? '[]',
+                        'grid_layout'        => $sibFlash['grid_layout'] ?? 'grid-1',
+                        'grid_bitmap'        => $sibFlash['grid_bitmap'] ?? '',
+                        'font_size_override' => $sibFlash['font_size_override'] ?? '',
+                        'layout_mode'        => $sibFlash['layout_mode'] ?? 'auto',
+                        'image_main'         => $sibFlash['image_main'] ?? '',
+                        'image_2'            => $sibFlash['image_2'] ?? '',
+                        'image_3'            => $sibFlash['image_3'] ?? '',
+                        'image1_caption'     => $sibFlash['image1_caption'] ?? '',
+                        'image2_caption'     => $sibFlash['image2_caption'] ?? '',
+                        'image3_caption'     => $sibFlash['image3_caption'] ?? '',
+                        'image1_transform'   => $sibFlash['image1_transform'] ?? '',
+                        'image2_transform'   => $sibFlash['image2_transform'] ?? '',
+                        'image3_transform'   => $sibFlash['image3_transform'] ?? '',
+                    ];
+                    $this->createJobFile($sibId, $sibJobData);
                     $this->triggerWorker($sibId);
                 }
 
