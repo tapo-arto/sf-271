@@ -170,6 +170,27 @@ function sf_status_definitions(): array
             'badge_class' => 'sf-status sf-status--comms',
         ],
 
+        'awaiting_publish' => [
+            'key'   => 'awaiting_publish',
+            'group' => 'open',
+            'level' => 'info',
+            'labels' => [
+                'fi' => 'Odottaa julkaisua',
+                'sv' => 'Väntar på publicering',
+                'en' => 'Awaiting publish',
+                'it' => 'In attesa di pubblicazione',
+                'el' => 'Αναμένει δημοσίευση',
+            ],
+            'descriptions' => [
+                'fi' => 'Kieliversio on valmis ja odottaa erillistä julkaisua omille näytöilleen.',
+                'sv' => 'Språkversionen är klar och väntar på separat publicering till sina egna skärmar.',
+                'en' => 'The language version is ready and awaiting separate publishing to its own displays.',
+                'it' => 'La versione linguistica è pronta e in attesa di pubblicazione separata sui propri schermi.',
+                'el' => 'Η γλωσσική έκδοση είναι έτοιμη και αναμένει ξεχωριστή δημοσίευση στις δικές της οθόνες.',
+            ],
+            'badge_class' => 'sf-status sf-status--awaiting-publish',
+        ],
+
         'published' => [
             'key'   => 'published',
             'group' => 'closed',

@@ -42,7 +42,7 @@ function sf_update_state_all_languages(PDO $pdo, int $flashId, string $newState)
     // Update all language versions.
     // When moving to a terminal state (published/archived), update all versions.
     // Otherwise, skip versions already in a terminal state so they aren't pulled back.
-    $terminalStates = ['published', 'archived'];
+    $terminalStates = ['published', 'archived', 'awaiting_publish'];
     if (in_array($newState, $terminalStates, true)) {
         $updateStmt = $pdo->prepare("
             UPDATE sf_flashes 

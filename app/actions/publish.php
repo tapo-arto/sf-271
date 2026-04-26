@@ -85,160 +85,86 @@ $hasPersonalInjury = isset($_POST['has_personal_injury']) && $_POST['has_persona
 // Lue valitut maat (POST)
 $selectedCountries = $_POST['distribution_countries'] ?? ['fi']; // Default: Suomi
 
-// ========== JULKAISULOGIIKKA ==========
-$publishMode = $_POST['publish_mode'] ?? 'all';
+// ========== JULKAISULOGIIKKA — aina yksittäinen versio ==========
+$updateStmt = $pdo->prepare("
+    UPDATE sf_flashes 
+    SET state = 'published', 
+        status = 'JULKAISTU',
+        published_at = COALESCE(published_at, NOW()),
+        has_personal_injury = :injury,
+        sent_to_distribution = :distribution,
+        updated_at = NOW()
+    WHERE id = :id
+");
+$updateStmt->execute([
+    ':id' => $id,
+    ':injury' => $hasPersonalInjury ? 1 : 0,
+    ':distribution' => $sendToDistribution ? 1 : 0,
+]);
 
-if ($publishMode === 'single') {
-    // ===== TAPAUS B: Yksittäisen kieliversion julkaisu =====
-    $updateStmt = $pdo->prepare("
-        UPDATE sf_flashes 
-        SET state = 'published', 
-            status = 'JULKAISTU',
-            published_at = COALESCE(published_at, NOW()),
-            has_personal_injury = :injury,
-            sent_to_distribution = :distribution,
-            updated_at = NOW()
-        WHERE id = :id
+// Clear display snapshot so the new published preview takes over on Xibo displays.
+$pdo->prepare("UPDATE sf_flashes SET display_snapshot_active = 0, display_snapshot_preview = NULL WHERE id = ?")
+    ->execute([$id]);
+
+sf_app_log("publish.php: Single language version published: flash_id={$id}");
+
+// Display targets — vain tälle kieliversiolle
+$singleTargets = $_POST['display_targets'][$id] ?? [];
+$pdo->prepare("DELETE FROM sf_flash_display_targets WHERE flash_id = ?")->execute([$id]);
+
+if (!empty($singleTargets)) {
+    $stmtInsert = $pdo->prepare("
+        INSERT INTO sf_flash_display_targets
+        (flash_id, display_key_id, is_active, selected_by, selected_at, activated_at)
+        VALUES (?, ?, 1, ?, NOW(), NOW())
     ");
-    $updateStmt->execute([
-        ':id' => $id,
-        ':injury' => $hasPersonalInjury ? 1 : 0,
-        ':distribution' => $sendToDistribution ? 1 : 0,
-    ]);
-
-    // Clear display snapshot so the new published preview takes over on Xibo displays.
-    $pdo->prepare("UPDATE sf_flashes SET display_snapshot_active = 0, display_snapshot_preview = NULL WHERE id = ?")
-        ->execute([$id]);
-
-    sf_app_log("publish.php: Single language version published: flash_id={$id}");
-
-    // Display targets — vain tälle kieliversiolle
-    $singleTargets = $_POST['display_targets'][$id] ?? [];
-    $pdo->prepare("DELETE FROM sf_flash_display_targets WHERE flash_id = ?")->execute([$id]);
-
-    if (!empty($singleTargets)) {
-        $stmtInsert = $pdo->prepare("
-            INSERT INTO sf_flash_display_targets
-            (flash_id, display_key_id, is_active, selected_by, selected_at, activated_at)
-            VALUES (?, ?, 1, ?, NOW(), NOW())
-        ");
-        foreach ($singleTargets as $displayId) {
-            $displayId = (int)$displayId;
-            if ($displayId > 0) {
-                $stmtInsert->execute([$id, $displayId, $userId]);
-            }
+    foreach ($singleTargets as $displayId) {
+        $displayId = (int)$displayId;
+        if ($displayId > 0) {
+            $stmtInsert->execute([$id, $displayId, $userId]);
         }
-    }
-
-    // TTL tälle versiolle
-    $ttlDays = (int)($_POST['display_ttl_days'] ?? 30);
-    if ($ttlDays > 0) {
-        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlDays} days"));
-        $pdo->prepare("UPDATE sf_flashes SET display_expires_at = ?, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-            ->execute([$expiresAt, $id]);
-    } else {
-        $pdo->prepare("UPDATE sf_flashes SET display_expires_at = NULL, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-            ->execute([$id]);
-    }
-
-    // Kesto tälle versiolle
-    $durationSeconds = max(5, min(120, (int)($_POST['display_duration_seconds'] ?? 30)));
-    $pdo->prepare("UPDATE sf_flashes SET display_duration_seconds = ? WHERE id = ?")
-        ->execute([$durationSeconds, $id]);
-
-} else {
-    // ===== TAPAUS A: Kaikkien valmiiden kieliversioiden julkaisu =====
-    $stmtAllVersions = $pdo->prepare("
-        SELECT id, lang, state FROM sf_flashes 
-        WHERE id = :gid OR translation_group_id = :gid2
-    ");
-    $stmtAllVersions->execute([':gid' => $groupId, ':gid2' => $groupId]);
-    $allVersions = $stmtAllVersions->fetchAll(PDO::FETCH_ASSOC);
-
-    $publishedVersionIds = [];
-    $allDisplayTargets = $_POST['display_targets'] ?? [];
-
-    foreach ($allVersions as $ver) {
-        $verId = (int)$ver['id'];
-        $verState = $ver['state'];
-        $hasTargets = !empty($allDisplayTargets[$verId]);
-
-        if ($verState !== 'draft' || $hasTargets) {
-            $publishedVersionIds[] = $verId;
-        } else {
-            sf_app_log("publish.php: Skipping draft version flash_id={$verId} ({$ver['lang']}) — no display targets selected");
-        }
-    }
-
-    if (!empty($publishedVersionIds)) {
-        $placeholders = implode(',', array_fill(0, count($publishedVersionIds), '?'));
-        $updateStmt = $pdo->prepare("
-            UPDATE sf_flashes 
-            SET state = 'published', 
-                status = 'JULKAISTU',
-                published_at = COALESCE(published_at, NOW()),
-                has_personal_injury = ?,
-                sent_to_distribution = ?,
-                updated_at = NOW()
-            WHERE id IN ({$placeholders})
-        ");
-        $params = array_merge(
-            [$hasPersonalInjury ? 1 : 0, $sendToDistribution ? 1 : 0],
-            $publishedVersionIds
-        );
-        $updateStmt->execute($params);
-
-        // Clear display snapshot so the new published preview takes over on Xibo displays.
-        $clearPlaceholders = implode(',', array_fill(0, count($publishedVersionIds), '?'));
-        $pdo->prepare("UPDATE sf_flashes SET display_snapshot_active = 0, display_snapshot_preview = NULL WHERE id IN ({$clearPlaceholders})")
-            ->execute($publishedVersionIds);
-
-        sf_app_log("publish.php: Published " . count($publishedVersionIds) . " versions: " . implode(',', $publishedVersionIds));
-    }
-
-    // Display targets per kieliversio
-    foreach ($allVersions as $ver) {
-        $verId = (int)$ver['id'];
-        if (!in_array($verId, $publishedVersionIds)) {
-            continue;
-        }
-
-        $targetsForThis = $allDisplayTargets[$verId] ?? [];
-        $pdo->prepare("DELETE FROM sf_flash_display_targets WHERE flash_id = ?")->execute([$verId]);
-
-        if (!empty($targetsForThis)) {
-            $stmtInsert = $pdo->prepare("
-                INSERT INTO sf_flash_display_targets
-                (flash_id, display_key_id, is_active, selected_by, selected_at, activated_at)
-                VALUES (?, ?, 1, ?, NOW(), NOW())
-            ");
-            foreach ($targetsForThis as $displayId) {
-                $displayId = (int)$displayId;
-                if ($displayId > 0) {
-                    $stmtInsert->execute([$verId, $displayId, $userId]);
-                }
-            }
-        }
-    }
-
-    // TTL ja kesto kaikille julkaistuille versioille
-    $ttlDays = (int)($_POST['display_ttl_days'] ?? 30);
-    $durationSeconds = max(5, min(120, (int)($_POST['display_duration_seconds'] ?? 30)));
-
-    foreach ($publishedVersionIds as $verId) {
-        if ($ttlDays > 0) {
-            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlDays} days"));
-            $pdo->prepare("UPDATE sf_flashes SET display_expires_at = ?, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-                ->execute([$expiresAt, $verId]);
-        } else {
-            $pdo->prepare("UPDATE sf_flashes SET display_expires_at = NULL, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
-                ->execute([$verId]);
-        }
-        $pdo->prepare("UPDATE sf_flashes SET display_duration_seconds = ? WHERE id = ?")
-            ->execute([$durationSeconds, $verId]);
     }
 }
-// ========================================
+
+// TTL tälle versiolle
+$ttlDays = (int)($_POST['display_ttl_days'] ?? 30);
+if ($ttlDays > 0) {
+    $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlDays} days"));
+    $pdo->prepare("UPDATE sf_flashes SET display_expires_at = ?, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
+        ->execute([$expiresAt, $id]);
+} else {
+    $pdo->prepare("UPDATE sf_flashes SET display_expires_at = NULL, display_removed_at = NULL, display_removed_by = NULL WHERE id = ?")
+        ->execute([$id]);
+}
+
+// Kesto tälle versiolle
+$durationSeconds = max(5, min(120, (int)($_POST['display_duration_seconds'] ?? 30)));
+$pdo->prepare("UPDATE sf_flashes SET display_duration_seconds = ? WHERE id = ?")
+    ->execute([$durationSeconds, $id]);
+
+// ========== SISARVERSIOIDEN SIIRTO awaiting_publish-TILAAN ==========
+// Kun kieliversio julkaistaan ensimmäistä kertaa, muut saman ryhmän
+// julkaisemattomat sisarukset siirretään awaiting_publish-tilaan.
+if ($oldState !== 'published') {
+    $stmtSiblingUpdate = $pdo->prepare("
+        UPDATE sf_flashes
+        SET state = 'awaiting_publish', updated_at = NOW()
+        WHERE (id = :gid OR translation_group_id = :gid2)
+          AND id != :current_id
+          AND state NOT IN ('published', 'archived', 'awaiting_publish')
+    ");
+    $stmtSiblingUpdate->execute([
+        ':gid'        => $groupId,
+        ':gid2'       => $groupId,
+        ':current_id' => $id,
+    ]);
+
+    $siblingCount = $stmtSiblingUpdate->rowCount();
+    if ($siblingCount > 0) {
+        sf_app_log("publish.php: Moved {$siblingCount} sibling(s) to awaiting_publish for group {$groupId}");
+    }
+}
+// ====================================================================
 
 // ========== SAVE SNAPSHOT ==========
 // Only save snapshot if this is a new publish (not already published)
@@ -372,6 +298,31 @@ if ($oldState !== 'published') {
         ':description'=> $stateChangeDesc,
         ':batch_id'   => $publishBatchId,
     ]);
+
+    // Kirjataan loki sisarversioiden siirrosta awaiting_publish-tilaan
+    $stmtSiblings = $pdo->prepare("
+        SELECT id FROM sf_flashes
+        WHERE (id = :gid OR translation_group_id = :gid2)
+          AND id != :current_id
+          AND state = 'awaiting_publish'
+    ");
+    $stmtSiblings->execute([':gid' => $groupId, ':gid2' => $groupId, ':current_id' => $id]);
+    $siblingsNowAwaiting = $stmtSiblings->fetchAll(PDO::FETCH_COLUMN);
+
+    foreach ($siblingsNowAwaiting as $sibId) {
+        $sibId = (int)$sibId;
+        $logSibling = $pdo->prepare("
+            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+            VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
+        ");
+        $logSibling->execute([
+            ':flash_id'   => $sibId,
+            ':user_id'    => $userId,
+            ':event_type' => 'state_changed',
+            ':description'=> "log_state_changed: to_comms → awaiting_publish",
+            ':batch_id'   => $publishBatchId,
+        ]);
+    }
 }
 
 // ========== AUDIT LOG ==========

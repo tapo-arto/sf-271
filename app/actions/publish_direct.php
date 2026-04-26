@@ -104,19 +104,19 @@ try {
             status = 'JULKAISTU',
             published_at = COALESCE(published_at, NOW()),
             updated_at = NOW()
-        WHERE id IN ($placeholders)
+        WHERE id = ?
     ";
     $stmtUpdate = $pdo->prepare($updateSql);
-    $stmtUpdate->execute($versionIds);
+    $stmtUpdate->execute([$id]);
 
     $clearSnapshotSql = "
         UPDATE sf_flashes
         SET display_snapshot_active = 0,
             display_snapshot_preview = NULL
-        WHERE id IN ($placeholders)
+        WHERE id = ?
     ";
     $stmtClearSnapshot = $pdo->prepare($clearSnapshotSql);
-    $stmtClearSnapshot->execute($versionIds);
+    $stmtClearSnapshot->execute([$id]);
 
     $stmtType = $pdo->prepare("
         SELECT type
@@ -220,6 +220,21 @@ try {
         ':description' => $commentDescription,
     ]);
 
+    // Sisarversioiden siirto awaiting_publish-tilaan
+    if ($oldState !== 'published') {
+        $pdo->prepare("
+            UPDATE sf_flashes
+            SET state = 'awaiting_publish', updated_at = NOW()
+            WHERE (id = :gid OR translation_group_id = :gid2)
+              AND id != :current_id
+              AND state NOT IN ('published', 'archived', 'awaiting_publish')
+        ")->execute([
+            ':gid'        => $groupId,
+            ':gid2'       => $groupId,
+            ':current_id' => $id,
+        ]);
+    }
+
     // Generoi yksi batch_id tälle julkaisuoperaatiolle (ei kommenteille)
     $publishDirectBatchId = sf_log_generate_batch_id();
 
@@ -265,7 +280,7 @@ try {
         $userId ?: null
     );
 
-    sf_app_log("publish_direct.php: Flash {$id} published directly by user {$userId}. Group {$groupId}. Versions: " . implode(',', $versionIds));
+    sf_app_log("publish_direct.php: Flash {$id} published directly by user {$userId}. Group {$groupId}.");
 
     sf_redirect($base . "/index.php?page=view&id={$id}&notice=published_direct");
 } catch (Throwable $e) {

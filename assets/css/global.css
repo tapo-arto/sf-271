@@ -487,6 +487,10 @@ svg {
     --status-comms-bg: #3b82f6;
     --status-comms-text: #ffffff;
 
+    /* Odottaa julkaisua – teal (erottuu sinisestä ja vihreästä) */
+    --status-awaiting-publish-bg: #0d9488;
+    --status-awaiting-publish-text: #ffffff;
+
     /* Julkaistu – vihreä */
     --status-published-bg: #16a34a;
     --status-published-text: #ffffff;
@@ -543,6 +547,11 @@ svg {
 .sf-status--comms {
     background: var(--status-comms-bg);
     color: var(--status-comms-text);
+}
+
+.sf-status--awaiting-publish {
+    background: var(--status-awaiting-publish-bg);
+    color: var(--status-awaiting-publish-text);
 }
 
 .status-pill-published,
@@ -728,6 +737,11 @@ svg {
 .sf-status--published {
     background: var(--status-published-bg, #16a34a);
     color: var(--status-published-text, #ffffff);
+}
+
+.sf-status--awaiting-publish {
+    background: var(--status-awaiting-publish-bg, #0d9488);
+    color: var(--status-awaiting-publish-text, #ffffff);
 }
 
 .sf-status--investigation {
