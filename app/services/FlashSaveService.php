@@ -100,6 +100,20 @@ class FlashSaveService
                     $originalTypeForGroup = $flash['type'];
                 }
 
+                // Collect sibling IDs and their current (old) types BEFORE the UPDATE
+                // so we can log the accurate before/after transition for each sibling.
+                $sibStmt = $pdo->prepare("
+                    SELECT id, type FROM sf_flashes
+                    WHERE (id = :group_id OR translation_group_id = :group_id2)
+                      AND id != :flash_id
+                ");
+                $sibStmt->execute([
+                    ':group_id'  => $groupId,
+                    ':group_id2' => $groupId,
+                    ':flash_id'  => $flashId,
+                ]);
+                $siblings = $sibStmt->fetchAll(PDO::FETCH_ASSOC);
+
                 $syncStmt = $pdo->prepare("
                     UPDATE sf_flashes
                     SET type = :type,
@@ -119,20 +133,9 @@ class FlashSaveService
                     ':flash_id'      => $flashId,
                 ]);
 
-                $sibStmt = $pdo->prepare("
-                    SELECT id FROM sf_flashes
-                    WHERE (id = :group_id OR translation_group_id = :group_id2)
-                      AND id != :flash_id
-                ");
-                $sibStmt->execute([
-                    ':group_id'  => $groupId,
-                    ':group_id2' => $groupId,
-                    ':flash_id'  => $flashId,
-                ]);
-                $siblingIds = $sibStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                foreach ($siblingIds as $sibId) {
-                    $sibId = (int)$sibId;
+                foreach ($siblings as $sib) {
+                    $sibId      = (int)$sib['id'];
+                    $sibOldType = (string)$sib['type'];
 
                     // Fetch sibling's own DB data to use its language-specific content
                     $sibFlashStmt = $pdo->prepare("SELECT * FROM sf_flashes WHERE id = ? LIMIT 1");
@@ -142,7 +145,6 @@ class FlashSaveService
                         continue;
                     }
 
-                    $sibOldType = (string)($sibFlash['type'] ?? $flash['type']);
                     $this->logService->logTypeChange(
                         $sibId,
                         $sibOldType,
@@ -153,6 +155,8 @@ class FlashSaveService
 
                     // Build job data from the sibling's own content so the worker
                     // renders its language-specific text with the new type/template.
+                    // Both 'short_text' and 'title_short' are provided because the
+                    // worker reads $post['short_text'] ?? $post['title_short'].
                     $sibJobData = [
                         'id'                 => $sibId,
                         'user_id'            => $user['id'] ?? null,
@@ -188,7 +192,7 @@ class FlashSaveService
                 }
 
                 if (function_exists('sf_app_log')) {
-                    sf_app_log("[FlashSaveService] Propagated type change ({$flash['type']} → {$newTypeForGroup}) to " . count($siblingIds) . " sibling(s) in group {$groupId}");
+                    sf_app_log("[FlashSaveService] Propagated type change ({$flash['type']} → {$newTypeForGroup}) to " . count($siblings) . " sibling(s) in group {$groupId}");
                 }
             } catch (Throwable $e) {
                 error_log("FlashSaveService: Failed to propagate type change to siblings: " . $e->getMessage());
