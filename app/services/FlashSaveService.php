@@ -86,6 +86,8 @@ class FlashSaveService
         // Generate a single batch_id for all log entries of this save operation
         $batchId = sf_log_generate_batch_id();
 
+        $pendingWorkerIds = [];
+
         // Propagate type change to all sibling language versions in the same translation group
         if (isset($data['type']) && $data['type'] !== $flash['type']) {
             try {
@@ -188,7 +190,7 @@ class FlashSaveService
                         'image3_transform'   => $sibFlash['image3_transform'] ?? '',
                     ];
                     $this->createJobFile($sibId, $sibJobData);
-                    $this->triggerWorker($sibId);
+                    $pendingWorkerIds[] = $sibId;
                 }
 
                 if (function_exists('sf_app_log')) {
@@ -302,11 +304,9 @@ class FlashSaveService
         sf_app_log("[FlashSaveService] Creating worker job for flash {$flashId}: preview_image_data length: {$preview1Length}, preview_image_data_2 length: {$preview2Length}");
         
         $this->createJobFile($flashId, array_merge($data, ['user_id' => $user['id'] ?? null]));
+        $pendingWorkerIds[] = $flashId;
         
-        // 8. Trigger worker to process images
-        $this->triggerWorker($flashId);
-        
-        return ['ok' => true, 'flash_id' => $flashId];
+        return ['ok' => true, 'flash_id' => $flashId, 'pending_worker_ids' => $pendingWorkerIds];
     }
     
     /**
@@ -587,6 +587,22 @@ class FlashSaveService
      */
     private function triggerWorker(int $flashId): void
     {
+        // DEFENSIVE: never trigger a worker while an outer transaction is active.
+        // An inline worker opens a fresh DB connection which cannot see the parent
+        // transaction's locks, causing a 1205 Lock wait timeout.
+        try {
+            if (Database::getInstance()->inTransaction()) {
+                error_log("FlashSaveService::triggerWorker() refused: outer transaction is active. flash_id={$flashId}");
+                if (function_exists('sf_app_log')) {
+                    sf_app_log("[FlashSaveService] Refusing to trigger worker for flash {$flashId} while transaction is active", 'WARN');
+                }
+                return;
+            }
+        } catch (Throwable $e) {
+            // If we can't check the transaction state, log and proceed cautiously with the original logic
+            error_log("FlashSaveService::triggerWorker() could not check transaction state: " . $e->getMessage());
+        }
+
         $workerPath = __DIR__ . '/../api/process_flash_worker.php';
         
         if (!file_exists($workerPath)) {
