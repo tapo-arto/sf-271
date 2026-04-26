@@ -222,17 +222,34 @@ try {
 
     // Sisarversioiden siirto awaiting_publish-tilaan
     if ($oldState !== 'published') {
-        $pdo->prepare("
+        $stmtSiblingUpdate = $pdo->prepare("
             UPDATE sf_flashes
-            SET state = 'awaiting_publish', updated_at = NOW()
+            SET state  = 'awaiting_publish',
+                status = 'ODOTTAA_JULKAISUA',
+                updated_at = NOW()
             WHERE (id = :gid OR translation_group_id = :gid2)
               AND id != :current_id
               AND state NOT IN ('published', 'archived', 'awaiting_publish')
-        ")->execute([
+        ");
+        $stmtSiblingUpdate->execute([
             ':gid'        => $groupId,
             ':gid2'       => $groupId,
             ':current_id' => $id,
         ]);
+
+        // Sanity check: verify no sibling still has an empty/null state (catches silent ENUM truncation).
+        $verifyStmt = $pdo->prepare("
+            SELECT id, state FROM sf_flashes
+            WHERE (id = :gid OR translation_group_id = :gid2)
+              AND id != :current_id
+              AND (state = '' OR state IS NULL)
+        ");
+        $verifyStmt->execute([':gid' => $groupId, ':gid2' => $groupId, ':current_id' => $id]);
+        $broken = $verifyStmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($broken)) {
+            sf_app_log('publish_direct.php: SIBLING STATE WRITE FAILED (silent ENUM truncation?) for ids=' .
+                implode(',', array_column($broken, 'id')), LOG_LEVEL_ERROR);
+        }
     }
 
     // Generoi yksi batch_id tälle julkaisuoperaatiolle (ei kommenteille)
