@@ -317,7 +317,31 @@ if ($flash_id <= 0) {
 }
 
 sf_app_log("Worker starting for flash_id: $flash_id", 'INFO');
-$pdo = Database::getInstance();
+
+// Defensiivinen: hae tuore yhteys ja varmista että se toimii.
+$pdo = null;
+$lastConnError = null;
+for ($attempt = 1; $attempt <= 2; $attempt++) {
+    try {
+        if ($attempt > 1 && method_exists(Database::class, 'reconnect')) {
+            $pdo = Database::reconnect();
+        } else {
+            $pdo = Database::getInstance();
+        }
+        $pdo->query('SELECT 1'); // probe – throws if connection is dead
+        break;
+    } catch (Throwable $e) {
+        $lastConnError = $e;
+        sf_app_log("Worker DB probe failed on attempt {$attempt}: " . $e->getMessage(), 'WARN');
+        if ($attempt < 2) {
+            usleep(150000); // 150 ms before retry
+        }
+    }
+}
+if ($pdo === null) {
+    error_log("Worker: Could not establish DB connection: " . ($lastConnError ? $lastConnError->getMessage() : 'unknown'));
+    exit(1);
+}
 
 try {
     $pdo->prepare("UPDATE sf_flashes SET processing_status = 'in_progress' WHERE id = ?")->execute([$flash_id]);
@@ -628,12 +652,24 @@ try {
     sf_app_log("Worker successfully processed flash_id: $flash_id", 'INFO');
 
 } catch (Throwable $e) {
+    $isGoneAway = Database::isGoneAwayError($e);
+
     sf_app_log("Worker FAILED for flash_id: $flash_id. Error: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'ERROR');
-    if (isset($pdo)) {
-        $pdo->prepare("UPDATE sf_flashes SET processing_status = 'error', is_processing = 0 WHERE id = ?")->execute([$flash_id]);
-        if (isset($sfJobId)) {
-            $pdo->prepare("UPDATE sf_jobs SET status = 'failed', updated_at = NOW() WHERE id = ?")
-                ->execute([$sfJobId]);
+
+    // Attempt to update error status, reconnecting first if needed
+    try {
+        if ($isGoneAway && method_exists(Database::class, 'reconnect')) {
+            sf_app_log("Worker attempting reconnect after gone-away error for flash_id: $flash_id", 'WARN');
+            $pdo = Database::reconnect();
         }
+        if (isset($pdo)) {
+            $pdo->prepare("UPDATE sf_flashes SET processing_status = 'error', is_processing = 0 WHERE id = ?")->execute([$flash_id]);
+            if (isset($sfJobId)) {
+                $pdo->prepare("UPDATE sf_jobs SET status = 'failed', updated_at = NOW() WHERE id = ?")
+                    ->execute([$sfJobId]);
+            }
+        }
+    } catch (Throwable $logErr) {
+        error_log("Worker failure logging also failed: " . $logErr->getMessage());
     }
 }

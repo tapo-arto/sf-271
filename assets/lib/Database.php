@@ -19,13 +19,53 @@ class Database
 
     /**
      * Hae PDO-instanssi (singleton)
+     *
+     * Tekee defensiivisen ping-kyselyn ja luo uuden yhteyden automaattisesti
+     * jos MySQL on sulkenut vanhan yhteyden (wait_timeout / error 2006/2013).
      */
     public static function getInstance(): PDO
     {
         if (self::$instance === null) {
             self::$instance = self::createConnection();
+            return self::$instance;
         }
+
+        // Defensiivinen ping: jos yhteys on katkennut, luo uusi automaattisesti.
+        try {
+            self::$instance->query('SELECT 1');
+        } catch (PDOException $e) {
+            if (self::isGoneAwayError($e)) {
+                error_log('Database: connection lost (' . $e->getMessage() . '), reconnecting');
+                self::$instance = null;
+                self::$instance = self::createConnection();
+            } else {
+                throw $e;
+            }
+        }
+
         return self::$instance;
+    }
+
+    /**
+     * Tarkistaa onko poikkeus MySQL "gone away" / "lost connection" -virhe.
+     */
+    public static function isGoneAwayError(\Throwable $e): bool
+    {
+        $msg = $e->getMessage();
+        return (strpos($msg, '2006') !== false)
+            || (strpos($msg, '2013') !== false)
+            || (stripos($msg, 'server has gone away') !== false)
+            || (stripos($msg, 'lost connection') !== false);
+    }
+
+    /**
+     * Pakottaa uuden tietokantayhteyden.
+     * Käytä ennen pitkäkestoisten operaatioiden jälkeen suoritettavia workereita.
+     */
+    public static function reconnect(): PDO
+    {
+        self::$instance = null;
+        return self::getInstance();
     }
 
     /**
