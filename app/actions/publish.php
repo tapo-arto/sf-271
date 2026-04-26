@@ -301,25 +301,24 @@ if ($oldState !== 'published') {
 
     // Kirjataan loki sisarversioiden siirrosta awaiting_publish-tilaan
     $stmtSiblings = $pdo->prepare("
-        SELECT id FROM sf_flashes
+        SELECT id, state FROM sf_flashes
         WHERE (id = :gid OR translation_group_id = :gid2)
           AND id != :current_id
           AND state = 'awaiting_publish'
     ");
     $stmtSiblings->execute([':gid' => $groupId, ':gid2' => $groupId, ':current_id' => $id]);
-    $siblingsNowAwaiting = $stmtSiblings->fetchAll(PDO::FETCH_COLUMN);
+    $siblingsNowAwaiting = $stmtSiblings->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($siblingsNowAwaiting as $sibId) {
-        $sibId = (int)$sibId;
-        $logSibling = $pdo->prepare("
-            INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
-            VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
-        ");
+    $logSibling = $pdo->prepare("
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
+    ");
+    foreach ($siblingsNowAwaiting as $sib) {
         $logSibling->execute([
-            ':flash_id'   => $sibId,
+            ':flash_id'   => (int)$sib['id'],
             ':user_id'    => $userId,
             ':event_type' => 'state_changed',
-            ':description'=> "log_state_changed: to_comms → awaiting_publish",
+            ':description'=> "log_state_changed: → awaiting_publish",
             ':batch_id'   => $publishBatchId,
         ]);
     }
