@@ -148,7 +148,9 @@ $pdo->prepare("UPDATE sf_flashes SET display_duration_seconds = ? WHERE id = ?")
 if ($oldState !== 'published') {
     $stmtSiblingUpdate = $pdo->prepare("
         UPDATE sf_flashes
-        SET state = 'awaiting_publish', updated_at = NOW()
+        SET state  = 'awaiting_publish',
+            status = 'ODOTTAA_JULKAISUA',
+            updated_at = NOW()
         WHERE (id = :gid OR translation_group_id = :gid2)
           AND id != :current_id
           AND state NOT IN ('published', 'archived', 'awaiting_publish')

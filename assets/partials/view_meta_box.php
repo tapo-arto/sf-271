@@ -11,9 +11,13 @@ if (!function_exists('sf_term')) {
     require_once __DIR__ . '/../../includes/statuses.php'; // Oletettu sijainti
 }
 
-$statusDef       = function_exists('sf_status_get') ? sf_status_get((string)($flash['state'] ?? '')) : null;
+$stateValue = (string)($flash['state'] ?? '');
+if ($stateValue === '') {
+    $stateValue = 'draft'; // safe fallback: never render an empty badge
+}
+$statusDef       = function_exists('sf_status_get') ? sf_status_get($stateValue) : null;
 $metaStatusClass = trim((string)($statusDef['badge_class'] ?? 'sf-status--other'));
-$statusLabel     = function_exists('sf_status_label') ? (sf_status_label($flash['state'], $currentUiLang) ?? '') : '';
+$statusLabel     = function_exists('sf_status_label') ? (sf_status_label($stateValue, $currentUiLang) ?? '') : '';
 
 ?>
 <div class="view-box meta-box">
