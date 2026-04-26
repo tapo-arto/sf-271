@@ -473,7 +473,6 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
   <?php endif; ?>
   <?php if ($isTranslationChild): ?>
     <input type="hidden" name="is_translation_child" value="1">
-    <input type="hidden" name="type" value="<?= htmlspecialchars($flash['type'] ?? 'yellow', ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="lang" value="<?= htmlspecialchars($flash['lang'] ?? 'fi', ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="worksite" value="<?= htmlspecialchars($worksite_val, ENT_QUOTES, 'UTF-8') ?>">
   <?php endif; ?>
@@ -545,7 +544,7 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
 
       <!-- RED -->
       <label class="sf-type-box" data-type="red">
-        <input type="radio" name="type" value="red" <?= $type_val === 'red' ? 'checked' : '' ?> <?= $isTranslationChild ? 'disabled' : '' ?>>
+        <input type="radio" name="type" value="red" <?= $type_val === 'red' ? 'checked' : '' ?>>
         <div class="sf-type-box-content">
           <img src="<?= $base ?>/assets/img/icon-red.png" alt="" class="sf-type-icon" aria-hidden="true">
           <div class="sf-type-text">
@@ -560,7 +559,7 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
 
       <!-- YELLOW -->
       <label class="sf-type-box" data-type="yellow">
-        <input type="radio" name="type" value="yellow" <?= $type_val === 'yellow' ? 'checked' : '' ?> <?= $isTranslationChild ? 'disabled' : '' ?>>
+        <input type="radio" name="type" value="yellow" <?= $type_val === 'yellow' ? 'checked' : '' ?>>
         <div class="sf-type-box-content">
           <img src="<?= $base ?>/assets/img/icon-yellow.png" alt="" class="sf-type-icon" aria-hidden="true">
           <div class="sf-type-text">
@@ -575,7 +574,7 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
 
       <!-- GREEN -->
       <label class="sf-type-box" data-type="green">
-        <input type="radio" name="type" value="green" <?= $type_val === 'green' ? 'checked' : '' ?> <?= $isTranslationChild ? 'disabled' : '' ?>>
+        <input type="radio" name="type" value="green" <?= $type_val === 'green' ? 'checked' : '' ?>>
         <div class="sf-type-box-content">
           <img src="<?= $base ?>/assets/img/icon-green.png" alt="" class="sf-type-icon" aria-hidden="true">
           <div class="sf-type-text">

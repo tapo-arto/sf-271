@@ -86,6 +86,75 @@ class FlashSaveService
         // Generate a single batch_id for all log entries of this save operation
         $batchId = sf_log_generate_batch_id();
 
+        // Propagate type change to all sibling language versions in the same translation group
+        if (isset($data['type']) && $data['type'] !== $flash['type']) {
+            try {
+                $newTypeForGroup = trim((string)$data['type']);
+                $groupId = !empty($flash['translation_group_id'])
+                    ? (int)$flash['translation_group_id']
+                    : (int)$flashId;
+
+                // Compute original_type the same way updateFlash() does
+                $originalTypeForGroup = $flash['original_type'] ?? null;
+                if ($originalTypeForGroup === null) {
+                    $originalTypeForGroup = $flash['type'];
+                }
+
+                $syncStmt = $pdo->prepare("
+                    UPDATE sf_flashes
+                    SET type = :type,
+                        original_type = COALESCE(original_type, :original_type),
+                        processing_status = 'pending',
+                        is_processing = 1,
+                        preview_status = 'pending',
+                        updated_at = NOW()
+                    WHERE (id = :group_id OR translation_group_id = :group_id2)
+                      AND id != :flash_id
+                ");
+                $syncStmt->execute([
+                    ':type'          => $newTypeForGroup,
+                    ':original_type' => $originalTypeForGroup,
+                    ':group_id'      => $groupId,
+                    ':group_id2'     => $groupId,
+                    ':flash_id'      => $flashId,
+                ]);
+
+                $sibStmt = $pdo->prepare("
+                    SELECT id FROM sf_flashes
+                    WHERE (id = :group_id OR translation_group_id = :group_id2)
+                      AND id != :flash_id
+                ");
+                $sibStmt->execute([
+                    ':group_id'  => $groupId,
+                    ':group_id2' => $groupId,
+                    ':flash_id'  => $flashId,
+                ]);
+                $siblingIds = $sibStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($siblingIds as $sibId) {
+                    $sibId = (int)$sibId;
+                    $this->logService->logTypeChange(
+                        $sibId,
+                        $flash['type'],
+                        $newTypeForGroup,
+                        (int)($user['id'] ?? 0),
+                        $batchId
+                    );
+                    $this->createJobFile($sibId, array_merge($data, [
+                        'id'      => $sibId,
+                        'user_id' => $user['id'] ?? null,
+                    ]));
+                    $this->triggerWorker($sibId);
+                }
+
+                if (function_exists('sf_app_log')) {
+                    sf_app_log("[FlashSaveService] Propagated type change ({$flash['type']} → {$newTypeForGroup}) to " . count($siblingIds) . " sibling(s) in group {$groupId}");
+                }
+            } catch (Throwable $e) {
+                error_log("FlashSaveService: Failed to propagate type change to siblings: " . $e->getMessage());
+            }
+        }
+
         // 6. Log changes
         if (isset($changes['type'])) {
             $this->logService->logTypeChange(
