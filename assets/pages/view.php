@@ -533,6 +533,20 @@ if ($isArchived) {
     // Archived flashes cannot be edited or modified
     // Only viewing is allowed
 } else {
+    // Tarkista onko käännösryhmässä jo edenneitä sisarversioita (to_comms, awaiting_publish, published)
+    $hasAdvancedSibling = false;
+    if (!empty($flash['translation_group_id'])) {
+        $gid = (int)$flash['translation_group_id'];
+        $stmtAdv = $pdo->prepare("
+            SELECT COUNT(*) FROM sf_flashes
+            WHERE (id = :gid OR translation_group_id = :gid2)
+              AND id != :self
+              AND state IN ('to_comms', 'awaiting_publish', 'published')
+        ");
+        $stmtAdv->execute([':gid' => $gid, ':gid2' => $gid, ':self' => (int)$flash['id']]);
+        $hasAdvancedSibling = (int)$stmtAdv->fetchColumn() > 0;
+    }
+
     // Määritä toiminnot tilan ja roolin mukaan
 switch ($stateVal) {
     case 'draft':
@@ -540,6 +554,12 @@ switch ($stateVal) {
             $actions[] = 'edit';
             $actions[] = 'delete';
             $actions[] = 'send_to_review';
+        }
+        if ($hasAdvancedSibling && ($isAdmin || $isSafety || $isComms)) {
+            $actions[] = 'publish_single';
+            if (!in_array('edit', $actions, true)) {
+                $actions[] = 'edit';
+            }
         }
         break;
 
@@ -1822,7 +1842,7 @@ $iconBase = $base .'/assets/img/icons/';
                 $stmtGroupPublished = $pdo->prepare("
                     SELECT COUNT(*) FROM sf_flashes
                     WHERE (id = ? OR translation_group_id = ?)
-                      AND state = 'published' AND id != ?
+                      AND state IN ('to_comms', 'awaiting_publish', 'published') AND id != ?
                 ");
                 $gidCheck = (int)$flash['translation_group_id'];
                 $stmtGroupPublished->execute([$gidCheck, $gidCheck, $flash['id']]);
