@@ -132,7 +132,8 @@
         } catch (e) { /* käytä sellaisenaan */ }
 
         var exportedLabel = cfg.i18n && cfg.i18n.badge_exported_by ? cfg.i18n.badge_exported_by : 'Viety';
-        var text = 'Athena · ' + exportedLabel + ' ' + formattedDate;
+        var badgePrefix   = cfg.i18n && cfg.i18n.badge_athena_exported ? cfg.i18n.badge_athena_exported : 'Athena · ' + exportedLabel;
+        var text = badgePrefix + ' ' + formattedDate;
         if (userName) text += ' · ' + userName;
 
         badge.className = 'sf-athena-badge sf-athena-badge--ok';

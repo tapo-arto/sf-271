@@ -153,7 +153,7 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
-    // Hae uusin export-rivi (logFlashId ei ole vielä asetettu, lasketaan alla)
+    // Fetch latest Athena export row (logFlashId not yet set, calculated below)
     $tmpLogFlashId = !empty($flash['translation_group_id'])
         ? (int)$flash['translation_group_id']
         : (int)$flash['id'];
@@ -3543,10 +3543,11 @@ window.SF_ATHENA_CFG = {
     reportUrl:   <?= json_encode("{$base}/app/api/generate_report.php?id={$id}") ?>,
     showReminder: <?= json_encode($showAthenaReminder) ?>,
     i18n: {
-        marked_done:      <?= json_encode(sf_term('btn_already_exported_athena', $currentUiLang)) ?>,
-        pdf_downloaded:   <?= json_encode(sf_term('btn_download_and_mark_athena', $currentUiLang)) ?>,
-        badge_exported_by:<?= json_encode(sf_term('badge_athena_exported_by', $currentUiLang)) ?>,
-        current_user:     <?= json_encode($currentUserName) ?>
+        marked_done:          <?= json_encode(sf_term('btn_already_exported_athena', $currentUiLang)) ?>,
+        pdf_downloaded:       <?= json_encode(sf_term('btn_download_and_mark_athena', $currentUiLang)) ?>,
+        badge_exported_by:    <?= json_encode(sf_term('badge_athena_exported_by', $currentUiLang)) ?>,
+        badge_athena_exported:<?= json_encode(sf_term('badge_athena_exported', $currentUiLang)) ?>,
+        current_user:         <?= json_encode($currentUserName) ?>
     }
 };
 </script>
