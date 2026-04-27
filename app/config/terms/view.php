@@ -724,4 +724,25 @@ return [
     'it' => 'Modifica testo',
     'el' => 'Επεξεργασία κειμένου',
 ],
+'badge_athena_exported' => [
+    'fi' => 'Athena · Viety',
+    'sv' => 'Athena · Exporterad',
+    'en' => 'Athena · Exported',
+    'it' => 'Athena · Esportato',
+    'el' => 'Athena · Εξαγμένο',
+],
+'badge_athena_not_exported' => [
+    'fi' => 'Ei vielä viety Athenaan',
+    'sv' => 'Ännu inte exporterad till Athena',
+    'en' => 'Not yet exported to Athena',
+    'it' => 'Non ancora esportato su Athena',
+    'el' => 'Δεν έχει εξαχθεί ακόμα στο Athena',
+],
+'badge_athena_exported_by' => [
+    'fi' => 'Viety',
+    'sv' => 'Exporterad',
+    'en' => 'Exported',
+    'it' => 'Esportato',
+    'el' => 'Εξαγμένο',
+],
 ];

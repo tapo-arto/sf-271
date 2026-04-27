@@ -171,6 +171,58 @@ try {
         error_log("Audit log error: " . $auditErr->getMessage());
     }
     
+    // If context=athena, record the Athena export before streaming
+    $context = $_GET['context'] ?? '';
+    if ($context === 'athena') {
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId) {
+            // Determine logFlashId (translation group root or flash.id)
+            $logFlashId = !empty($flash['translation_group_id'])
+                ? (int)$flash['translation_group_id']
+                : (int)$flash['id'];
+
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS sf_flash_athena_exports (
+                        id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        flash_id    INT UNSIGNED NOT NULL,
+                        user_id     INT UNSIGNED NOT NULL,
+                        exported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        source      ENUM('post_publish_modal','manual_download','marked_done') NOT NULL DEFAULT 'marked_done',
+                        KEY idx_flash (flash_id),
+                        KEY idx_exported_at (exported_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+                $insAthena = $pdo->prepare("
+                    INSERT INTO sf_flash_athena_exports (flash_id, user_id, source)
+                    VALUES (:flash_id, :user_id, 'manual_download')
+                ");
+                $insAthena->execute([
+                    ':flash_id' => $logFlashId,
+                    ':user_id'  => (int)$userId,
+                ]);
+            } catch (Throwable $athenaErr) {
+                error_log('generate_report: athena export insert error: ' . $athenaErr->getMessage());
+            }
+
+            // System comment
+            try {
+                $stmtAthenaComment = $pdo->prepare("
+                    INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
+                    VALUES (:flash_id, :user_id, :event_type, :description, NOW())
+                ");
+                $stmtAthenaComment->execute([
+                    ':flash_id'    => $logFlashId,
+                    ':user_id'     => (int)$userId,
+                    ':event_type'  => 'comment_added',
+                    ':description' => 'log_comment_label: log_athena_exported',
+                ]);
+            } catch (Throwable $commentErr) {
+                error_log('generate_report: athena system comment error: ' . $commentErr->getMessage());
+            }
+        }
+    }
+
     // Send PDF response
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $filename . '"');

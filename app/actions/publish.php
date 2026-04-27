@@ -405,12 +405,12 @@ if ($isAjax) {
     echo json_encode([
         'ok' => true,
         'message' => sf_term('notice_published', $currentUiLang),
-        'redirect' => $config['base_url'] . "/index.php?page=view&id={$id}"
+        'redirect' => $config['base_url'] . "/index.php?page=view&id={$id}&published=1"
     ]);
     exit;
 }
 
-sf_redirect($config['base_url'] . "/index.php?page=view&id={$id}&notice=published");
+sf_redirect($config['base_url'] . "/index.php?page=view&id={$id}&notice=published&published=1");
 
 } catch (Throwable $e) {
     // Log error for debugging

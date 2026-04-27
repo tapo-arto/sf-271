@@ -589,7 +589,7 @@ return [
     'sv' => 'Den ursprungliga SafetyFlashen "{title}" (ID {id}, typ {type}, status {state}) sammanfogades med utredningsrapporten. Sammanfogad av: {user}.',
     'en' => 'Original SafetyFlash "{title}" (ID {id}, type {type}, state {state}) was merged into the investigation report. Merged by: {user}.',
     'it' => 'Il SafetyFlash originale "{title}" (ID {id}, tipo {type}, stato {state}) è stato unito al rapporto di indagine. Unito da: {user}.',
-    'el' => 'Το αρχικό SafetyFlash "{title}" (ID {id}, τύπος {type}, κατάσταση {state}) συνδέθηκε με την αναφορά έρευνας. Εκτελέστηκε [...]
+    'el' => 'Το αρχικό SafetyFlash "{title}" (ID {id}, τύπος {type}, κατάσταση {state}) συνδέθηκε με την αναφορά έρευνας. Εκτελέστηκε από: {user}.',
 ],
 'log_title_short_changed' => [
     'fi' => 'Lyhyt otsikko muutettu',
@@ -926,5 +926,19 @@ return [
     'en' => 'Too many attempts (Rate limit)',
     'it' => 'Troppi tentativi (Rate limit)',
     'el' => 'Πάρα πολλές προσπάθειες (Rate limit)',
+],
+'log_athena_exported' => [
+    'fi' => 'Vei tutkintatiedotteen raportin Athenaan',
+    'sv' => 'Exporterade utredningsrapporten till Athena',
+    'en' => 'Exported the investigation report to Athena',
+    'it' => 'Ha esportato il rapporto di indagine su Athena',
+    'el' => 'Εξήγαγε την αναφορά έρευνας στο Athena',
+],
+'log_athena_marked_done' => [
+    'fi' => 'Merkitsi tutkintatiedotteen viedyksi Athenaan',
+    'sv' => 'Markerade utredningsrapporten som exporterad till Athena',
+    'en' => 'Marked the investigation report as exported to Athena',
+    'it' => 'Ha contrassegnato il rapporto di indagine come esportato su Athena',
+    'el' => 'Σήμανε την αναφορά έρευνας ως εξαγμένη στο Athena',
 ],
 ];

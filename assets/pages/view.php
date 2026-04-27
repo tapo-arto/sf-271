@@ -137,6 +137,43 @@ try {
     error_log('view.php: Failed to load additional info: ' . $e->getMessage());
 }
 
+// --- Athena export table + status ---
+$athenaExportRow  = null;
+$athenaExported   = false;
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS sf_flash_athena_exports (
+            id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            flash_id    INT UNSIGNED NOT NULL,
+            user_id     INT UNSIGNED NOT NULL,
+            exported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            source      ENUM('post_publish_modal','manual_download','marked_done') NOT NULL DEFAULT 'marked_done',
+            KEY idx_flash (flash_id),
+            KEY idx_exported_at (exported_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Fetch latest Athena export row (logFlashId not yet set, calculated below)
+    $tmpLogFlashId = !empty($flash['translation_group_id'])
+        ? (int)$flash['translation_group_id']
+        : (int)$flash['id'];
+
+    $athenaStmt = $pdo->prepare("
+        SELECT ae.id, ae.exported_at, ae.source,
+               u.first_name, u.last_name
+        FROM sf_flash_athena_exports ae
+        LEFT JOIN sf_users u ON u.id = ae.user_id
+        WHERE ae.flash_id = ?
+        ORDER BY ae.exported_at DESC
+        LIMIT 1
+    ");
+    $athenaStmt->execute([$tmpLogFlashId]);
+    $athenaExportRow = $athenaStmt->fetch(PDO::FETCH_ASSOC);
+    $athenaExported  = !empty($athenaExportRow);
+} catch (Throwable $e) {
+    error_log('view.php: Athena export check error: ' . $e->getMessage());
+}
+
 // Check if user can manage reviewers (admin, safety team, or original creator)
 $canManageReviewers = false;
 if ($currentUser) {
@@ -726,7 +763,42 @@ $iconBase = $base .'/assets/img/icons/';
         <?php endif; ?>
     </div>
 
-    <!-- ===== FOOTER ACTION BAR (siirretty ylös, jotta näkyy heti) ===== -->
+    <?php
+    // Athena-status-badge tutkintatiedotteille (type=green)
+    $showAthenaBadge = (($flash['type'] ?? '') === 'green');
+    $showAthenaMissingBadge = $showAthenaBadge && !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
+    if ($showAthenaBadge && ($athenaExported || $showAthenaMissingBadge)):
+    ?>
+    <div style="margin-bottom:12px;">
+        <?php if ($athenaExported && !empty($athenaExportRow)): ?>
+            <?php
+            $athenaUser = trim(($athenaExportRow['first_name'] ?? '') . ' ' . ($athenaExportRow['last_name'] ?? ''));
+            $athenaDate = '';
+            if (!empty($athenaExportRow['exported_at'])) {
+                $aDate = new DateTime($athenaExportRow['exported_at']);
+                $athenaDate = $aDate->format('j.n.Y');
+            }
+            $athenaBadgeText = htmlspecialchars(sf_term('badge_athena_exported', $currentUiLang), ENT_QUOTES, 'UTF-8');
+            if ($athenaDate) $athenaBadgeText .= ' ' . htmlspecialchars($athenaDate, ENT_QUOTES, 'UTF-8');
+            if ($athenaUser) $athenaBadgeText .= ' · ' . htmlspecialchars($athenaUser, ENT_QUOTES, 'UTF-8');
+            ?>
+            <span id="sfAthenaBadge" class="sf-athena-badge sf-athena-badge--ok">
+                <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon"
+                     style="filter:invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);">
+                <span class="sf-athena-badge__text"><?= $athenaBadgeText ?></span>
+            </span>
+        <?php elseif ($showAthenaMissingBadge): ?>
+            <button type="button" id="sfAthenaBadge"
+                    class="sf-athena-badge sf-athena-badge--missing"
+                    onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
+                    aria-label="<?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon"
+                     style="filter:invert(40%) sepia(60%) saturate(600%) hue-rotate(10deg);">
+                <span class="sf-athena-badge__text"><?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+            </button>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <?php if ($hasActions): ?>
     <div class="view-footer-actions" role="toolbar" aria-label="Toiminnot">
         <div class="view-footer-buttons-4col">
@@ -3425,6 +3497,10 @@ function updateDeleteModalContent() {
 <?php require __DIR__ . '/../partials/report_settings_modal.php'; ?>
 <?php endif; ?>
 
+<?php if (($flash['type'] ?? '') === 'green' && !$athenaExported): ?>
+<?php require __DIR__ . '/../../app/views/partials/athena_reminder_modal.php'; ?>
+<?php endif; ?>
+
 
 <?php /* Footer action bar siirretty ylös (näkyy heti sivun latautuessa). */ ?>
 
@@ -3446,6 +3522,36 @@ function updateDeleteModalContent() {
 <script src="<?= sf_asset_url('assets/js/comms-modal.js', $base) ?>"></script>
 <?php if (in_array('display_targets', $actions ?? [])): ?>
 <script src="<?= sf_asset_url('assets/js/display-targets-modal.js', $base) ?>"></script>
+<?php endif; ?>
+
+<?php if (($flash['type'] ?? '') === 'green'): ?>
+<script>
+<?php
+// Determine whether to show the Athena reminder modal
+$showAthenaReminder = !$athenaExported
+    && ($flash['state'] ?? '') === 'published'
+    && isset($_GET['published']) && (int)$_GET['published'] === 1;
+$currentUserName = $currentUser
+    ? trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''))
+    : '';
+?>
+window.SF_ATHENA_CFG = {
+    flashId:     <?= json_encode($id) ?>,
+    logFlashId:  <?= json_encode($logFlashId) ?>,
+    baseUrl:     <?= json_encode($base) ?>,
+    csrfToken:   <?= json_encode(sf_csrf_token()) ?>,
+    reportUrl:   <?= json_encode("{$base}/app/api/generate_report.php?id={$id}") ?>,
+    showReminder: <?= json_encode($showAthenaReminder) ?>,
+    i18n: {
+        marked_done:          <?= json_encode(sf_term('btn_already_exported_athena', $currentUiLang)) ?>,
+        pdf_downloaded:       <?= json_encode(sf_term('btn_download_and_mark_athena', $currentUiLang)) ?>,
+        badge_exported_by:    <?= json_encode(sf_term('badge_athena_exported_by', $currentUiLang)) ?>,
+        badge_athena_exported:<?= json_encode(sf_term('badge_athena_exported', $currentUiLang)) ?>,
+        current_user:         <?= json_encode($currentUserName) ?>
+    }
+};
+</script>
+<script src="<?= sf_asset_url('assets/js/athena_reminder.js', $base) ?>"></script>
 <?php endif; ?>
 
 <script>
