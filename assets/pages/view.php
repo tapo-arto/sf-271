@@ -754,11 +754,10 @@ $iconBase = $base .'/assets/img/icons/';
         <?php if (($flash['type'] ?? '') === 'green'): ?>
         <?php
         // Athena-status-badge tutkintatiedotteille (type=green)
-        $showAthenaBadge = true;
         $showAthenaMissingBadge = !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
         $showAthenaBadgeBlock = $athenaExported || $showAthenaMissingBadge;
         ?>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div class="sf-view-back-right">
             <button
                id="btnGenerateReport"
                data-report-url="<?= htmlspecialchars($base) ?>/app/api/generate_report.php?id=<?= (int)$id ?>"

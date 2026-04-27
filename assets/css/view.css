@@ -30,6 +30,13 @@
     margin-bottom: 16px;
 }
 
+.sf-view-back-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
 .btn-back {
     display: inline-flex;
     align-items: center;
