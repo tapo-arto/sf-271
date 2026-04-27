@@ -743,7 +743,7 @@ $iconBase = $base .'/assets/img/icons/';
 <?php $stateCss = preg_replace('/[^a-z0-9_\-]/i', '', (string)($flash['state'] ?? '')); ?>
 <div class="sf-page-container">
 <div class="view-container view-state-<?= htmlspecialchars($stateCss, ENT_QUOTES, 'UTF-8') ?>">
-    <div class="view-back" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="view-back" style="display: flex; justify-content: space-between; align-items: flex-start;">
         <a
           href="<?= htmlspecialchars($base) ?>/index.php?page=list"
           class="btn-back"
@@ -752,53 +752,53 @@ $iconBase = $base .'/assets/img/icons/';
           ← <?= htmlspecialchars(sf_term('back_to_list', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </a>
         <?php if (($flash['type'] ?? '') === 'green'): ?>
-        <button
-           id="btnGenerateReport"
-           data-report-url="<?= htmlspecialchars($base) ?>/app/api/generate_report.php?id=<?= (int)$id ?>"
-           class="btn-report-topright"
-           aria-label="<?= htmlspecialchars(sf_term('btn_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
-            <img src="<?= $iconBase ?>report.svg" alt="" class="btn-report-icon">
-            <span><?= htmlspecialchars(sf_term('btn_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
-        </button>
-        <?php endif; ?>
-    </div>
-
-    <?php
-    // Athena-status-badge tutkintatiedotteille (type=green)
-    $showAthenaBadge = (($flash['type'] ?? '') === 'green');
-    $showAthenaMissingBadge = $showAthenaBadge && !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
-    if ($showAthenaBadge && ($athenaExported || $showAthenaMissingBadge)):
-    ?>
-    <div style="margin-bottom:12px;">
-        <?php if ($athenaExported && !empty($athenaExportRow)): ?>
-            <?php
-            $athenaUser = trim(($athenaExportRow['first_name'] ?? '') . ' ' . ($athenaExportRow['last_name'] ?? ''));
-            $athenaDate = '';
-            if (!empty($athenaExportRow['exported_at'])) {
-                $aDate = new DateTime($athenaExportRow['exported_at']);
-                $athenaDate = $aDate->format('j.n.Y');
-            }
-            $athenaBadgeText = htmlspecialchars(sf_term('badge_athena_exported', $currentUiLang), ENT_QUOTES, 'UTF-8');
-            if ($athenaDate) $athenaBadgeText .= ' ' . htmlspecialchars($athenaDate, ENT_QUOTES, 'UTF-8');
-            if ($athenaUser) $athenaBadgeText .= ' · ' . htmlspecialchars($athenaUser, ENT_QUOTES, 'UTF-8');
-            ?>
-            <span id="sfAthenaBadge" class="sf-athena-badge sf-athena-badge--ok">
-                <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon"
-                     style="filter:invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);">
-                <span class="sf-athena-badge__text"><?= $athenaBadgeText ?></span>
-            </span>
-        <?php elseif ($showAthenaMissingBadge): ?>
-            <button type="button" id="sfAthenaBadge"
-                    class="sf-athena-badge sf-athena-badge--missing"
-                    onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
-                    aria-label="<?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
-                <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon"
-                     style="filter:invert(40%) sepia(60%) saturate(600%) hue-rotate(10deg);">
-                <span class="sf-athena-badge__text"><?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+        <?php
+        // Athena-status-badge tutkintatiedotteille (type=green)
+        $showAthenaBadge = true;
+        $showAthenaMissingBadge = !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
+        $showAthenaBadgeBlock = $athenaExported || $showAthenaMissingBadge;
+        ?>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <button
+               id="btnGenerateReport"
+               data-report-url="<?= htmlspecialchars($base) ?>/app/api/generate_report.php?id=<?= (int)$id ?>"
+               class="btn-report-topright"
+               aria-label="<?= htmlspecialchars(sf_term('btn_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                <img src="<?= $iconBase ?>report.svg" alt="" class="btn-report-icon">
+                <span><?= htmlspecialchars(sf_term('btn_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
             </button>
+            <?php if ($showAthenaBadgeBlock): ?>
+                <?php if ($athenaExported && !empty($athenaExportRow)): ?>
+                    <?php
+                    $athenaUser = trim(($athenaExportRow['first_name'] ?? '') . ' ' . ($athenaExportRow['last_name'] ?? ''));
+                    $athenaDate = '';
+                    if (!empty($athenaExportRow['exported_at'])) {
+                        $aDate = new DateTime($athenaExportRow['exported_at']);
+                        $athenaDate = $aDate->format('j.n.Y');
+                    }
+                    $athenaBadgeText = htmlspecialchars(sf_term('badge_athena_exported', $currentUiLang), ENT_QUOTES, 'UTF-8');
+                    if ($athenaDate) $athenaBadgeText .= ' ' . htmlspecialchars($athenaDate, ENT_QUOTES, 'UTF-8');
+                    if ($athenaUser) $athenaBadgeText .= ' · ' . htmlspecialchars($athenaUser, ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <span id="sfAthenaBadge" class="sf-athena-badge sf-athena-badge--ok">
+                        <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon"
+                             style="filter:invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);">
+                        <span class="sf-athena-badge__text"><?= $athenaBadgeText ?></span>
+                    </span>
+                <?php elseif ($showAthenaMissingBadge): ?>
+                    <button type="button" id="sfAthenaBadge"
+                            class="sf-athena-badge sf-athena-badge--missing"
+                            onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
+                            aria-label="<?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                        <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon"
+                             style="filter:invert(40%) sepia(60%) saturate(600%) hue-rotate(10deg);">
+                        <span class="sf-athena-badge__text"><?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </button>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
         <?php endif; ?>
     </div>
-    <?php endif; ?>
     <?php if ($hasActions): ?>
     <div class="view-footer-actions" role="toolbar" aria-label="Toiminnot">
         <div class="view-footer-buttons-4col">
@@ -3667,37 +3667,42 @@ window.SF_TRANSLATIONS = {
 document.addEventListener('DOMContentLoaded', function() {
     const previewSpinner = document.getElementById('previewSpinner');
     const previewImages = document.querySelectorAll('.preview-box .preview-image');
-    
-    if (previewSpinner && previewImages.length > 0) {
-        // Function to hide spinner and show image with fade-in
-        const showImageFn = function(img) {
-            previewSpinner.classList.add('loaded');
-            img.classList.add('loaded');
-        };
-        
-        previewImages.forEach(function(img) {
-            // If image is already loaded (from cache)
-            if (img.complete && img.naturalHeight !== 0) {
-                showImageFn(img);
-            } else {
-                // Wait for image to load
-                img.addEventListener('load', function() {
-                    showImageFn(img);
-                });
-                // Handle error - still hide spinner
-                img.addEventListener('error', function() {
-                    previewSpinner.classList.add('loaded');
-                });
-            }
-        });
-        
-        // Fallback: show everything after 3 seconds regardless
-        setTimeout(function() {
-            previewSpinner.classList.add('loaded');
-            previewImages.forEach(function(img) {
+
+    if (previewSpinner) {
+        if (previewImages.length > 0) {
+            // Function to hide spinner and show image with fade-in
+            const showImageFn = function(img) {
+                previewSpinner.classList.add('loaded');
                 img.classList.add('loaded');
+            };
+
+            previewImages.forEach(function(img) {
+                // If image is already loaded (from cache)
+                if (img.complete && img.naturalHeight !== 0) {
+                    showImageFn(img);
+                } else {
+                    // Wait for image to load
+                    img.addEventListener('load', function() {
+                        showImageFn(img);
+                    });
+                    // Handle error - still hide spinner
+                    img.addEventListener('error', function() {
+                        previewSpinner.classList.add('loaded');
+                    });
+                }
             });
-        }, 3000);
+
+            // Fallback: show everything after 3 seconds regardless
+            setTimeout(function() {
+                previewSpinner.classList.add('loaded');
+                previewImages.forEach(function(img) {
+                    img.classList.add('loaded');
+                });
+            }, 3000);
+        } else {
+            // No preview images in DOM (e.g. skeleton/pending state) — hide spinner immediately
+            previewSpinner.classList.add('loaded');
+        }
     }
 
     // ===== COPY TO CLIPBOARD BUTTONS =====
