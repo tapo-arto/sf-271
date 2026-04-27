@@ -367,4 +367,25 @@ return [
     'it' => 'Unisci il SafetyFlash selezionato',
     'el' => 'Συγχώνευση επιλεγμένου SafetyFlash',
 ],
+'btn_download_and_mark_athena' => [
+    'fi' => 'Lataa PDF ja merkitse vietyksi',
+    'sv' => 'Ladda ned PDF och markera som exporterad',
+    'en' => 'Download PDF and mark as exported',
+    'it' => 'Scarica PDF e segna come esportato',
+    'el' => 'Λήψη PDF και σήμανση ως εξαγμένο',
+],
+'btn_already_exported_athena' => [
+    'fi' => 'Olen jo vienyt sen',
+    'sv' => 'Jag har redan exporterat det',
+    'en' => 'I already exported it',
+    'it' => 'L\'ho già esportato',
+    'el' => 'Το έχω ήδη εξαγάγει',
+],
+'btn_remind_later' => [
+    'fi' => 'Muistuta myöhemmin',
+    'sv' => 'Påminn mig senare',
+    'en' => 'Remind me later',
+    'it' => 'Ricordamelo più tardi',
+    'el' => 'Υπενθύμισέ μου αργότερα',
+],
 ];
