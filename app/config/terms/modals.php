@@ -797,4 +797,18 @@ return [
     'it' => 'Se hai già esportato questo comunicato su Athena, puoi contrassegnarlo come fatto con il pulsante qui sotto.',
     'el' => 'Εάν έχεις ήδη εξαγάγει αυτή την ανακοίνωση στο Athena, μπορείς να την επισημάνεις ως ολοκληρωμένη με το παρακάτω κουμπί.',
 ],
+'badge_athena_modal_title' => [
+    'fi' => 'Muista viedä raportti Athenaan',
+    'sv' => 'Kom ihåg att exportera rapporten till Athena',
+    'en' => 'Remember to export the report to Athena',
+    'it' => 'Ricordati di esportare il rapporto su Athena',
+    'el' => 'Θυμήσου να εξαγάγεις την αναφορά στο Athena',
+],
+'badge_athena_modal_description' => [
+    'fi' => 'Tiedote on julkaistu. Ladathan PDF-raportin ja viet sen Athenaan (sisäinen intratiedostopankki), jotta muut käyttäjät tietävät tiedotteen löytyvän sieltä.',
+    'sv' => 'Meddelandet har publicerats. Ladda ned PDF-rapporten och exportera den till Athena (internt intranätarkiv) så att övriga användare vet att meddelandet finns där.',
+    'en' => 'The announcement has been published. Please download the PDF report and upload it to Athena (internal intranet file bank) so other users know it is available there.',
+    'it' => 'Il comunicato è stato pubblicato. Scarica il report PDF e caricalo su Athena (archivio intranet interno) in modo che gli altri utenti sappiano che è disponibile lì.',
+    'el' => 'Η ανακοίνωση έχει δημοσιευτεί. Κατεβάστε την αναφορά PDF και μεταφορτώστε την στο Athena (εσωτερική τράπεζα αρχείων intranet) ώστε οι άλλοι χρήστες να γνωρίζουν ότι είναι διαθέσιμη εκεί.',
+],
 ];

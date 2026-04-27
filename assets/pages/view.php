@@ -780,8 +780,7 @@ $iconBase = $base .'/assets/img/icons/';
                     if ($athenaUser) $athenaBadgeText .= ' · ' . htmlspecialchars($athenaUser, ENT_QUOTES, 'UTF-8');
                     ?>
                     <span id="sfAthenaBadge" class="sf-athena-badge sf-athena-badge--ok">
-                        <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon"
-                             style="filter:invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);">
+                        <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon" aria-hidden="true">
                         <span class="sf-athena-badge__text"><?= $athenaBadgeText ?></span>
                     </span>
                 <?php elseif ($showAthenaMissingBadge): ?>
@@ -789,8 +788,7 @@ $iconBase = $base .'/assets/img/icons/';
                             class="sf-athena-badge sf-athena-badge--missing"
                             onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
                             aria-label="<?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
-                        <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon"
-                             style="filter:invert(40%) sepia(60%) saturate(600%) hue-rotate(10deg);">
+                        <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon" aria-hidden="true">
                         <span class="sf-athena-badge__text"><?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
                     </button>
                 <?php endif; ?>
