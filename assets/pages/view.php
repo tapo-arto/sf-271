@@ -553,12 +553,22 @@ switch ($stateVal) {
         if ($isOwner || $isAdmin) {
             $actions[] = 'edit';
             $actions[] = 'delete';
-            $actions[] = 'send_to_review';
         }
-        if ($hasAdvancedSibling && ($isAdmin || $isSafety || $isComms)) {
-            $actions[] = 'publish_single';
-            if (!in_array('edit', $actions, true)) {
-                $actions[] = 'edit';
+        if ($hasAdvancedSibling) {
+            // Sisarus on jo edennyt → ohitetaan supervisor-kierros, mennään suoraan viestintään
+            if ($isOwner || $isAdmin || $isSafety || $isComms) {
+                $actions[] = 'send_to_comms_direct';
+            }
+            if ($isAdmin || $isSafety || $isComms) {
+                $actions[] = 'publish_single';
+                if (!in_array('edit', $actions, true)) {
+                    $actions[] = 'edit';
+                }
+            }
+        } else {
+            // Tavallinen flow: lähetä tarkistettavaksi
+            if ($isOwner || $isAdmin) {
+                $actions[] = 'send_to_review';
             }
         }
         break;
@@ -843,6 +853,16 @@ $iconBase = $base .'/assets/img/icons/';
                     <img src="<?= $iconBase ?>supervisor_icon.svg" alt="" class="footer-icon">
                     <span class="btn-label"><?= htmlspecialchars(sf_term('footer_send_to_review', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
                 </a>
+            <?php endif; ?>
+
+            <?php if (in_array('send_to_comms_direct', $actions)): ?>
+                <form method="post" action="<?= htmlspecialchars($base) ?>/app/actions/draft_to_comms.php?id=<?= (int)$id ?>" style="display:inline;">
+                    <?= sf_csrf_field() ?>
+                    <button type="submit" class="footer-btn fb-publish" aria-label="<?= htmlspecialchars(sf_term('footer_to_comms', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                        <img src="<?= $iconBase ?>publish_icon.svg" alt="" class="footer-icon">
+                        <span class="btn-label"><?= htmlspecialchars(sf_term('footer_to_comms', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                    </button>
+                </form>
             <?php endif; ?>
 
             <?php if ($canAccessSettings): ?>
