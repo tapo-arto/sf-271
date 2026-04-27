@@ -143,7 +143,8 @@ try {
     }
 
     $base = isset($config['base_url']) ? rtrim($config['base_url'], '/') : '';
-    $id   = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    // Prefer the already-validated $id if set; fall back to raw GET param
+    $id = isset($id) ? (int)$id : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
 
     if ($base !== '') {
         header("Location: {$base}/index.php?page=view&id={$id}&notice=error");

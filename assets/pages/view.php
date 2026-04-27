@@ -553,23 +553,23 @@ switch ($stateVal) {
         if ($isOwner || $isAdmin) {
             $actions[] = 'edit';
             $actions[] = 'delete';
-            if ($hasAdvancedSibling) {
-                // Sisarus on jo edennyt → ohitetaan supervisor-kierros, mennään suoraan viestintään
+        }
+        if ($hasAdvancedSibling) {
+            // Sisarus on jo edennyt → ohitetaan supervisor-kierros, mennään suoraan viestintään
+            if ($isOwner || $isAdmin || $isSafety || $isComms) {
                 $actions[] = 'send_to_comms_direct';
-            } else {
-                // Tavallinen flow: lähetä tarkistettavaksi
+            }
+            if ($isAdmin || $isSafety || $isComms) {
+                $actions[] = 'publish_single';
+                if (!in_array('edit', $actions, true)) {
+                    $actions[] = 'edit';
+                }
+            }
+        } else {
+            // Tavallinen flow: lähetä tarkistettavaksi
+            if ($isOwner || $isAdmin) {
                 $actions[] = 'send_to_review';
             }
-        }
-        if ($hasAdvancedSibling && ($isAdmin || $isSafety || $isComms)) {
-            $actions[] = 'publish_single';
-            if (!in_array('edit', $actions, true)) {
-                $actions[] = 'edit';
-            }
-        }
-        // Safety/comms-rooleille send_to_comms_direct vaikka eivät ole owner
-        if ($hasAdvancedSibling && ($isSafety || $isComms) && !in_array('send_to_comms_direct', $actions, true)) {
-            $actions[] = 'send_to_comms_direct';
         }
         break;
 
