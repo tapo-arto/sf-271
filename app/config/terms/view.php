@@ -745,4 +745,18 @@ return [
     'it' => 'Esportato',
     'el' => 'Εξαγμένο',
 ],
+'badge_athena_action_export' => [
+    'fi' => 'Lataa PDF Athenaa varten',
+    'sv' => 'Ladda ned PDF för Athena',
+    'en' => 'Download PDF for Athena',
+    'it' => 'Scarica PDF per Athena',
+    'el' => 'Λήψη PDF για Athena',
+],
+'badge_athena_action_already_exported' => [
+    'fi' => 'Olen jo vienyt Athenaan',
+    'sv' => 'Jag har redan exporterat till Athena',
+    'en' => 'I already exported it to Athena',
+    'it' => 'L\'ho già esportato su Athena',
+    'el' => 'Το έχω ήδη εξαγάγει στο Athena',
+],
 ];

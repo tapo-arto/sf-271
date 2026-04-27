@@ -138,7 +138,11 @@
 
         badge.className = 'sf-athena-badge sf-athena-badge--ok';
         badge.removeAttribute('onclick');
-        badge.style.cursor = 'default';
+        badge.style.removeProperty('cursor');
+        if (badge.tagName === 'BUTTON') {
+            badge.setAttribute('disabled', 'disabled');
+            badge.setAttribute('aria-label', text);
+        }
 
         var iconEl = badge.querySelector('.sf-athena-badge__icon');
         if (iconEl) {
