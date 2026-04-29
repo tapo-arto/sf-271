@@ -700,6 +700,13 @@ case 'request_info':
         if ($isAdmin || $isSafety || $isComms) {
             $actions[] = 'display_targets';
         }
+        // "Tee tutkintatiedote" -painike julkaistuille ensitiedotteille ja vaaratilanteille
+        // (ei tutkintatiedotteille itsellensä, ei jo arkistoiduille)
+        if (!$isArchived && in_array($flash['type'] ?? '', ['red', 'yellow'], true) && !$isTranslation) {
+            if ($isAdmin || $isSafety || $isOwner) {
+                $actions[] = 'make_investigation';
+            }
+        }
         break;
 }
 
@@ -751,6 +758,9 @@ $canMergeOriginalFlash =
     && (($flash['type'] ?? '') === 'green')
     && !$hasLinkedOriginalFlash
     && ($isAdmin || $isSafety || $isComms || $isOwner || $canEdit);
+
+// "Make investigation" capability: for published red/yellow flashes only
+$canMakeInvestigation = in_array('make_investigation', $actions, true);
 
 $iconBase = $base .'/assets/img/icons/';
 ?>
@@ -896,6 +906,19 @@ $iconBase = $base .'/assets/img/icons/';
                 >
                     <img src="<?= $iconBase ?>link.svg" alt="" class="footer-icon">
                     <span class="btn-label"><?= htmlspecialchars(sf_term('footer_merge_flash', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
+                </button>
+            <?php endif; ?>
+
+            <?php if ($canMakeInvestigation): ?>
+                <button
+                    class="footer-btn fb-investigation"
+                    id="footerMakeInvestigation"
+                    type="button"
+                    data-flash-id="<?= (int)$id ?>"
+                    aria-label="<?= htmlspecialchars(sf_term('btn_make_investigation', $currentUiLang) ?? 'Tee tutkintatiedote', ENT_QUOTES, 'UTF-8') ?>"
+                >
+                    <img src="<?= $iconBase ?>icon-green.png" alt="" class="footer-icon">
+                    <span class="btn-label"><?= htmlspecialchars(sf_term('btn_make_investigation', $currentUiLang) ?? 'Tee tutkintatiedote', ENT_QUOTES, 'UTF-8') ?></span>
                 </button>
             <?php endif; ?>
 
@@ -2026,8 +2049,74 @@ include __DIR__ . '/../partials/body_map_modal.php';
 ?>
 
 <!-- ===== MODALIT ===== -->
-<div class="sf-modal hidden" id="modalEdit" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
+
+<?php if ($canMakeInvestigation): ?>
+<!-- Investigation base language picker modal (Step 1) -->
+<div class="sf-modal hidden" id="modalInvestigationBase" role="dialog" aria-modal="true" aria-labelledby="modalInvestigationBaseTitle">
     <div class="sf-modal-content">
+        <h2 id="modalInvestigationBaseTitle">
+            <?= htmlspecialchars(sf_term('investigation_base_modal_title', $currentUiLang) ?? 'Valitse pohjakieliversio', ENT_QUOTES, 'UTF-8') ?>
+        </h2>
+        <p class="sf-help-text">
+            <?= htmlspecialchars(sf_term('investigation_base_modal_help', $currentUiLang) ?? 'Valitse mistä julkaistusta kieliversiosta tutkintatiedote luodaan.', ENT_QUOTES, 'UTF-8') ?>
+        </p>
+        <div id="sfInvBaseSiblingList" style="margin: 12px 0; display: flex; flex-direction: column; gap: 8px;"></div>
+        <div id="sfInvBaseLoading" style="color:#6b7280; font-size:0.9em;">...</div>
+        <div class="sf-modal-actions" style="margin-top:16px;">
+            <button type="button" class="sf-btn sf-btn-secondary" id="sfInvBaseCancelBtn">
+                <?= htmlspecialchars(sf_term('btn_cancel', $currentUiLang) ?? 'Peruuta', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button type="button" class="sf-btn sf-btn-primary" id="sfInvBaseNextBtn" disabled>
+                <?= htmlspecialchars(sf_term('btn_next', $currentUiLang) ?? 'Jatka', ENT_QUOTES, 'UTF-8') ?> →
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Investigation bundle language selection modal (Step 2) -->
+<div class="sf-modal hidden" id="modalInvestigationBundle" role="dialog" aria-modal="true" aria-labelledby="modalInvestigationBundleTitle">
+    <div class="sf-modal-content">
+        <h2 id="modalInvestigationBundleTitle">
+            <?= htmlspecialchars(sf_term('investigation_bundle_modal_title', $currentUiLang) ?? 'Valitse luotavat kieliversiot', ENT_QUOTES, 'UTF-8') ?>
+        </h2>
+        <p class="sf-help-text">
+            <?= htmlspecialchars(sf_term('investigation_bundle_modal_help', $currentUiLang) ?? 'Valitse mistä kielistä tutkintatiedote luodaan.', ENT_QUOTES, 'UTF-8') ?>
+        </p>
+        <div id="sfInvBundleLangList" style="margin: 12px 0; display: flex; flex-direction: column; gap: 8px;"></div>
+        <div class="sf-modal-actions" style="margin-top:16px;">
+            <button type="button" class="sf-btn sf-btn-secondary" id="sfInvBundleBackBtn">
+                ← <?= htmlspecialchars(sf_term('btn_prev', $currentUiLang) ?? 'Takaisin', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button type="button" class="sf-btn sf-btn-primary" id="sfInvBundleNextBtn" disabled>
+                <?= htmlspecialchars(sf_term('btn_next', $currentUiLang) ?? 'Jatka', ENT_QUOTES, 'UTF-8') ?> →
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Investigation collision handling modal (Step 3, shown only when collisions exist) -->
+<div class="sf-modal hidden" id="modalInvestigationCollision" role="dialog" aria-modal="true" aria-labelledby="modalInvestigationCollisionTitle">
+    <div class="sf-modal-content" style="max-width:560px;">
+        <h2 id="modalInvestigationCollisionTitle">
+            <?= htmlspecialchars(sf_term('investigation_collision_modal_title', $currentUiLang) ?? 'Olemassa olevat kieliversiot', ENT_QUOTES, 'UTF-8') ?>
+        </h2>
+        <p class="sf-help-text">
+            <?= htmlspecialchars(sf_term('investigation_collision_modal_help', $currentUiLang) ?? 'Seuraavissa kielissä on jo olemassa tutkintatiedoteversio. Valitse kullekin kielelle toiminto.', ENT_QUOTES, 'UTF-8') ?>
+        </p>
+        <div id="sfInvCollisionList" style="margin: 12px 0; display: flex; flex-direction: column; gap: 12px;"></div>
+        <div class="sf-modal-actions" style="margin-top:16px;">
+            <button type="button" class="sf-btn sf-btn-secondary" id="sfInvCollisionBackBtn">
+                ← <?= htmlspecialchars(sf_term('btn_prev', $currentUiLang) ?? 'Takaisin', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+            <button type="button" class="sf-btn sf-btn-primary" id="sfInvCollisionConfirmBtn">
+                <?= htmlspecialchars(sf_term('btn_confirm', $currentUiLang) ?? 'Vahvista', ENT_QUOTES, 'UTF-8') ?>
+            </button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="sf-modal hidden" id="modalEdit" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
         <h2 id="modalEditTitle">
             <?= htmlspecialchars(sf_term('modal_edit_title', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </h2>
@@ -5368,4 +5457,302 @@ window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
     }
 })();
 </script>
-<?php endif; ?>
+<?php endif; // canAccessSettings ?>
+
+<?php if ($canMakeInvestigation): ?>
+<script>
+(function () {
+    'use strict';
+
+    var baseUrl   = (window.SF_BASE_URL || '').replace(/\/$/, '');
+    var csrfToken = <?= json_encode(sf_csrf_token(), JSON_UNESCAPED_UNICODE) ?>;
+    var flashId   = <?= (int)$id ?>;
+
+    // ---- Localised strings ----
+    var T = {
+        original: <?= json_encode(sf_term('investigation_base_original_label', $currentUiLang) ?? '(alkuperäinen)', JSON_UNESCAPED_UNICODE) ?>,
+        replace:  <?= json_encode(sf_term('investigation_collision_replace', $currentUiLang) ?? 'Korvaa luonnos', JSON_UNESCAPED_UNICODE) ?>,
+        open:     <?= json_encode(sf_term('investigation_collision_open', $currentUiLang) ?? 'Avaa muokattavaksi', JSON_UNESCAPED_UNICODE) ?>,
+        skip:     <?= json_encode(sf_term('investigation_collision_skip', $currentUiLang) ?? 'Ohita tämä kieli', JSON_UNESCAPED_UNICODE) ?>,
+        pubWarn:  <?= json_encode(sf_term('investigation_collision_published_warning', $currentUiLang) ?? 'Varoitus: tämä kieliversio on jo julkaistu', JSON_UNESCAPED_UNICODE) ?>,
+    };
+
+    var langNames = {fi:'Suomi 🇫🇮', sv:'Ruotsi 🇸🇪', en:'Englanti 🇬🇧', it:'Italia 🇮🇹', el:'Kreikka 🇬🇷'};
+    var allLangs  = ['fi','sv','en','it','el'];
+
+    // ---- State ----
+    var siblings         = [];
+    var selectedBaseId   = 0;
+    var selectedLangs    = [];
+    var collisionData    = {};
+    var collisionActions = {};
+
+    // ---- Modal helpers ----
+    function openModal(id) {
+        var m = document.getElementById(id);
+        if (m) { m.classList.remove('hidden'); document.body.classList.add('sf-modal-open'); }
+    }
+    function closeModal(id) {
+        var m = document.getElementById(id);
+        if (m) { m.classList.add('hidden'); }
+    }
+    function closeAllInvModals() {
+        ['modalInvestigationBase','modalInvestigationBundle','modalInvestigationCollision'].forEach(closeModal);
+        document.body.classList.remove('sf-modal-open');
+    }
+
+    // ---- Utility ----
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ---- Build form URL ----
+    function buildFormUrl(relatedId, sourceLangId, invBundleLangs) {
+        var url = baseUrl + '/index.php?page=form&type=green&related_flash_id=' + relatedId;
+        if (sourceLangId && sourceLangId !== relatedId) {
+            url += '&source_lang_id=' + sourceLangId;
+        }
+        if (invBundleLangs && invBundleLangs.length > 1) {
+            url += '&inv_bundle_langs=' + encodeURIComponent(invBundleLangs.join(','));
+        }
+        return url;
+    }
+
+    // ---- Step 1: Base language picker ----
+    function initBaseModal() {
+        var list    = document.getElementById('sfInvBaseSiblingList');
+        var loading = document.getElementById('sfInvBaseLoading');
+        var nextBtn = document.getElementById('sfInvBaseNextBtn');
+
+        list.innerHTML = '';
+        loading.style.display = 'block';
+        nextBtn.disabled = true;
+        selectedBaseId = 0;
+
+        fetch(baseUrl + '/app/api/list_translation_siblings.php?flash_id=' + flashId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                loading.style.display = 'none';
+                if (!data.success || !data.siblings || data.siblings.length === 0) {
+                    closeAllInvModals();
+                    window.location.href = buildFormUrl(flashId, 0, []);
+                    return;
+                }
+                siblings = data.siblings;
+
+                if (siblings.length === 1) {
+                    selectedBaseId = siblings[0].id;
+                    closeAllInvModals();
+                    window.location.href = buildFormUrl(flashId, selectedBaseId, []);
+                    return;
+                }
+
+                siblings.forEach(function (s) {
+                    var label = document.createElement('label');
+                    label.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;';
+                    var radio = document.createElement('input');
+                    radio.type  = 'radio';
+                    radio.name  = 'sfInvBaseRadio';
+                    radio.value = String(s.id);
+                    if (s.is_original) {
+                        radio.checked  = true;
+                        selectedBaseId = s.id;
+                        nextBtn.disabled = false;
+                        label.style.borderColor = '#2563eb';
+                    }
+                    radio.addEventListener('change', function () {
+                        list.querySelectorAll('label').forEach(function (l) { l.style.borderColor = '#e2e8f0'; });
+                        label.style.borderColor = '#2563eb';
+                        selectedBaseId  = parseInt(this.value, 10);
+                        nextBtn.disabled = false;
+                    });
+                    var txt = document.createElement('span');
+                    var origNote = s.is_original ? ' <em>' + escHtml(T.original) + '</em>' : '';
+                    txt.innerHTML = '<strong>' + escHtml(langNames[s.lang] || s.lang.toUpperCase()) + '</strong>' + origNote +
+                                    '<br><small style="color:#6b7280">' + escHtml(s.published_at || '') + ' – ' + escHtml(s.title_short || '') + '</small>';
+                    label.appendChild(radio);
+                    label.appendChild(txt);
+                    list.appendChild(label);
+                });
+
+                openModal('modalInvestigationBase');
+            })
+            .catch(function () {
+                loading.textContent = 'Virhe haettaessa kieliversioita.';
+            });
+    }
+
+    // ---- Step 2: Bundle language selection ----
+    function initBundleModal() {
+        var list    = document.getElementById('sfInvBundleLangList');
+        var nextBtn = document.getElementById('sfInvBundleNextBtn');
+        list.innerHTML = '';
+        selectedLangs = [];
+
+        var sourceLangs = siblings.map(function (s) { return s.lang; });
+
+        allLangs.forEach(function (lang) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;';
+            var cb   = document.createElement('input');
+            cb.type  = 'checkbox';
+            cb.name  = 'sfInvBundleLang';
+            cb.value = lang;
+            cb.checked = sourceLangs.indexOf(lang) >= 0;
+            if (cb.checked) { selectedLangs.push(lang); label.style.borderColor = '#2563eb'; }
+            cb.addEventListener('change', function () {
+                label.style.borderColor = this.checked ? '#2563eb' : '#e2e8f0';
+                if (this.checked) {
+                    if (selectedLangs.indexOf(lang) < 0) { selectedLangs.push(lang); }
+                } else {
+                    selectedLangs = selectedLangs.filter(function (l) { return l !== lang; });
+                }
+                nextBtn.disabled = selectedLangs.length === 0;
+            });
+            var txt = document.createElement('span');
+            txt.textContent = langNames[lang] || lang.toUpperCase();
+            label.appendChild(cb);
+            label.appendChild(txt);
+            list.appendChild(label);
+        });
+
+        nextBtn.disabled = selectedLangs.length === 0;
+        closeModal('modalInvestigationBase');
+        openModal('modalInvestigationBundle');
+    }
+
+    // ---- Step 3: Collision check ----
+    function runCollisionCheck() {
+        var fd = new FormData();
+        fd.append('csrf_token', csrfToken);
+        fd.append('source_id', String(flashId));
+        fd.append('langs', selectedLangs.join(','));
+
+        fetch(baseUrl + '/app/api/check_investigation_collisions.php', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) { alert('Virhe kollisiotarkistuksessa.'); return; }
+                collisionData = data.collisions || {};
+                var hasCollision = Object.keys(collisionData).some(function (l) {
+                    return collisionData[l].status !== 'free';
+                });
+                if (!hasCollision) { executeCreation(); } else { showCollisionModal(); }
+            })
+            .catch(function () { alert('Verkkovirhe kollisiotarkistuksessa.'); });
+    }
+
+    function showCollisionModal() {
+        var list = document.getElementById('sfInvCollisionList');
+        list.innerHTML = '';
+        collisionActions = {};
+
+        selectedLangs.forEach(function (lang) {
+            var col = collisionData[lang] || { status: 'free', flash_id: null };
+            if (col.status === 'free') { collisionActions[lang] = 'create'; return; }
+
+            var isPublished = col.status === 'existing_published';
+            var block = document.createElement('div');
+            block.style.cssText = 'padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;';
+
+            var heading = document.createElement('div');
+            heading.style.fontWeight = '600';
+            heading.style.marginBottom = '6px';
+            heading.textContent = langNames[lang] || lang.toUpperCase();
+            if (isPublished) {
+                var warn = document.createElement('span');
+                warn.style.cssText = 'color:#dc2626;font-size:0.85em;margin-left:8px;';
+                warn.textContent = T.pubWarn;
+                heading.appendChild(warn);
+            }
+            block.appendChild(heading);
+
+            collisionActions[lang] = isPublished ? 'skip' : 'replace';
+
+            var opts = [];
+            if (!isPublished) { opts.push({ v: 'replace', label: T.replace }); }
+            opts.push({ v: 'open', label: T.open + (col.flash_id ? ' (ID: ' + col.flash_id + ')' : '') });
+            opts.push({ v: 'skip', label: T.skip });
+            if (isPublished)  { opts.push({ v: 'replace', label: T.replace + ' ⚠️' }); }
+
+            opts.forEach(function (opt) {
+                var label = document.createElement('label');
+                label.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;';
+                var radio = document.createElement('input');
+                radio.type  = 'radio';
+                radio.name  = 'sfInvCollision_' + lang;
+                radio.value = opt.v;
+                if (opt.v === collisionActions[lang]) { radio.checked = true; }
+                radio.addEventListener('change', function () { collisionActions[lang] = this.value; });
+                var span = document.createElement('span');
+                span.textContent = opt.label;
+                label.appendChild(radio);
+                label.appendChild(span);
+                block.appendChild(label);
+            });
+
+            list.appendChild(block);
+        });
+
+        selectedLangs.forEach(function (l) { if (!collisionActions[l]) { collisionActions[l] = 'create'; } });
+
+        document.getElementById('sfInvCollisionConfirmBtn').onclick = executeCreation;
+        closeModal('modalInvestigationBundle');
+        openModal('modalInvestigationCollision');
+    }
+
+    // ---- Execute creation ----
+    function executeCreation() {
+        closeAllInvModals();
+        var langsToCreate = [];
+        var openUrl = null;
+
+        selectedLangs.forEach(function (lang) {
+            var act = collisionActions[lang] || 'create';
+            if (act === 'replace' || act === 'create') {
+                langsToCreate.push(lang);
+            } else if (act === 'open') {
+                var fid = (collisionData[lang] || {}).flash_id;
+                if (fid && !openUrl) { openUrl = baseUrl + '/index.php?page=form&id=' + fid; }
+            }
+        });
+
+        if (langsToCreate.length === 0 && openUrl) { window.location.href = openUrl; return; }
+        if (langsToCreate.length === 0) { return; }
+
+        window.location.href = buildFormUrl(flashId, selectedBaseId, langsToCreate);
+    }
+
+    // ---- Wire up ----
+    function init() {
+        var btn = document.getElementById('footerMakeInvestigation');
+        if (!btn) { return; }
+
+        btn.addEventListener('click', initBaseModal);
+
+        var baseCancelBtn = document.getElementById('sfInvBaseCancelBtn');
+        var baseNextBtn   = document.getElementById('sfInvBaseNextBtn');
+        if (baseCancelBtn) { baseCancelBtn.addEventListener('click', closeAllInvModals); }
+        if (baseNextBtn)   { baseNextBtn.addEventListener('click', function () { if (selectedBaseId) { initBundleModal(); } }); }
+
+        var bundleBackBtn = document.getElementById('sfInvBundleBackBtn');
+        var bundleNextBtn = document.getElementById('sfInvBundleNextBtn');
+        if (bundleBackBtn) { bundleBackBtn.addEventListener('click', function () { closeModal('modalInvestigationBundle'); openModal('modalInvestigationBase'); }); }
+        if (bundleNextBtn) { bundleNextBtn.addEventListener('click', function () { if (selectedLangs.length > 0) { closeModal('modalInvestigationBundle'); runCollisionCheck(); } }); }
+
+        var collisionBackBtn = document.getElementById('sfInvCollisionBackBtn');
+        if (collisionBackBtn) { collisionBackBtn.addEventListener('click', function () { closeModal('modalInvestigationCollision'); openModal('modalInvestigationBundle'); }); }
+
+        ['modalInvestigationBase','modalInvestigationBundle','modalInvestigationCollision'].forEach(function (mid) {
+            var m = document.getElementById(mid);
+            if (m) { m.addEventListener('click', function (e) { if (e.target === m) { closeAllInvModals(); } }); }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+<?php endif; // canMakeInvestigation ?>

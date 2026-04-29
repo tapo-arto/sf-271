@@ -941,4 +941,18 @@ return [
     'it' => 'Ha contrassegnato il rapporto di indagine come esportato su Athena',
     'el' => 'Σήμανε την αναφορά έρευνας ως εξαγμένη στο Athena',
 ],
+'log_investigation_replaced_draft' => [
+    'fi' => 'Tutkintatiedotteen luonnos korvattu',
+    'sv' => 'Utredningsrapportens utkast ersatt',
+    'en' => 'Investigation report draft replaced',
+    'it' => 'Bozza del rapporto di indagine sostituita',
+    'el' => 'Το πρόχειρο της έκθεσης έρευνας αντικαταστάθηκε',
+],
+'log_investigation_bundle_created' => [
+    'fi' => 'Tutkintatiedote-nippu luotu',
+    'sv' => 'Utredningsrapportpaket skapat',
+    'en' => 'Investigation report bundle created',
+    'it' => 'Bundle del rapporto di indagine creato',
+    'el' => 'Δημιουργήθηκε πακέτο έκθεσης έρευνας',
+],
 ];

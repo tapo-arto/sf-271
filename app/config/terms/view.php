@@ -759,4 +759,11 @@ return [
     'it' => 'L\'ho già esportato su Athena',
     'el' => 'Το έχω ήδη εξαγάγει στο Athena',
 ],
+'btn_make_investigation' => [
+    'fi' => 'Tee tutkintatiedote',
+    'sv' => 'Skapa utredningsrapport',
+    'en' => 'Create investigation report',
+    'it' => 'Crea rapporto di indagine',
+    'el' => 'Δημιουργία έκθεσης έρευνας',
+],
 ];

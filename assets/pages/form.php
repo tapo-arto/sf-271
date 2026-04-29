@@ -39,6 +39,71 @@ try {
     error_log('form.php load related flashes error: ' . $e->getMessage());
 }
 
+// --- Source language version pre-fill (for investigation created from view.php button) ---
+// When source_lang_id is provided in GET, pre-fill form from that specific language version.
+// This does NOT change which flash gets converted (that's still related_flash_id), it
+// only changes the content shown in the form for the user to edit.
+$sourceLangId = isset($_GET['source_lang_id']) ? (int)$_GET['source_lang_id'] : 0;
+$sourceLangFlash = null;
+if ($sourceLangId > 0) {
+    try {
+        $sourceLangFlash = Database::fetchOne(
+            "SELECT id, type, title, title_short, site, site_detail, description,
+                    occurred_at, image_main, image_2, image_3,
+                    annotations_data, image1_transform, image2_transform, image3_transform,
+                    grid_layout, grid_bitmap, lang
+             FROM sf_flashes WHERE id = :id AND state = 'published' LIMIT 1",
+            [':id' => $sourceLangId]
+        );
+    } catch (Throwable $e) {
+        error_log('form.php load source lang flash error: ' . $e->getMessage());
+    }
+}
+
+// --- Source language version pre-fill (for investigation created from view.php button) ---
+// When source_lang_id is provided in GET, pre-fill form from that specific language version.
+// This does NOT change which flash gets converted (that's still related_flash_id), it
+// only changes the content (data attributes) shown for the user to edit.
+//
+// Implementation: if source_lang_id differs from related_flash_id, create a synthetic
+// option entry whose VALUE is related_flash_id (for correct save_flash.php submission)
+// but whose DATA ATTRIBUTES come from source_lang_id (for correct content pre-fill).
+$sourceLangId = isset($_GET['source_lang_id']) ? (int)$_GET['source_lang_id'] : 0;
+$sourceLangFlash = null;
+if ($sourceLangId > 0) {
+    try {
+        $sourceLangFlash = Database::fetchOne(
+            "SELECT id, type, title, title_short, site, site_detail, description,
+                    occurred_at, image_main, image_2, image_3,
+                    annotations_data, image1_transform, image2_transform, image3_transform,
+                    grid_layout, grid_bitmap, lang
+             FROM sf_flashes WHERE id = :id AND state = 'published' LIMIT 1",
+            [':id' => $sourceLangId]
+        );
+    } catch (Throwable $e) {
+        error_log('form.php load source lang flash error: ' . $e->getMessage());
+    }
+}
+
+$relatedFlashIdFromGet = isset($_GET['related_flash_id']) ? (int)$_GET['related_flash_id'] : 0;
+
+if ($sourceLangFlash !== null && $relatedFlashIdFromGet > 0 && $sourceLangId !== $relatedFlashIdFromGet) {
+    // Create synthetic option: value = original (related_flash_id), content = source language.
+    // Override the 'id' so the dropdown option submits the correct related_flash_id.
+    $syntheticOption = $sourceLangFlash;
+    $syntheticOption['id'] = $relatedFlashIdFromGet;
+    $syntheticOption['_source_lang_synthetic'] = true;
+
+    // Remove the original entry from $relatedOptions to avoid duplicate values in the dropdown.
+    $relatedOptions = array_filter($relatedOptions, function ($ro) use ($relatedFlashIdFromGet) {
+        return (int)$ro['id'] !== $relatedFlashIdFromGet;
+    });
+    $relatedOptions = array_values($relatedOptions);
+
+    // Prepend the synthetic option so it appears first and will be pre-selected.
+    array_unshift($relatedOptions, $syntheticOption);
+}
+
 // --- Load flash for editing if id is provided ---
 $editing = false;
 $flash   = [];
@@ -247,6 +312,13 @@ $worksite_val     = $flash['site'] ?? '';
 $site_detail_val  = $flash['site_detail'] ?? '';
 $event_date_val   = !empty($flash['occurred_at']) ? date('Y-m-d\TH:i', strtotime($flash['occurred_at'])) : '';
 $type_val         = $flash['type'] ?? '';
+// Allow pre-selecting type via GET parameter (e.g. type=green from view.php button)
+if ($type_val === '' && !$editing) {
+    $typeFromGet = trim($_GET['type'] ?? '');
+    if (in_array($typeFromGet, ['red', 'yellow', 'green'], true)) {
+        $type_val = $typeFromGet;
+    }
+}
 $state_val        = $flash['state'] ?? '';
 $preview_filename = $flash['preview_filename'] ?? '';
 $image_main       = $flash['image_main'] ?? '';
@@ -486,6 +558,11 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
   <!-- Related flash ID tutkintatiedotteelle (päivittää alkuperäisen) -->
   <input type="hidden" id="sf-related-flash-id" value="<?= htmlspecialchars($flash['related_flash_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 
+  <?php if ($sourceLangId > 0 && !$editing): ?>
+  <!-- Source language version used as content basis (for audit log) -->
+  <input type="hidden" name="source_lang_id" value="<?= (int)$sourceLangId ?>">
+  <?php endif; ?>
+
   <!-- Modern Navigable Progress Bar (NO wrapper div) -->
   <nav class="sf-form-progress" aria-label="<?= htmlspecialchars(sf_term('form_progress_label', $uiLang) ?: 'Lomakkeen vaiheet', ENT_QUOTES, 'UTF-8') ?>">
       <div class="sf-form-progress__track" role="progressbar" aria-valuenow="<?= (int) $initialStep ?>" aria-valuemin="1" aria-valuemax="6">
@@ -690,7 +767,15 @@ window.SF_FLASH_ID = <?= (int)$editId ?>;
               data-image3-transform="<?= htmlspecialchars($opt['image3_transform'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
               data-grid-layout="<?= htmlspecialchars($opt['grid_layout'] ?? 'grid-1', ENT_QUOTES, 'UTF-8') ?>"
               data-grid-bitmap="<?= htmlspecialchars($opt['grid_bitmap'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-              <?= (isset($flash['related_flash_id']) && (int) $flash['related_flash_id'] === (int) $opt['id']) ? 'selected' :  '' ?>
+              <?php
+              // Pre-select logic: either editing an existing flash (related_flash_id from DB),
+              // or creating a new investigation from view.php (related_flash_id from GET).
+              $preSelectId = (int)($flash['related_flash_id'] ?? 0);
+              if ($preSelectId === 0 && $relatedFlashIdFromGet > 0) {
+                  $preSelectId = $relatedFlashIdFromGet;
+              }
+              echo ($preSelectId > 0 && $preSelectId === (int)$opt['id']) ? 'selected' : '';
+              ?>
             >
               <?= htmlspecialchars($optLabel, ENT_QUOTES, 'UTF-8') ?>
             </option>
@@ -2670,6 +2755,27 @@ document.addEventListener('DOMContentLoaded', function () {
         var url = window.location.href.replace(/[?&]saved=1/, '').replace(/\?$/, '');
         window.history.replaceState({}, '', url);
     }
+});
+</script>
+<?php endif; ?>
+
+<?php if ($relatedFlashIdFromGet > 0 && !$editing): ?>
+<script>
+// Pre-select the related flash dropdown and trigger form pre-fill when coming from view.php.
+// Using a short timeout to ensure bootstrap.js has bound the change listener first.
+document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+        var sel = document.getElementById('sf-related-flash');
+        if (!sel) { return; }
+        var relId = <?= (int)$relatedFlashIdFromGet ?>;
+        for (var i = 0; i < sel.options.length; i++) {
+            if (parseInt(sel.options[i].value, 10) === relId) {
+                sel.selectedIndex = i;
+                sel.dispatchEvent(new Event('change'));
+                break;
+            }
+        }
+    }, 150);
 });
 </script>
 <?php endif; ?>
