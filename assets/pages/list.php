@@ -17,7 +17,11 @@ $uiLang = $_SESSION['ui_lang'] ?? DEFAULT_LANG;
 
 // Tarkista onko käyttäjä ylläpitäjä
 $user = sf_current_user();
-$isAdmin = $user && (int)($user['role_id'] ?? 0) === 1;
+$roleId = $user ? (int)($user['role_id'] ?? 0) : 0;
+$isAdmin = $roleId === 1;
+$isSafety = $roleId === 3;
+$isComms = $roleId === 4;
+$canSeeAthenaListBadge = $isAdmin || $isSafety || $isComms;
 
 // POISTETTU: Ei enää käytetä "recently processed" logiikkaa
 
@@ -192,9 +196,9 @@ if ($currentUserId > 0) {
 // --- Role-based visibility (SQL) ---
 // Replaces the PHP-level visibility filter. Admin sees everything; others see
 // only flashes they have access to based on state and role.
-$roleId   = $user ? (int)$user['role_id'] : 0;
-$isSafety = $roleId === 3;
-$isComms  = $roleId === 4;
+$roleId = $roleId ?? ($user ? (int)$user['role_id'] : 0);
+$isSafety = $isSafety ?? ($roleId === 3);
+$isComms = $isComms ?? ($roleId === 4);
 
 if (!$isAdmin) {
     $isSafetyInt = $isSafety ? 1 : 0;  // 0 or 1 — safe to inline; not user-supplied
@@ -251,6 +255,167 @@ $sortDirSQL  = $sortOrder === 'asc' ? 'ASC' : 'DESC';
 
 $whereSql = $where ? ("WHERE " . implode(" AND ", $where)) : "";
 
+// --- Filter counts for server-side filtered list ---
+$buildFilterCountWhere = function (string $excludeFilter = '') use (
+    $type,
+    $originalType,
+    $onlyOriginals,
+    $state,
+    $site,
+    $q,
+    $from,
+    $to,
+    $archived,
+    $isAdmin,
+    $isSafety,
+    $isComms,
+    $currentUserId
+): array {
+    $countWhere = [];
+    $countParams = [];
+
+    if ($excludeFilter !== 'type' && $type !== '') {
+        $countWhere[] = "f.type = :count_type";
+        $countParams[':count_type'] = $type;
+    }
+
+    if ($excludeFilter !== 'original_type' && $originalType !== '') {
+        $countWhere[] = "(f.original_type = :count_original_type OR (f.original_type IS NULL AND f.type = :count_original_type2))";
+        $countParams[':count_original_type'] = $originalType;
+        $countParams[':count_original_type2'] = $originalType;
+    }
+
+    if ($onlyOriginals) {
+        $countWhere[] = "(f.translation_group_id IS NULL OR f.translation_group_id = f.id)";
+    }
+
+    if ($excludeFilter !== 'state' && $state !== '') {
+        $countWhere[] = "f.state = :count_state";
+        $countParams[':count_state'] = $state;
+    }
+
+    if ($excludeFilter !== 'site' && $site !== '') {
+        $countWhere[] = "f.site = :count_site";
+        $countParams[':count_site'] = $site;
+    }
+
+    if ($q !== '') {
+        $escapedQ = addcslashes($q, '%_\\');
+        $qVal = "%" . $escapedQ . "%";
+        $countWhere[] = "(f.title LIKE :count_q1
+                       OR f.title_short LIKE :count_q2
+                       OR f.summary LIKE :count_q3
+                       OR f.description LIKE :count_q4)";
+        $countParams[':count_q1'] = $qVal;
+        $countParams[':count_q2'] = $qVal;
+        $countParams[':count_q3'] = $qVal;
+        $countParams[':count_q4'] = $qVal;
+    }
+
+    if ($from !== '') {
+        $countWhere[] = "f.occurred_at >= :count_from";
+        $countParams[':count_from'] = "$from 00:00:00";
+    }
+
+    if ($to !== '') {
+        $countWhere[] = "f.occurred_at <= :count_to";
+        $countParams[':count_to'] = "$to 23:59:59";
+    }
+
+    if ($archived === 'only') {
+        $countWhere[] = "f.is_archived = 1";
+    } elseif ($archived !== 'all') {
+        $countWhere[] = "f.is_archived = 0";
+    }
+
+    if (!$isAdmin) {
+        $isSafetyInt = $isSafety ? 1 : 0;
+        $isCommsInt = $isComms ? 1 : 0;
+
+        $countWhere[] = "(
+            f.state = 'published'
+            OR f.created_by = :count_vis_uid
+            OR ({$isSafetyInt} = 1 AND f.state != 'draft')
+            OR ({$isCommsInt} = 1 AND f.state IN ('to_comms', 'awaiting_publish'))
+            OR (
+                f.selected_approvers IS NOT NULL
+                AND JSON_VALID(f.selected_approvers)
+                AND (
+                    JSON_CONTAINS(f.selected_approvers, :count_vis_uid_json)
+                    OR JSON_CONTAINS(f.selected_approvers, :count_vis_uid_json_str)
+                    OR (
+                        JSON_TYPE(JSON_EXTRACT(f.selected_approvers, '$.approver_ids')) = 'ARRAY'
+                        AND (
+                            JSON_CONTAINS(JSON_EXTRACT(f.selected_approvers, '$.approver_ids'), :count_vis_uid_json2)
+                            OR JSON_CONTAINS(JSON_EXTRACT(f.selected_approvers, '$.approver_ids'), :count_vis_uid_json_str2)
+                        )
+                    )
+                )
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM safetyflash_logs sl
+                WHERE sl.flash_id = COALESCE(f.translation_group_id, f.id)
+                  AND sl.user_id = :count_vis_uid_logs
+            )
+        )";
+
+        $countParams[':count_vis_uid'] = $currentUserId;
+        $countParams[':count_vis_uid_json'] = (string)$currentUserId;
+        $countParams[':count_vis_uid_json_str'] = json_encode((string)$currentUserId);
+        $countParams[':count_vis_uid_json2'] = (string)$currentUserId;
+        $countParams[':count_vis_uid_json_str2'] = json_encode((string)$currentUserId);
+        $countParams[':count_vis_uid_logs'] = $currentUserId;
+    }
+
+    return [
+        $countWhere ? ("WHERE " . implode(" AND ", $countWhere)) : "",
+        $countParams
+    ];
+};
+
+$countDistinctGroups = function (string $excludeFilter = '') use ($pdo, $buildFilterCountWhere): int {
+    [$countWhereSql, $countParams] = $buildFilterCountWhere($excludeFilter);
+
+    $sql = "SELECT COUNT(*) FROM (
+        SELECT COALESCE(f.translation_group_id, f.id) AS group_id
+        FROM sf_flashes f
+        {$countWhereSql}
+        GROUP BY COALESCE(f.translation_group_id, f.id)
+    ) AS grouped_flashes";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($countParams);
+
+    return (int)$stmt->fetchColumn();
+};
+
+$countGroupedFilterValues = function (string $fieldSql, string $excludeFilter = '') use ($pdo, $buildFilterCountWhere): array {
+    [$countWhereSql, $countParams] = $buildFilterCountWhere($excludeFilter);
+
+    $sql = "SELECT filter_value, COUNT(*) AS filter_count
+        FROM (
+            SELECT
+                {$fieldSql} AS filter_value,
+                COALESCE(f.translation_group_id, f.id) AS group_id
+            FROM sf_flashes f
+            {$countWhereSql}
+            GROUP BY COALESCE(f.translation_group_id, f.id), {$fieldSql}
+        ) AS grouped_filter_values
+        WHERE filter_value IS NOT NULL AND filter_value != ''
+        GROUP BY filter_value";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($countParams);
+
+    $counts = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $counts[(string)$row['filter_value']] = (int)$row['filter_count'];
+    }
+
+    return $counts;
+};
+
 // --- Step 1: Count distinct visible groups ---
 $countSql = "SELECT COUNT(*) FROM (
     SELECT COALESCE(f.translation_group_id, f.id) AS group_id
@@ -262,6 +427,18 @@ $countSql = "SELECT COUNT(*) FROM (
 $countStmt = $pdo->prepare($countSql);
 $countStmt->execute($params);
 $totalGroups = (int)$countStmt->fetchColumn();
+
+$filterCounts = [
+    'type_all' => $countDistinctGroups('type'),
+    'original_type_all' => $countDistinctGroups('original_type'),
+    'state_all' => $countDistinctGroups('state'),
+    'site_all' => $countDistinctGroups('site'),
+    'type' => $countGroupedFilterValues('f.type', 'type'),
+    'original_type' => $countGroupedFilterValues('COALESCE(f.original_type, f.type)', 'original_type'),
+    'state' => $countGroupedFilterValues('f.state', 'state'),
+    'site' => $countGroupedFilterValues('f.site', 'site'),
+];
+
 $totalPages  = max(1, (int)ceil($totalGroups / $perPage));
 // Clamp current page
 if ($currentPage > $totalPages) {
@@ -292,6 +469,12 @@ if (!empty($groupIdsList)) {
     $dataSql = "SELECT f.*,
                 DATE_FORMAT(f.occurred_at, '%d.%m.%Y %H:%i') AS occurredFmt,
                 DATE_FORMAT(f.updated_at, '%d.%m.%Y %H:%i') AS updatedFmt,
+                (
+                    SELECT MAX(a.exported_at)
+                    FROM sf_flash_athena_exports a
+                    WHERE a.flash_id = COALESCE(f.translation_group_id, f.id)
+                      AND a.exported_at >= f.updated_at
+                ) AS athena_exported_at,
                 (SELECT COUNT(*)
                  FROM safetyflash_logs sl
                  WHERE sl.flash_id = COALESCE(f.translation_group_id, f.id)
@@ -669,64 +852,65 @@ $currentUiLang = $uiLang ?? DEFAULT_LANG;
 <!-- HIDDEN FILTER FIELDS (for JavaScript access) -->
 <div style="display: none;">
     <select id="f-type" name="type">
-        <option value="">
+        <option value="" data-count="<?= (int)($filterCounts['type_all'] ?? 0) ?>">
             <?= htmlspecialchars(sf_term('filter_all', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="red" <?= $type === 'red' ? 'selected' : '' ?>>
+        <option value="red" data-count="<?= (int)($filterCounts['type']['red'] ?? 0) ?>" <?= $type === 'red' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_term('first_release', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="yellow" <?= $type === 'yellow' ? 'selected' : '' ?>>
+        <option value="yellow" data-count="<?= (int)($filterCounts['type']['yellow'] ?? 0) ?>" <?= $type === 'yellow' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_term('dangerous_situation', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="green" <?= $type === 'green' ? 'selected' : '' ?>>
+        <option value="green" data-count="<?= (int)($filterCounts['type']['green'] ?? 0) ?>" <?= $type === 'green' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_term('investigation_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
     </select>
 
     <select id="f-original-type" name="original_type">
-        <option value="">
+        <option value="" data-count="<?= (int)($filterCounts['original_type_all'] ?? 0) ?>">
             <?= htmlspecialchars(sf_term('filter_all', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="red" <?= $originalType === 'red' ? 'selected' : '' ?>>
+        <option value="red" data-count="<?= (int)($filterCounts['original_type']['red'] ?? 0) ?>" <?= $originalType === 'red' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_term('first_release', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="yellow" <?= $originalType === 'yellow' ? 'selected' : '' ?>>
+        <option value="yellow" data-count="<?= (int)($filterCounts['original_type']['yellow'] ?? 0) ?>" <?= $originalType === 'yellow' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_term('dangerous_situation', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
     </select>
 
     <select id="f-state" name="state">
-        <option value="">
+        <option value="" data-count="<?= (int)($filterCounts['state_all'] ?? 0) ?>">
             <?= htmlspecialchars(sf_term('filter_all', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
-        <option value="draft" <?= $state==='draft' ? 'selected' : '' ?>>
+        <option value="draft" data-count="<?= (int)($filterCounts['state']['draft'] ?? 0) ?>" <?= $state === 'draft' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('draft', $currentUiLang)) ?>
         </option>
-        <option value="pending_supervisor" <?= $state==='pending_supervisor' ? 'selected' : '' ?>>
-    <?= htmlspecialchars(sf_status_label('pending_supervisor', $currentUiLang)) ?>
-</option>
-        <option value="pending_review" <?= $state==='pending_review' ? 'selected' : '' ?>>
+        <option value="pending_supervisor" data-count="<?= (int)($filterCounts['state']['pending_supervisor'] ?? 0) ?>" <?= $state === 'pending_supervisor' ? 'selected' : '' ?>>
+            <?= htmlspecialchars(sf_status_label('pending_supervisor', $currentUiLang)) ?>
+        </option>
+        <option value="pending_review" data-count="<?= (int)($filterCounts['state']['pending_review'] ?? 0) ?>" <?= $state === 'pending_review' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('pending_review', $currentUiLang)) ?>
         </option>
-        <option value="to_comms" <?= $state==='to_comms' ? 'selected' : '' ?>>
+        <option value="to_comms" data-count="<?= (int)($filterCounts['state']['to_comms'] ?? 0) ?>" <?= $state === 'to_comms' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('to_comms', $currentUiLang)) ?>
         </option>
-        <option value="awaiting_publish" <?= $state==='awaiting_publish' ? 'selected' : '' ?>>
+        <option value="awaiting_publish" data-count="<?= (int)($filterCounts['state']['awaiting_publish'] ?? 0) ?>" <?= $state === 'awaiting_publish' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('awaiting_publish', $currentUiLang)) ?>
         </option>
-        <option value="published" <?= $state==='published' ? 'selected' : '' ?>>
+        <option value="published" data-count="<?= (int)($filterCounts['state']['published'] ?? 0) ?>" <?= $state === 'published' ? 'selected' : '' ?>>
             <?= htmlspecialchars(sf_status_label('published', $currentUiLang)) ?>
         </option>
     </select>
 
     <select id="f-site" name="site">
-        <option value="">
+        <option value="" data-count="<?= (int)($filterCounts['site_all'] ?? 0) ?>">
             <?= htmlspecialchars(sf_term('filter_all', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </option>
         <?php foreach ($sites as $s): ?>
-            <option value="<?= htmlspecialchars($s) ?>"
+            <option value="<?= htmlspecialchars($s, ENT_QUOTES, 'UTF-8') ?>"
+                data-count="<?= (int)($filterCounts['site'][$s] ?? 0) ?>"
                 <?= ($site !== '' ? $site : $autoSite) === $s ? 'selected' : '' ?>>
-                <?= htmlspecialchars($s) ?>
+                <?= htmlspecialchars($s, ENT_QUOTES, 'UTF-8') ?>
             </option>
         <?php endforeach; ?>
     </select>
@@ -1220,6 +1404,8 @@ if (!empty($rows)) {
                         <?= htmlspecialchars(sf_term('archived', $currentUiLang) ?: 'ARKISTOITU') ?>
                     </span>
                 <?php endif; ?>
+
+
                 <?php 
                 // Show language badge if this is a fallback (not user's preferred language)
                 $flashLang = $r['lang'] ?? DEFAULT_LANG;
@@ -1274,18 +1460,41 @@ if (!empty($rows)) {
             </span>
 
             <?php
-            // Show original type badge only when it differs from current type (i.e. the report has been converted)
+            // Original type and Athena status are secondary metadata.
+            // Athena badge is shown only when the report has actually been saved to Athena.
             $origType = $r['original_type'] ?? null;
-            if (!empty($origType) && $origType !== $r['type']):
-                $origTypeKey   = $typeKeyMap[$origType] ?? null;
+            $showOriginalType = !empty($origType) && $origType !== $r['type'];
+            $origTypeLabel = null;
+
+            if ($showOriginalType) {
+                $origTypeKey = $typeKeyMap[$origType] ?? null;
                 $origTypeLabel = $origTypeKey ? sf_term($origTypeKey, $currentUiLang) : null;
-                if ($origTypeLabel):
+                $showOriginalType = !empty($origTypeLabel);
+            }
+
+            $showAthenaInlineBadge = $canSeeAthenaListBadge
+                && (($r['type'] ?? '') === 'green')
+                && !empty($r['athena_exported_at']);
             ?>
-                <span class="card-original-type">
-                    <span class="card-original-type-label"><?= htmlspecialchars(sf_term('settings_original_type_label', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>:</span>
-                    <span class="badge badge-original-type badge-original-<?= htmlspecialchars($origType) ?>"><?= htmlspecialchars($origTypeLabel) ?></span>
+
+            <?php if ($showOriginalType || $showAthenaInlineBadge): ?>
+                <span class="sf-meta-inline">
+                    <?php if ($showOriginalType): ?>
+                        <span class="card-original-type">
+                            <span class="card-original-type-label"><?= htmlspecialchars(sf_term('settings_original_type_label', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>:</span>
+                            <span class="badge badge-original-type badge-original-<?= htmlspecialchars($origType, ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars($origTypeLabel, ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        </span>
+                    <?php endif; ?>
+
+                    <?php if ($showAthenaInlineBadge): ?>
+                        <span class="badge badge-athena-inline badge-athena-saved">
+                            <?= htmlspecialchars(sf_term('list_athena_saved', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    <?php endif; ?>
                 </span>
-            <?php endif; endif; ?>
+            <?php endif; ?>
          </div>
 
          <?php

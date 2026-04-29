@@ -138,8 +138,10 @@ try {
 }
 
 // --- Athena export table + status ---
-$athenaExportRow  = null;
-$athenaExported   = false;
+$athenaExportRow = null;
+$athenaExported = false;
+$athenaExportOutdated = false;
+
 try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS sf_flash_athena_exports (
@@ -169,7 +171,19 @@ try {
     ");
     $athenaStmt->execute([$tmpLogFlashId]);
     $athenaExportRow = $athenaStmt->fetch(PDO::FETCH_ASSOC);
-    $athenaExported  = !empty($athenaExportRow);
+
+    if (!empty($athenaExportRow['exported_at'])) {
+        try {
+            $athenaExportedAt = new DateTime((string)$athenaExportRow['exported_at']);
+            $flashUpdatedAt = new DateTime((string)($flash['updated_at'] ?? $flash['created_at'] ?? 'now'));
+
+            $athenaExported = $athenaExportedAt >= $flashUpdatedAt;
+            $athenaExportOutdated = $athenaExportedAt < $flashUpdatedAt;
+        } catch (Throwable $e) {
+            $athenaExported = false;
+            $athenaExportOutdated = true;
+        }
+    }
 } catch (Throwable $e) {
     error_log('view.php: Athena export check error: ' . $e->getMessage());
 }
@@ -752,11 +766,6 @@ $iconBase = $base .'/assets/img/icons/';
           ← <?= htmlspecialchars(sf_term('back_to_list', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
         </a>
         <?php if (($flash['type'] ?? '') === 'green'): ?>
-        <?php
-        // Athena-status-badge tutkintatiedotteille (type=green)
-        $showAthenaMissingBadge = !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
-        $showAthenaBadgeBlock = $athenaExported || $showAthenaMissingBadge;
-        ?>
         <div class="sf-view-back-right">
             <button
                id="btnGenerateReport"
@@ -766,33 +775,6 @@ $iconBase = $base .'/assets/img/icons/';
                 <img src="<?= $iconBase ?>report.svg" alt="" class="btn-report-icon">
                 <span><?= htmlspecialchars(sf_term('btn_report', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
             </button>
-            <?php if ($showAthenaBadgeBlock): ?>
-                <?php if ($athenaExported && !empty($athenaExportRow)): ?>
-                    <?php
-                    $athenaUser = trim(($athenaExportRow['first_name'] ?? '') . ' ' . ($athenaExportRow['last_name'] ?? ''));
-                    $athenaDate = '';
-                    if (!empty($athenaExportRow['exported_at'])) {
-                        $aDate = new DateTime($athenaExportRow['exported_at']);
-                        $athenaDate = $aDate->format('j.n.Y');
-                    }
-                    $athenaBadgeText = htmlspecialchars(sf_term('badge_athena_exported', $currentUiLang), ENT_QUOTES, 'UTF-8');
-                    if ($athenaDate) $athenaBadgeText .= ' ' . htmlspecialchars($athenaDate, ENT_QUOTES, 'UTF-8');
-                    if ($athenaUser) $athenaBadgeText .= ' · ' . htmlspecialchars($athenaUser, ENT_QUOTES, 'UTF-8');
-                    ?>
-                    <span id="sfAthenaBadge" class="sf-athena-badge sf-athena-badge--ok">
-                        <img src="<?= $iconBase ?>check.svg" alt="" class="sf-athena-badge__icon" aria-hidden="true">
-                        <span class="sf-athena-badge__text"><?= $athenaBadgeText ?></span>
-                    </span>
-                <?php elseif ($showAthenaMissingBadge): ?>
-                    <button type="button" id="sfAthenaBadge"
-                            class="sf-athena-badge sf-athena-badge--missing"
-                            onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
-                            aria-label="<?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
-                        <img src="<?= $iconBase ?>alert-circle.svg" alt="" class="sf-athena-badge__icon" aria-hidden="true">
-                        <span class="sf-athena-badge__text"><?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></span>
-                    </button>
-                <?php endif; ?>
-            <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>
@@ -950,51 +932,95 @@ $iconBase = $base .'/assets/img/icons/';
     </div>
     <?php endif; // End of hasActions check ?>
 
-    <div
-      class="lang-switcher"
-      role="tablist"
-      aria-label="<?= htmlspecialchars(sf_term('view_languages_aria', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>"
-    >
-        <?php foreach ($supportedLangs as $langCode => $langData):
-            $hasTranslation = isset($translations[$langCode]);
-            $isActive = ($langCode === $currentLang);
-            
-            // LISÄTTY: Arkistoidussa näytetään vain olemassa olevat käännökset
-            if ($isArchived && ! $hasTranslation) {
-                continue; // Ohita puuttuvat käännökset arkistoidussa
-            }
-            
-            // Build tooltip text based on state
-            $tooltipText = '';
-            if ($isActive) {
-                // Active version tooltip
-                $tooltipText = sf_term('lang_tooltip_active_' . $langCode, $currentUiLang) ?? '';
-            } elseif ($hasTranslation) {
-                // Created version tooltip (go to version)
-                $tooltipText = sf_term('lang_tooltip_goto_' . $langCode, $currentUiLang) ?? '';
-            } else {
-                // Missing version tooltip (add version)
-                $tooltipText = sf_term('lang_tooltip_add_' . $langCode, $currentUiLang) ?? '';
-            }
-            
-            // Get add button text
-            $addButtonText = sf_term('lang_add_button_text', $currentUiLang) ?? '+Lisää';
-        ?>
-            <div class="lang-chip <?= $isActive ? 'active' : '' ?> <?= $hasTranslation ? 'has-version' : 'no-version' ?>" role="button" tabindex="0" title="<?= htmlspecialchars($tooltipText, ENT_QUOTES, 'UTF-8') ?>">
-                <?php if ($hasTranslation): ?>
-                    <a href="index.php?page=view&id=<?= (int)$translations[$langCode] ?>" class="lang-link">
-                        <img class="lang-flag-img" src="<?= htmlspecialchars($base) ?>/assets/img/<?= htmlspecialchars($langData['icon']) ?>" alt="<?= htmlspecialchars($langData['label']) ?>">
-                        <span class="lang-label"><?= htmlspecialchars($langData['label']) ?></span>
-                    </a>
-                <?php elseif (! $isArchived): ?>
-                    <!-- Näytä + -nappi vain jos EI arkistoitu -->
-                    <button type="button" class="lang-add-button" data-lang="<?= htmlspecialchars($langCode) ?>" data-lang-label="<?= htmlspecialchars($langData['label']) ?>" data-base-id="<?= (int)$currentId ?>" onclick="sfConfirmTranslation(this)">
-                        <img class="lang-flag-img" src="<?= htmlspecialchars($base) ?>/assets/img/<?= htmlspecialchars($langData['icon']) ?>" alt="<?= htmlspecialchars($langData['label']) ?>">
-                        <span class="lang-label"><?= htmlspecialchars($addButtonText) ?></span>
+    <div class="sf-view-language-status-row">
+        <div
+          class="lang-switcher"
+          role="tablist"
+          aria-label="<?= htmlspecialchars(sf_term('view_languages_aria', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>"
+        >
+            <?php foreach ($supportedLangs as $langCode => $langData):
+                $hasTranslation = isset($translations[$langCode]);
+                $isActive = ($langCode === $currentLang);
+                
+                if ($isArchived && ! $hasTranslation) {
+                    continue;
+                }
+                
+                $tooltipText = '';
+                if ($isActive) {
+                    $tooltipText = sf_term('lang_tooltip_active_' . $langCode, $currentUiLang) ?? '';
+                } elseif ($hasTranslation) {
+                    $tooltipText = sf_term('lang_tooltip_goto_' . $langCode, $currentUiLang) ?? '';
+                } else {
+                    $tooltipText = sf_term('lang_tooltip_add_' . $langCode, $currentUiLang) ?? '';
+                }
+                
+                $addButtonText = sf_term('lang_add_button_text', $currentUiLang) ?? '+Lisää';
+            ?>
+                <div class="lang-chip <?= $isActive ? 'active' : '' ?> <?= $hasTranslation ? 'has-version' : 'no-version' ?>" role="button" tabindex="0" title="<?= htmlspecialchars($tooltipText, ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if ($hasTranslation): ?>
+                        <a href="index.php?page=view&id=<?= (int)$translations[$langCode] ?>" class="lang-link">
+                            <img class="lang-flag-img" src="<?= htmlspecialchars($base) ?>/assets/img/<?= htmlspecialchars($langData['icon']) ?>" alt="<?= htmlspecialchars($langData['label']) ?>">
+                            <span class="lang-label"><?= htmlspecialchars($langData['label']) ?></span>
+                        </a>
+                    <?php elseif (! $isArchived): ?>
+                        <button type="button" class="lang-add-button" data-lang="<?= htmlspecialchars($langCode) ?>" data-lang-label="<?= htmlspecialchars($langData['label']) ?>" data-base-id="<?= (int)$currentId ?>" onclick="sfConfirmTranslation(this)">
+                            <img class="lang-flag-img" src="<?= htmlspecialchars($base) ?>/assets/img/<?= htmlspecialchars($langData['icon']) ?>" alt="<?= htmlspecialchars($langData['label']) ?>">
+                            <span class="lang-label"><?= htmlspecialchars($addButtonText) ?></span>
+                        </button>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if (($flash['type'] ?? '') === 'green'): ?>
+            <?php
+            $showAthenaMissingBadge = !$athenaExported && ($isAdmin || $isSafety || $isComms || $isOwner);
+            ?>
+            <?php if ($athenaExported): ?>
+                <?php
+                $athenaExportedDate = '';
+                if (!empty($athenaExportRow['exported_at'])) {
+                    try {
+                        $athenaDate = new DateTime((string)$athenaExportRow['exported_at']);
+                        $athenaExportedDate = $athenaDate->format('j.n.Y');
+                    } catch (Throwable $e) {
+                        $athenaExportedDate = '';
+                    }
+                }
+
+                $athenaExportedText = sf_term('badge_athena_exported', $currentUiLang);
+                if ($athenaExportedDate !== '') {
+                    $athenaExportedText .= ' ' . $athenaExportedDate;
+                }
+                ?>
+                <div class="sf-athena-status-card sf-athena-status-card--top">
+                    <span class="sf-athena-badge sf-athena-badge--ok" id="sfAthenaBadge">
+                        <img src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/img/icons/check.svg" alt="" class="sf-athena-badge__icon" aria-hidden="true">
+                        <span class="sf-athena-badge__text">
+                            <?= htmlspecialchars($athenaExportedText, ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </span>
+                </div>
+            <?php elseif ($showAthenaMissingBadge): ?>
+                <div class="sf-athena-status-card sf-athena-status-card--top">
+                    <span class="sf-athena-badge sf-athena-badge--missing" id="sfAthenaBadge">
+                        <span class="sf-athena-badge__icon">!</span>
+                        <span class="sf-athena-badge__text">
+                            <?= htmlspecialchars(sf_term('badge_athena_not_exported', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="sf-athena-action-btn"
+                        onclick="document.getElementById('sfAthenaReminderModal')?.classList.remove('hidden'); document.body.classList.add('sf-modal-open');"
+                    >
+                        <?= htmlspecialchars(sf_term('btn_athena_mark_done', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
                     </button>
-                <?php endif; ?>
-            </div>
-        <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
     
     <!-- UUSI RAKENNE ALKAA TÄSTÄ -->
@@ -1232,16 +1258,23 @@ $iconBase = $base .'/assets/img/icons/';
                                 $commentText = '';
                                 if (preg_match('/log_comment_label:\s*(.+)/is', $descRaw, $match)) {
                                     $commentText = trim($match[1]);
-                                    // Translate a nested log_ key prefix if present
-                                    // e.g. "log_sent_to_comms: <message>" → "Sent to communications: <message>"
+
                                     if (preg_match('/^(log_\w+):\s*(.*)$/su', $commentText, $nestedMatch)) {
-                                        $nestedKey   = $nestedMatch[1];
+                                        $nestedKey = $nestedMatch[1];
                                         $nestedValue = trim($nestedMatch[2]);
-                                        $nestedT     = sf_term($nestedKey, $currentUiLang);
-                                        if ($nestedT !== $nestedKey) {
+                                        $nestedTerm = sf_term($nestedKey, $currentUiLang);
+
+                                        if ($nestedTerm !== $nestedKey) {
                                             $commentText = $nestedValue !== ''
-                                                ? $nestedT . ': ' . $nestedValue
-                                                : $nestedT;
+                                                ? $nestedTerm . ': ' . $nestedValue
+                                                : $nestedTerm;
+                                        }
+                                    } elseif (preg_match('/^(log_\w+)$/su', $commentText, $plainLogMatch)) {
+                                        $plainKey = $plainLogMatch[1];
+                                        $plainTerm = sf_term($plainKey, $currentUiLang);
+
+                                        if ($plainTerm !== $plainKey) {
+                                            $commentText = $plainTerm;
                                         }
                                     }
                                 } else {
@@ -1958,6 +1991,8 @@ $iconBase = $base .'/assets/img/icons/';
                 </button>
             </div>
             <?php endif; ?>
+
+
 
             <?php if (file_exists(__DIR__ . '/../partials/view_playlist_status.php')): ?>
                 <?php require __DIR__ . '/../partials/view_playlist_status.php'; ?>
@@ -3495,7 +3530,7 @@ function updateDeleteModalContent() {
 <?php endif; ?>
 
 <?php if (($flash['type'] ?? '') === 'green' && !$athenaExported): ?>
-<?php require __DIR__ . '/../../app/views/partials/athena_reminder_modal.php'; ?>
+<?php require __DIR__ . '/../partials/athena_reminder_modal.php'; ?>
 <?php endif; ?>
 
 
