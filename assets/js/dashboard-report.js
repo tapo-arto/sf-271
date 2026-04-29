@@ -98,12 +98,12 @@
 
     function generateReport() {
         var startDate = (document.getElementById('sf-report-start-date') || {}).value || '';
-        var endDate   = (document.getElementById('sf-report-end-date')   || {}).value || '';
-        var site      = (document.getElementById('sf-report-site')        || {}).value || '';
-        var includeStats     = document.getElementById('sf-report-include-stats')     ? document.getElementById('sf-report-include-stats').checked     : true;
+        var endDate = (document.getElementById('sf-report-end-date') || {}).value || '';
+        var site = (document.getElementById('sf-report-site') || {}).value || '';
+        var includeStats = document.getElementById('sf-report-include-stats') ? document.getElementById('sf-report-include-stats').checked : true;
         var includeWorksites = document.getElementById('sf-report-include-worksites') ? document.getElementById('sf-report-include-worksites').checked : true;
-        var includeInjuries  = document.getElementById('sf-report-include-injuries')  ? document.getElementById('sf-report-include-injuries').checked  : true;
-        var includeRecent    = document.getElementById('sf-report-include-recent')    ? document.getElementById('sf-report-include-recent').checked    : true;
+        var includeInjuries = document.getElementById('sf-report-include-injuries') ? document.getElementById('sf-report-include-injuries').checked : true;
+        var includeRecent = document.getElementById('sf-report-include-recent') ? document.getElementById('sf-report-include-recent').checked : true;
 
         if (!includeStats && !includeWorksites && !includeInjuries && !includeRecent) {
             var selectMsg = (window.SF_REPORT_I18N && window.SF_REPORT_I18N.selectContent)
@@ -119,12 +119,12 @@
         var formData = new FormData();
         formData.append('csrf_token', csrfToken);
         if (startDate) formData.append('start_date', startDate);
-        if (endDate)   formData.append('end_date',   endDate);
-        if (site)      formData.append('site',       site);
-        formData.append('include_stats',      includeStats     ? '1' : '0');
-        formData.append('include_worksites',  includeWorksites ? '1' : '0');
-        formData.append('include_injuries',   includeInjuries  ? '1' : '0');
-        formData.append('include_recent',     includeRecent    ? '1' : '0');
+        if (endDate) formData.append('end_date', endDate);
+        if (site) formData.append('site', site);
+        formData.append('include_stats', includeStats ? '1' : '0');
+        formData.append('include_worksites', includeWorksites ? '1' : '0');
+        formData.append('include_injuries', includeInjuries ? '1' : '0');
+        formData.append('include_recent', includeRecent ? '1' : '0');
 
         var baseUrl = getBaseUrl();
         fetch(baseUrl + '/app/api/generate_dashboard_report.php', {
@@ -134,37 +134,37 @@
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(function (res) {
-            if (!res.ok) {
-                return res.text().then(function (txt) {
-                    throw new Error(txt || 'HTTP ' + res.status);
-                });
-            }
-            var contentType = res.headers.get('Content-Type') || '';
-            if (contentType.indexOf('application/pdf') === -1) {
-                return res.text().then(function (txt) {
-                    throw new Error(txt || 'Unexpected response');
-                });
-            }
-            return res.blob();
-        })
-        .then(function (blob) {
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'dashboard-report-' + new Date().toISOString().slice(0, 10) + '.pdf';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function () {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-            closeModal();
-        })
-        .catch(function (err) {
-            setGenerating(false);
-            alert(I18N.error + '\n' + (err.message || ''));
-        });
+            .then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (txt) {
+                        throw new Error(txt || 'HTTP ' + res.status);
+                    });
+                }
+                var contentType = res.headers.get('Content-Type') || '';
+                if (contentType.indexOf('application/pdf') === -1) {
+                    return res.text().then(function (txt) {
+                        throw new Error(txt || 'Unexpected response');
+                    });
+                }
+                return res.blob();
+            })
+            .then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'dashboard-report-' + new Date().toISOString().slice(0, 10) + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                closeModal();
+            })
+            .catch(function (err) {
+                setGenerating(false);
+                alert(I18N.error + '\n' + (err.message || ''));
+            });
     }
 
     function init() {

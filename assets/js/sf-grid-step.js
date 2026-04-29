@@ -452,11 +452,12 @@
         });
     }
 
-    async function renderGridOptions(selectedCount, imageUrls) {
-        const wrap = el("sfGridPicker");
-        if (!wrap) return;
+async function renderGridOptions(selectedCount, imageUrls, initOptions = {}) {
+    const forceRegenerate = !!initOptions.forceRegenerate;
+    const wrap = el("sfGridPicker");
+    if (!wrap) return;
 
-        const options = getOptionsByCount(selectedCount);
+    const options = getOptionsByCount(selectedCount);
         wrap.innerHTML = "";
         wrap.dataset.count = String(selectedCount);
 
@@ -563,7 +564,7 @@
             const isPersistedFilename = existingBitmapValue
                 && !existingBitmapValue.startsWith('data:image')
                 && !existingBitmapValue.startsWith('temp_grid_');
-            if (isPersistedFilename) {
+            if (isPersistedFilename && !forceRegenerate) {
                 console.log('[Grid] Preserving existing persisted grid bitmap filename:', existingBitmapValue);
                 return;
             }
@@ -592,9 +593,9 @@
         }
     }
 
-    window.SF_GRID_STEP_INIT = async function (selectedCount, imageUrls) {
+    window.SF_GRID_STEP_INIT = async function (selectedCount, imageUrls, options = {}) {
         try {
-            await renderGridOptions(selectedCount, imageUrls);
+            await renderGridOptions(selectedCount, imageUrls, options);
         } catch (e) {
             console.error("Grid step init failed:", e);
         }
@@ -650,7 +651,7 @@
         });
 
         const count = urls.length || 1;
-        window.SF_GRID_STEP_INIT(count, urls);
+        window.SF_GRID_STEP_INIT(count, urls, { forceRegenerate: true });
     }
 
     // Listen for image changes and re-render grid options if on grid step

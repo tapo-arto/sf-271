@@ -929,7 +929,7 @@ export function initFormPage() {
 
                 if (form && previewContainer) {
                     const serverPreview = new ServerPreview({
-                        endpoint: '/api/preview.php',
+                        endpoint: '/app/api/preview.php',
                         debounce: 500,
                         container: previewContainer,
                         form: form

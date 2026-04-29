@@ -85,13 +85,28 @@
             if (!res.ok) throw new Error('HTTP ' + res.status);
             var contentType = res.headers.get('Content-Type') || '';
             if (contentType.indexOf('application/pdf') === -1) throw new Error('Not a PDF');
+            window.sfAthenaLastContentDisposition = res.headers.get('Content-Disposition') || '';
             return res.blob();
         })
         .then(function (blob) {
+            var filename = 'safetyflash_report.pdf';
+            var contentDisposition = window.sfAthenaLastContentDisposition || '';
+
+            if (contentDisposition) {
+                var utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                var normalMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+
+                if (utf8Match && utf8Match[1]) {
+                    filename = decodeURIComponent(utf8Match[1]);
+                } else if (normalMatch && normalMatch[1]) {
+                    filename = normalMatch[1];
+                }
+            }
+
             var a = document.createElement('a');
             a.style.display = 'none';
             a.href = URL.createObjectURL(blob);
-            a.download = 'safetyflash_report.pdf';
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             setTimeout(function () {
@@ -131,10 +146,12 @@
             formattedDate = d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear();
         } catch (e) { /* käytä sellaisenaan */ }
 
-        var exportedLabel = cfg.i18n && cfg.i18n.badge_exported_by ? cfg.i18n.badge_exported_by : 'Viety';
-        var badgePrefix   = cfg.i18n && cfg.i18n.badge_athena_exported ? cfg.i18n.badge_athena_exported : 'Athena · ' + exportedLabel;
-        var text = badgePrefix + ' ' + formattedDate;
-        if (userName) text += ' · ' + userName;
+        var badgePrefix = cfg.i18n && cfg.i18n.badge_athena_exported ? cfg.i18n.badge_athena_exported : 'Tallennettu Athenaan';
+        var text = badgePrefix;
+
+        if (formattedDate) {
+            text += ' ' + formattedDate;
+        }
 
         badge.className = 'sf-athena-badge sf-athena-badge--ok';
         badge.removeAttribute('onclick');
@@ -151,6 +168,11 @@
         var textEl = badge.querySelector('.sf-athena-badge__text');
         if (textEl) {
             textEl.textContent = text;
+        }
+
+        var actionBtn = document.querySelector('.sf-athena-action-btn');
+        if (actionBtn) {
+            actionBtn.remove();
         }
     }
 

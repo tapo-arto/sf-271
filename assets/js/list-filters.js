@@ -411,19 +411,20 @@
 
                 if (filterName === 'type') {
                     options.title = filterType.previousElementSibling?.textContent || i18n.filterType || 'Type';
-                    const allTypesOption = filterType.querySelector('option[value=""]');
-                    options.items = [
-                        { value: '', label: allTypesOption?.textContent || 'All types', selected: filterType.value === '' },
-                        { value: 'red', label: document.querySelector('#f-type option[value="red"]')?.textContent || i18n.typeRed || 'Red', selected: filterType.value === 'red' },
-                        { value: 'yellow', label: document.querySelector('#f-type option[value="yellow"]')?.textContent || i18n.typeYellow || 'Yellow', selected: filterType.value === 'yellow' },
-                        { value: 'green', label: document.querySelector('#f-type option[value="green"]')?.textContent || i18n.typeGreen || 'Green', selected: filterType.value === 'green' }
-                    ];
+                    const typeOptions = Array.from(filterType.options);
+                    options.items = typeOptions.map(opt => ({
+                        value: opt.value,
+                        label: opt.textContent.trim(),
+                        count: opt.dataset.count !== undefined ? opt.dataset.count : undefined,
+                        selected: filterType.value === opt.value
+                    }));
                 } else if (filterName === 'original_type') {
                     options.title = i18n.filterChipOriginalTypeAll || 'Original type';
                     const origTypeOptions = filterOriginalType ? Array.from(filterOriginalType.options) : [];
                     options.items = origTypeOptions.map(opt => ({
                         value: opt.value,
-                        label: opt.textContent,
+                        label: opt.textContent.trim(),
+                        count: opt.dataset.count !== undefined ? opt.dataset.count : undefined,
                         selected: filterOriginalType.value === opt.value
                     }));
                 } else if (filterName === 'state') {
@@ -431,7 +432,8 @@
                     const stateOptions = Array.from(filterState.options);
                     options.items = stateOptions.map(opt => ({
                         value: opt.value,
-                        label: opt.textContent,
+                        label: opt.textContent.trim(),
+                        count: opt.dataset.count !== undefined ? opt.dataset.count : undefined,
                         selected: filterState.value === opt.value
                     }));
                 } else if (filterName === 'site') {
@@ -439,7 +441,8 @@
                     const siteOptions = Array.from(filterSite.options);
                     options.items = siteOptions.map(opt => ({
                         value: opt.value,
-                        label: opt.textContent,
+                        label: opt.textContent.trim(),
+                        count: opt.dataset.count !== undefined ? opt.dataset.count : undefined,
                         selected: filterSite.value === opt.value
                     }));
                 } else if (filterName === 'date') {
@@ -500,28 +503,32 @@
             const typeOptions = Array.from(filterType.options);
             options = typeOptions.map(opt => ({
                 value: opt.value,
-                label: opt.textContent
+                label: opt.textContent.trim(),
+                count: opt.dataset.count !== undefined ? opt.dataset.count : undefined
             }));
         } else if (filterName === 'original_type') {
             currentValue = filterOriginalType ? filterOriginalType.value : '';
             const origTypeOptions = filterOriginalType ? Array.from(filterOriginalType.options) : [];
             options = origTypeOptions.map(opt => ({
                 value: opt.value,
-                label: opt.textContent
+                label: opt.textContent.trim(),
+                count: opt.dataset.count !== undefined ? opt.dataset.count : undefined
             }));
         } else if (filterName === 'state') {
             currentValue = filterState.value;
             const stateOptions = Array.from(filterState.options);
             options = stateOptions.map(opt => ({
                 value: opt.value,
-                label: opt.textContent
+                label: opt.textContent.trim(),
+                count: opt.dataset.count !== undefined ? opt.dataset.count : undefined
             }));
         } else if (filterName === 'site') {
             currentValue = filterSite.value;
             const siteOptions = Array.from(filterSite.options);
             options = siteOptions.map(opt => ({
                 value: opt.value,
-                label: opt.textContent
+                label: opt.textContent.trim(),
+                count: opt.dataset.count !== undefined ? opt.dataset.count : undefined
             }));
         }
 
@@ -538,6 +545,13 @@
 
             optEl.appendChild(radio);
             optEl.appendChild(label);
+
+            if (opt.count !== undefined) {
+                const count = document.createElement('span');
+                count.className = 'sf-chip-dropdown-count';
+                count.textContent = opt.count;
+                optEl.appendChild(count);
+            }
 
             optEl.addEventListener('click', (e) => {
                 e.stopPropagation();
