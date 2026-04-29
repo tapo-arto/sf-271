@@ -606,6 +606,17 @@ try {
             
             $logType = "type: {$oldType} → green";
             sf_log_event($relatedFlashId, 'type_changed', $logType, $batchId);
+
+            // Log source language version if investigation was created from a specific language
+            $sourceLangIdPost = isset($post['source_lang_id']) ? (int)$post['source_lang_id'] : 0;
+            if ($sourceLangIdPost > 0 && $sourceLangIdPost !== $relatedFlashId) {
+                require_once __DIR__ . '/../includes/audit_log.php';
+                sf_audit_log('flash_investigation_created', 'flash', $relatedFlashId, [
+                    'source_lang_id' => $sourceLangIdPost,
+                    'related_flash_id' => $relatedFlashId,
+                    'source_lang' => $origFlash['lang'] ?? null,
+                ]);
+            }
         } catch (Throwable $e) {
             error_log('save_flash: Lokitus epäonnistui (investigation): ' . $e->getMessage());
         }

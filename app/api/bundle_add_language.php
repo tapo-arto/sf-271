@@ -11,6 +11,11 @@ declare(strict_types=1);
  * POST params:
  *   source_id   (int)    – ID of the already-saved source flash
  *   target_lang (string) – language code for the new version
+ *   report_type (string) – optional; 'investigation' skips the duplicate-language check
+ *                          for non-green (red/yellow) versions in the group so that an
+ *                          investigation bundle can be built even when the original
+ *                          language family still contains red/yellow rows.
+ *                          Defaults to the source flash's own type.
  *
  * Returns JSON: { success: bool, redirect: string, new_id: int }
  */
@@ -50,6 +55,7 @@ try {
 
     $sourceId   = isset($_POST['source_id'])   ? (int)$_POST['source_id']          : 0;
     $targetLang = isset($_POST['target_lang'])  ? trim($_POST['target_lang'])        : '';
+    $reportType = isset($_POST['report_type'])  ? trim($_POST['report_type'])        : '';
 
     if ($sourceId <= 0) {
         http_response_code(400);
@@ -90,11 +96,22 @@ try {
         ? (int)$source['translation_group_id']
         : (int)$source['id'];
 
-    // Check that a version for this language does not already exist in the group
-    $checkStmt = $pdo->prepare('
-        SELECT id FROM sf_flashes
-        WHERE (translation_group_id = ? OR id = ?) AND lang = ?
-    ');
+    // Check that a version for this language does not already exist in the group.
+    // When report_type=investigation we only block if a GREEN (investigation) version
+    // already exists for this language – red/yellow siblings are allowed to coexist
+    // during the investigation-bundle creation workflow.
+    $effectiveReportType = $reportType !== '' ? $reportType : ($source['type'] ?? '');
+    if ($effectiveReportType === 'investigation') {
+        $checkStmt = $pdo->prepare('
+            SELECT id FROM sf_flashes
+            WHERE (translation_group_id = ? OR id = ?) AND lang = ? AND type = \'green\'
+        ');
+    } else {
+        $checkStmt = $pdo->prepare('
+            SELECT id FROM sf_flashes
+            WHERE (translation_group_id = ? OR id = ?) AND lang = ?
+        ');
+    }
     $checkStmt->execute([$groupId, $groupId, $targetLang]);
     if ($checkStmt->fetch()) {
         http_response_code(409);
@@ -170,16 +187,15 @@ try {
     require_once __DIR__ . '/../includes/audit_log.php';
     sf_log_event($newId, 'CREATED', sf_term('log_bundle_language_created', $currentUiLang) . ': ' . $targetLang);
 
-    sf_audit_log(
-        'flash_language_version_created',
-        'flash',
-        $newId,
-        [
-            'source_id'   => $sourceId,
-            'target_lang' => $targetLang,
-            'group_id'    => $groupId,
-        ]
-    );
+    $auditDetails = [
+        'source_id'   => $sourceId,
+        'target_lang' => $targetLang,
+        'group_id'    => $groupId,
+    ];
+    if ($effectiveReportType === 'investigation') {
+        $auditDetails['report_type'] = 'investigation';
+    }
+    sf_audit_log('flash_language_version_created', 'flash', $newId, $auditDetails);
 
     sf_app_log("[bundle_add_language] Created new draft id={$newId} lang={$targetLang} group={$groupId}");
 
