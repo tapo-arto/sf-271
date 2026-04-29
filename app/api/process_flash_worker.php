@@ -78,26 +78,28 @@ if (!defined('SF_FONT_SIZE_REFERENCE')) {
  * @param int $charsPerLine Average characters per line (default: 45)
  * @return int Estimated number of lines
  */
-function sf_estimate_lines($text, $charsPerLine = SF_GREEN_CHARS_PER_LINE) {
-    if (empty($text)) {
-        return 0;
-    }
-    
-    $lines = 0;
-    $paragraphs = explode("\n", $text);
-    
-    foreach ($paragraphs as $p) {
-        $p = trim($p);
-        if ($p === '') {
-            continue;
+if (!function_exists('sf_estimate_lines')) {
+    function sf_estimate_lines($text, $charsPerLine = SF_GREEN_CHARS_PER_LINE) {
+        if (empty($text)) {
+            return 0;
         }
         
-        // Each paragraph/bullet point is at least 1 line
-        // Additional lines based on character count
-        $lines += max(1, (int)ceil(mb_strlen($p) / $charsPerLine));
+        $lines = 0;
+        $paragraphs = explode("\n", $text);
+        
+        foreach ($paragraphs as $p) {
+            $p = trim($p);
+            if ($p === '') {
+                continue;
+            }
+            
+            // Each paragraph/bullet point is at least 1 line
+            // Additional lines based on character count
+            $lines += max(1, (int)ceil(mb_strlen($p) / $charsPerLine));
+        }
+        
+        return $lines;
     }
-    
-    return $lines;
 }
 
 /**
@@ -106,30 +108,32 @@ function sf_estimate_lines($text, $charsPerLine = SF_GREEN_CHARS_PER_LINE) {
  * @param mixed $fontSizeOverride Font size override value (numeric, S/M/L/XL, auto, or null)
  * @return float Multiplier to apply to character limits
  */
-function sf_get_font_size_multiplier($fontSizeOverride): float {
-    $legacyMultipliers = [
-        'S' => 1.4,   // Small font = 140% of base limit (40% more text fits)
-        'M' => 1.2,   // Medium font = 120% of base limit (20% more text fits)
-        'L' => 1.0,   // Large font = 100% of base limit
-        'XL' => 0.85, // XL font = 85% of base limit (15% less text fits)
-    ];
+if (!function_exists('sf_get_font_size_multiplier')) {
+    function sf_get_font_size_multiplier($fontSizeOverride): float {
+        $legacyMultipliers = [
+            'S' => 1.4,   // Small font = 140% of base limit (40% more text fits)
+            'M' => 1.2,   // Medium font = 120% of base limit (20% more text fits)
+            'L' => 1.0,   // Large font = 100% of base limit
+            'XL' => 0.85, // XL font = 85% of base limit (15% less text fits)
+        ];
 
-    if (is_string($fontSizeOverride)) {
-        $normalized = strtoupper(trim($fontSizeOverride));
-        if (isset($legacyMultipliers[$normalized])) {
-            return $legacyMultipliers[$normalized];
+        if (is_string($fontSizeOverride)) {
+            $normalized = strtoupper(trim($fontSizeOverride));
+            if (isset($legacyMultipliers[$normalized])) {
+                return $legacyMultipliers[$normalized];
+            }
         }
-    }
 
-    if (is_numeric($fontSizeOverride)) {
-        $size = max(SF_FONT_SIZE_OVERRIDE_MIN, min(SF_FONT_SIZE_OVERRIDE_MAX, (int) $fontSizeOverride));
-        if ($size <= 0) {
-            return 1.0;
+        if (is_numeric($fontSizeOverride)) {
+            $size = max(SF_FONT_SIZE_OVERRIDE_MIN, min(SF_FONT_SIZE_OVERRIDE_MAX, (int) $fontSizeOverride));
+            if ($size <= 0) {
+                return 1.0;
+            }
+            return SF_FONT_SIZE_REFERENCE / $size;
         }
-        return SF_FONT_SIZE_REFERENCE / $size;
-    }
 
-    return 1.0; // auto/null
+        return 1.0; // auto/null
+    }
 }
 
 /**
@@ -140,12 +144,14 @@ function sf_get_font_size_multiplier($fontSizeOverride): float {
  * @param string $fallback Fallback value if result is empty
  * @return string Sanitized string
  */
-function sf_sanitize_for_filename($text, $maxLength, $fallback) {
-    // Remove all characters not matching the safe pattern
-    $sanitized = preg_replace(SF_FILENAME_SANITIZE_PATTERN, '', $text);
-    $sanitized = substr($sanitized, 0, $maxLength);
-    // Use strict check to preserve '0' strings while catching truly empty strings
-    return (trim($sanitized) === '') ? $fallback : $sanitized;
+if (!function_exists('sf_sanitize_for_filename')) {
+    function sf_sanitize_for_filename($text, $maxLength, $fallback) {
+        // Remove all characters not matching the safe pattern
+        $sanitized = preg_replace(SF_FILENAME_SANITIZE_PATTERN, '', $text);
+        $sanitized = substr($sanitized, 0, $maxLength);
+        // Use strict check to preserve '0' strings while catching truly empty strings
+        return (trim($sanitized) === '') ? $fallback : $sanitized;
+    }
 }
 
 /**
@@ -159,176 +165,188 @@ function sf_sanitize_for_filename($text, $maxLength, $fallback) {
  * @param int|null $cardNumber Card number for multi-card reports (1 or 2)
  * @return string Sanitized filename
  */
-function sf_generate_preview_filename($site, $title, $lang, $type = SF_DEFAULT_FLASH_TYPE, $occurredAt = null, $cardNumber = null) {
-    // Get date in YYYY_MM_DD format
-    $date = $occurredAt ? date('Y_m_d', strtotime($occurredAt)) : date('Y_m_d');
-    
-    // Sanitize site name and title using helper function
-    $siteSafe = sf_sanitize_for_filename($site, SF_MAX_SITE_NAME_LENGTH, 'Site');
-    $titleSafe = sf_sanitize_for_filename($title, SF_MAX_TITLE_LENGTH, 'Flash');
-    
-    // Ensure language is valid, fallback to FI
-    $langSafe = in_array($lang, SF_ALLOWED_LANGUAGES, true) ? strtoupper($lang) : 'FI';
-    
-    // Ensure type is valid, fallback to YELLOW
-    $typeSafe = in_array(strtolower($type), ['yellow', 'green'], true) ? strtoupper($type) : 'YELLOW';
-    
-    // Build filename: SF_YYYY_MM_DD_TYPE_Site-Title-LANG.jpg
-    // For green type with card number, add card suffix after language: -LANG-1.jpg or -LANG-2.jpg
-    $cardSuffix = '';
-    if ($cardNumber !== null && strtolower($type) === 'green') {
-        $cardSuffix = "-{$cardNumber}";
-    }
-    $filename = "SF_{$date}_{$typeSafe}_{$siteSafe}-{$titleSafe}-{$langSafe}{$cardSuffix}.jpg";
-    
-    return $filename;
-}
-
-function sf_save_dataurl_preview_v2($dataurl, $uploadDir, $prefix = 'preview', $flashData = null) {
-    if (empty($dataurl) || strpos($dataurl, 'data:image') !== 0) {
-        sf_app_log('sf_save_dataurl_preview_v2: Invalid dataurl', 'ERROR');
-        return false;
-    }
-    $parts = explode(',', $dataurl);
-    if (count($parts) !== 2) {
-        sf_app_log('sf_save_dataurl_preview_v2: Could not parse dataurl', 'ERROR');
-        return false;
-    }
-    $imageData = base64_decode($parts[1], true);
-    if ($imageData === false) {
-        sf_app_log('sf_save_dataurl_preview_v2: base64_decode failed', 'ERROR');
-        return false;
-    }
-    
-    // BUG FIX 3: Use descriptive filename if flash data provided
-    if ($flashData && isset($flashData['site']) && isset($flashData['title']) && isset($flashData['lang'])) {
-        // Determine card number from prefix for green type with two cards
-        $cardNumber = null;
-        $type = $flashData['type'] ?? SF_DEFAULT_FLASH_TYPE;
-        if (strtolower($type) === 'green') {
-            // For green type, use card number to differentiate filenames
-            $cardNumber = ($prefix === 'preview2') ? 2 : 1;
-        }
+if (!function_exists('sf_generate_preview_filename')) {
+    function sf_generate_preview_filename($site, $title, $lang, $type = SF_DEFAULT_FLASH_TYPE, $occurredAt = null, $cardNumber = null) {
+        // Get date in YYYY_MM_DD format
+        $date = $occurredAt ? date('Y_m_d', strtotime($occurredAt)) : date('Y_m_d');
         
-        $filename = sf_generate_preview_filename(
-            $flashData['site'],
-            $flashData['title'],
-            $flashData['lang'],
-            $type,
-            $flashData['occurred_at'] ?? null,
-            $cardNumber
-        );
-    } else {
-        // Fallback to old format if data not available
-        $filename = $prefix . '_' . time() . '_' . uniqid() . '.jpg';
-    }
-    
-    $targetPath = $uploadDir . $filename;
-    $saved = false;
-    try {
-        if (extension_loaded('imagick')) {
-            $im = new Imagick();
-            $im->readImageBlob($imageData);
-            if ($im->getImageAlphaChannel()) {
-                $im->setImageBackgroundColor('white');
-                $im = $im->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);
-            }
-            $im->cropThumbnailImage(1920, 1080);
-            $im->setImageFormat('jpeg');
-            $im->setImageCompression(Imagick::COMPRESSION_JPEG);
-            $im->setImageCompressionQuality(88);
-            $im->writeImage($targetPath);
-            $saved = true;
-        } else if (extension_loaded('gd')) {
-            $image = @imagecreatefromstring($imageData);
-            if ($image !== false) {
-                $src_width = imagesx($image);
-                $src_height = imagesy($image);
-                $dst_width = 1920; $dst_height = 1080;
-                $dst = imagecreatetruecolor($dst_width, $dst_height);
-                $white = imagecolorallocate($dst, 255, 255, 255);
-                imagefill($dst, 0, 0, $white);
-                
-                // Issue 2: Calculate scale to fit (not stretch) - aspect-aware resizing
-                $scaleX = $dst_width / $src_width;
-                $scaleY = $dst_height / $src_height;
-                $scale = min($scaleX, $scaleY);
-                $newWidth = (int) round($src_width * $scale);
-                $newHeight = (int) round($src_height * $scale);
-                $offsetX = (int) (($dst_width - $newWidth) / 2);
-                $offsetY = (int) (($dst_height - $newHeight) / 2);
-                
-                imagecopyresampled($dst, $image, $offsetX, $offsetY, 0, 0, $newWidth, $newHeight, $src_width, $src_height);
-                imagejpeg($dst, $targetPath, 88);
-                imagedestroy($image); imagedestroy($dst);
-                $saved = true;
-            }
+        // Sanitize site name and title using helper function
+        $siteSafe = sf_sanitize_for_filename($site, SF_MAX_SITE_NAME_LENGTH, 'Site');
+        $titleSafe = sf_sanitize_for_filename($title, SF_MAX_TITLE_LENGTH, 'Flash');
+        
+        // Ensure language is valid, fallback to FI
+        $langSafe = in_array($lang, SF_ALLOWED_LANGUAGES, true) ? strtoupper($lang) : 'FI';
+        
+        // Ensure type is valid, fallback to YELLOW
+        $typeSafe = in_array(strtolower($type), ['yellow', 'green'], true) ? strtoupper($type) : 'YELLOW';
+        
+        // Build filename: SF_YYYY_MM_DD_TYPE_Site-Title-LANG.jpg
+        // For green type with card number, add card suffix after language: -LANG-1.jpg or -LANG-2.jpg
+        $cardSuffix = '';
+        if ($cardNumber !== null && strtolower($type) === 'green') {
+            $cardSuffix = "-{$cardNumber}";
         }
-    } catch (Exception $e) {
-        sf_app_log('sf_save_dataurl_preview_v2: Exception: ' . $e->getMessage(), 'ERROR');
-    }
-    return $saved ? $filename : false;
-}
-
-function sf_safe_filename(string $name): string {
-    $name = preg_replace('/[^\w\-. ]+/u', '_', $name);
-    $name = preg_replace('/_+/', '_', $name);
-    $name = trim($name, '._');
-    if ($name === '') $name = bin2hex(random_bytes(4));
-    return mb_substr($name, 0, 200);
-}
-
-function sf_unique_filename(string $dir, string $basename, string $ext): string {
-    $i = 0;
-    do {
-        $suffix = $i === 0 ? '' : "-$i";
-        $name = $basename . $suffix . '.' . $ext;
-        $i++;
-    } while (file_exists($dir . $name) && $i < 1000);
-    return $name;
-}
-
-function sf_compress_image(string $source, string $dest, string $mime): bool {
-    $maxWidth = 1920; $maxHeight = 1920; $jpegQuality = 85;
-    switch ($mime) {
-        case 'image/jpeg': $srcImage = @imagecreatefromjpeg($source); break;
-        case 'image/png': $srcImage = @imagecreatefrompng($source); break;
-        case 'image/webp': $srcImage = @imagecreatefromwebp($source); break;
-        default: return false;
-    }
-    if (!$srcImage) return false;
-    $origWidth = imagesx($srcImage); $origHeight = imagesy($srcImage);
-    $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight, 1.0);
-    $newWidth = (int) round($origWidth * $ratio); $newHeight = (int) round($origHeight * $ratio);
-    $newImage = imagecreatetruecolor($newWidth, $newHeight);
-    if (!$newImage) { imagedestroy($srcImage); return false; }
-    $white = imagecolorallocate($newImage, 255, 255, 255);
-    imagefill($newImage, 0, 0, $white);
-    $resized = imagecopyresampled($newImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
-    if (!$resized) { imagedestroy($srcImage); imagedestroy($newImage); return false; }
-    $saved = imagejpeg($newImage, $dest, $jpegQuality);
-    imagedestroy($srcImage); imagedestroy($newImage);
-    return $saved;
-}
-
-function sf_handle_uploaded_image(array $file, ?string $destDir = null): ?string {
-    if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) return null;
-    $destDir = $destDir ?: __DIR__ . '/../../uploads/images/';
-    $tmp = $file['tmp_name'];
-    $maxUploadSize = 20 * 1024 * 1024;
-    if (filesize($tmp) > $maxUploadSize) return null;
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mime = $finfo->file($tmp);
-    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) return null;
-    $origName = basename($file['name'] ?? ('img_' . time()));
-    $base = sf_safe_filename(pathinfo($origName, PATHINFO_FILENAME));
-    $filename = sf_unique_filename($destDir, $base, 'jpg');
-    $dest = $destDir . $filename;
-    if (sf_compress_image($tmp, $dest, $mime)) {
-        @chmod($dest, 0644);
+        $filename = "SF_{$date}_{$typeSafe}_{$siteSafe}-{$titleSafe}-{$langSafe}{$cardSuffix}.jpg";
+        
         return $filename;
     }
-    return null;
+}
+
+if (!function_exists('sf_save_dataurl_preview_v2')) {
+    function sf_save_dataurl_preview_v2($dataurl, $uploadDir, $prefix = 'preview', $flashData = null) {
+        if (empty($dataurl) || strpos($dataurl, 'data:image') !== 0) {
+            sf_app_log('sf_save_dataurl_preview_v2: Invalid dataurl', 'ERROR');
+            return false;
+        }
+        $parts = explode(',', $dataurl);
+        if (count($parts) !== 2) {
+            sf_app_log('sf_save_dataurl_preview_v2: Could not parse dataurl', 'ERROR');
+            return false;
+        }
+        $imageData = base64_decode($parts[1], true);
+        if ($imageData === false) {
+            sf_app_log('sf_save_dataurl_preview_v2: base64_decode failed', 'ERROR');
+            return false;
+        }
+        
+        // BUG FIX 3: Use descriptive filename if flash data provided
+        if ($flashData && isset($flashData['site']) && isset($flashData['title']) && isset($flashData['lang'])) {
+            // Determine card number from prefix for green type with two cards
+            $cardNumber = null;
+            $type = $flashData['type'] ?? SF_DEFAULT_FLASH_TYPE;
+            if (strtolower($type) === 'green') {
+                // For green type, use card number to differentiate filenames
+                $cardNumber = ($prefix === 'preview2') ? 2 : 1;
+            }
+            
+            $filename = sf_generate_preview_filename(
+                $flashData['site'],
+                $flashData['title'],
+                $flashData['lang'],
+                $type,
+                $flashData['occurred_at'] ?? null,
+                $cardNumber
+            );
+        } else {
+            // Fallback to old format if data not available
+            $filename = $prefix . '_' . time() . '_' . uniqid() . '.jpg';
+        }
+        
+        $targetPath = $uploadDir . $filename;
+        $saved = false;
+        try {
+            if (extension_loaded('imagick')) {
+                $im = new Imagick();
+                $im->readImageBlob($imageData);
+                if ($im->getImageAlphaChannel()) {
+                    $im->setImageBackgroundColor('white');
+                    $im = $im->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);
+                }
+                $im->cropThumbnailImage(1920, 1080);
+                $im->setImageFormat('jpeg');
+                $im->setImageCompression(Imagick::COMPRESSION_JPEG);
+                $im->setImageCompressionQuality(88);
+                $im->writeImage($targetPath);
+                $saved = true;
+            } else if (extension_loaded('gd')) {
+                $image = @imagecreatefromstring($imageData);
+                if ($image !== false) {
+                    $src_width = imagesx($image);
+                    $src_height = imagesy($image);
+                    $dst_width = 1920; $dst_height = 1080;
+                    $dst = imagecreatetruecolor($dst_width, $dst_height);
+                    $white = imagecolorallocate($dst, 255, 255, 255);
+                    imagefill($dst, 0, 0, $white);
+                    
+                    // Issue 2: Calculate scale to fit (not stretch) - aspect-aware resizing
+                    $scaleX = $dst_width / $src_width;
+                    $scaleY = $dst_height / $src_height;
+                    $scale = min($scaleX, $scaleY);
+                    $newWidth = (int) round($src_width * $scale);
+                    $newHeight = (int) round($src_height * $scale);
+                    $offsetX = (int) (($dst_width - $newWidth) / 2);
+                    $offsetY = (int) (($dst_height - $newHeight) / 2);
+                    
+                    imagecopyresampled($dst, $image, $offsetX, $offsetY, 0, 0, $newWidth, $newHeight, $src_width, $src_height);
+                    imagejpeg($dst, $targetPath, 88);
+                    imagedestroy($image); imagedestroy($dst);
+                    $saved = true;
+                }
+            }
+        } catch (Exception $e) {
+            sf_app_log('sf_save_dataurl_preview_v2: Exception: ' . $e->getMessage(), 'ERROR');
+        }
+        return $saved ? $filename : false;
+    }
+}
+
+if (!function_exists('sf_safe_filename')) {
+    function sf_safe_filename(string $name): string {
+        $name = preg_replace('/[^\w\-. ]+/u', '_', $name);
+        $name = preg_replace('/_+/', '_', $name);
+        $name = trim($name, '._');
+        if ($name === '') $name = bin2hex(random_bytes(4));
+        return mb_substr($name, 0, 200);
+    }
+}
+
+if (!function_exists('sf_unique_filename')) {
+    function sf_unique_filename(string $dir, string $basename, string $ext): string {
+        $i = 0;
+        do {
+            $suffix = $i === 0 ? '' : "-$i";
+            $name = $basename . $suffix . '.' . $ext;
+            $i++;
+        } while (file_exists($dir . $name) && $i < 1000);
+        return $name;
+    }
+}
+
+if (!function_exists('sf_compress_image')) {
+    function sf_compress_image(string $source, string $dest, string $mime): bool {
+        $maxWidth = 1920; $maxHeight = 1920; $jpegQuality = 85;
+        switch ($mime) {
+            case 'image/jpeg': $srcImage = @imagecreatefromjpeg($source); break;
+            case 'image/png': $srcImage = @imagecreatefrompng($source); break;
+            case 'image/webp': $srcImage = @imagecreatefromwebp($source); break;
+            default: return false;
+        }
+        if (!$srcImage) return false;
+        $origWidth = imagesx($srcImage); $origHeight = imagesy($srcImage);
+        $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight, 1.0);
+        $newWidth = (int) round($origWidth * $ratio); $newHeight = (int) round($origHeight * $ratio);
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+        if (!$newImage) { imagedestroy($srcImage); return false; }
+        $white = imagecolorallocate($newImage, 255, 255, 255);
+        imagefill($newImage, 0, 0, $white);
+        $resized = imagecopyresampled($newImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+        if (!$resized) { imagedestroy($srcImage); imagedestroy($newImage); return false; }
+        $saved = imagejpeg($newImage, $dest, $jpegQuality);
+        imagedestroy($srcImage); imagedestroy($newImage);
+        return $saved;
+    }
+}
+
+if (!function_exists('sf_handle_uploaded_image')) {
+    function sf_handle_uploaded_image(array $file, ?string $destDir = null): ?string {
+        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) return null;
+        $destDir = $destDir ?: __DIR__ . '/../../uploads/images/';
+        $tmp = $file['tmp_name'];
+        $maxUploadSize = 20 * 1024 * 1024;
+        if (filesize($tmp) > $maxUploadSize) return null;
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmp);
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) return null;
+        $origName = basename($file['name'] ?? ('img_' . time()));
+        $base = sf_safe_filename(pathinfo($origName, PATHINFO_FILENAME));
+        $filename = sf_unique_filename($destDir, $base, 'jpg');
+        $dest = $destDir . $filename;
+        if (sf_compress_image($tmp, $dest, $mime)) {
+            @chmod($dest, 0644);
+            return $filename;
+        }
+        return null;
+    }
 }
 
 // =========================================================================

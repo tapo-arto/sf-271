@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/protect.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/../../assets/lib/sf_terms.php';
 
 $base = rtrim($config['base_url'] ?? '', '/');
 
@@ -115,7 +116,8 @@ try {
 
 // Insert system comment
 try {
-    $commentDesc = 'log_comment_label: log_athena_marked_done';
+    $commentDesc = 'log_comment_label: ' . sf_term('log_athena_marked_done', $flash['lang'] ?? 'fi');
+
     $stmtComment = $pdo->prepare("
         INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, created_at)
         VALUES (:flash_id, :user_id, :event_type, :description, NOW())
