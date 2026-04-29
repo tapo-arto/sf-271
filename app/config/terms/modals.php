@@ -888,4 +888,25 @@ return [
     'it' => 'Attenzione: questa versione linguistica è già pubblicata',
     'el' => 'Προειδοποίηση: αυτή η γλωσσική έκδοση είναι ήδη δημοσιευμένη',
 ],
+'investigation_error_load_siblings' => [
+    'fi' => 'Virhe haettaessa kieliversioita.',
+    'sv' => 'Fel vid hämtning av språkversioner.',
+    'en' => 'Error loading language versions.',
+    'it' => 'Errore nel caricamento delle versioni linguistiche.',
+    'el' => 'Σφάλμα φόρτωσης γλωσσικών εκδόσεων.',
+],
+'investigation_error_collision_check' => [
+    'fi' => 'Virhe kollisiotarkistuksessa.',
+    'sv' => 'Fel vid kollisionskontroll.',
+    'en' => 'Error during collision check.',
+    'it' => 'Errore durante il controllo delle collisioni.',
+    'el' => 'Σφάλμα κατά τον έλεγχο συγκρούσεων.',
+],
+'investigation_error_network' => [
+    'fi' => 'Verkkovirhe kollisiotarkistuksessa.',
+    'sv' => 'Nätverksfel vid kollisionskontroll.',
+    'en' => 'Network error during collision check.',
+    'it' => 'Errore di rete durante il controllo delle collisioni.',
+    'el' => 'Σφάλμα δικτύου κατά τον έλεγχο συγκρούσεων.',
+],
 ];

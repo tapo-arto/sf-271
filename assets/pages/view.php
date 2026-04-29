@@ -5475,6 +5475,9 @@ window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
         open:     <?= json_encode(sf_term('investigation_collision_open', $currentUiLang) ?? 'Avaa muokattavaksi', JSON_UNESCAPED_UNICODE) ?>,
         skip:     <?= json_encode(sf_term('investigation_collision_skip', $currentUiLang) ?? 'Ohita tämä kieli', JSON_UNESCAPED_UNICODE) ?>,
         pubWarn:  <?= json_encode(sf_term('investigation_collision_published_warning', $currentUiLang) ?? 'Varoitus: tämä kieliversio on jo julkaistu', JSON_UNESCAPED_UNICODE) ?>,
+        errLoad:  <?= json_encode(sf_term('investigation_error_load_siblings', $currentUiLang) ?? 'Virhe haettaessa kieliversioita.', JSON_UNESCAPED_UNICODE) ?>,
+        errCheck: <?= json_encode(sf_term('investigation_error_collision_check', $currentUiLang) ?? 'Virhe kollisiotarkistuksessa.', JSON_UNESCAPED_UNICODE) ?>,
+        errNet:   <?= json_encode(sf_term('investigation_error_network', $currentUiLang) ?? 'Verkkovirhe kollisiotarkistuksessa.', JSON_UNESCAPED_UNICODE) ?>,
     };
 
     var langNames = {fi:'Suomi 🇫🇮', sv:'Ruotsi 🇸🇪', en:'Englanti 🇬🇧', it:'Italia 🇮🇹', el:'Kreikka 🇬🇷'};
@@ -5578,7 +5581,7 @@ window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
                 openModal('modalInvestigationBase');
             })
             .catch(function () {
-                loading.textContent = 'Virhe haettaessa kieliversioita.';
+                loading.textContent = T.errLoad;
             });
     }
 
@@ -5631,14 +5634,14 @@ window.SF_CSRF_TOKEN = <?= json_encode($viewCsrfToken) ?>;
         fetch(baseUrl + '/app/api/check_investigation_collisions.php', { method: 'POST', body: fd })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (!data.success) { alert('Virhe kollisiotarkistuksessa.'); return; }
+                if (!data.success) { alert(T.errCheck); return; }
                 collisionData = data.collisions || {};
                 var hasCollision = Object.keys(collisionData).some(function (l) {
                     return collisionData[l].status !== 'free';
                 });
                 if (!hasCollision) { executeCreation(); } else { showCollisionModal(); }
             })
-            .catch(function () { alert('Verkkovirhe kollisiotarkistuksessa.'); });
+            .catch(function () { alert(T.errNet); });
     }
 
     function showCollisionModal() {

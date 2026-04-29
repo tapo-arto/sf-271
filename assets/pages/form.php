@@ -42,27 +42,6 @@ try {
 // --- Source language version pre-fill (for investigation created from view.php button) ---
 // When source_lang_id is provided in GET, pre-fill form from that specific language version.
 // This does NOT change which flash gets converted (that's still related_flash_id), it
-// only changes the content shown in the form for the user to edit.
-$sourceLangId = isset($_GET['source_lang_id']) ? (int)$_GET['source_lang_id'] : 0;
-$sourceLangFlash = null;
-if ($sourceLangId > 0) {
-    try {
-        $sourceLangFlash = Database::fetchOne(
-            "SELECT id, type, title, title_short, site, site_detail, description,
-                    occurred_at, image_main, image_2, image_3,
-                    annotations_data, image1_transform, image2_transform, image3_transform,
-                    grid_layout, grid_bitmap, lang
-             FROM sf_flashes WHERE id = :id AND state = 'published' LIMIT 1",
-            [':id' => $sourceLangId]
-        );
-    } catch (Throwable $e) {
-        error_log('form.php load source lang flash error: ' . $e->getMessage());
-    }
-}
-
-// --- Source language version pre-fill (for investigation created from view.php button) ---
-// When source_lang_id is provided in GET, pre-fill form from that specific language version.
-// This does NOT change which flash gets converted (that's still related_flash_id), it
 // only changes the content (data attributes) shown for the user to edit.
 //
 // Implementation: if source_lang_id differs from related_flash_id, create a synthetic
@@ -2764,6 +2743,10 @@ document.addEventListener('DOMContentLoaded', function () {
 // Pre-select the related flash dropdown and trigger form pre-fill when coming from view.php.
 // Using a short timeout to ensure bootstrap.js has bound the change listener first.
 document.addEventListener('DOMContentLoaded', function () {
+    // 150ms gives form.js (type="module") time to import bootstrap.js and call
+    // bindRelatedFlash() before we dispatch the synthetic 'change' event.
+    // Module scripts always execute after the main thread completes DOMContentLoaded
+    // parsing, but may still be deferred relative to other DOMContentLoaded handlers.
     setTimeout(function () {
         var sel = document.getElementById('sf-related-flash');
         if (!sel) { return; }
