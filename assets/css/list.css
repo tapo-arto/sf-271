@@ -354,6 +354,28 @@ form.filters {
     border: 1px solid #4b5563;
 }
 
+.badge-athena-inline {
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-athena-saved {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #bbf7d0;
+}
+
+.sf-meta-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 /* Language badge for fallback versions */
 .sf-lang-badge {
     display: inline-flex;
@@ -2076,11 +2098,22 @@ jne.
 
 .sf-chip-dropdown-count,
 .sf-filter-dropdown-count {
-    font-size: 13px;
-    color: #94a3b8;
-    background: #f3f4f6;
+    margin-left: auto;
+    min-width: 28px;
     padding: 2px 8px;
-    border-radius: 10px;
+    border-radius: 999px;
+    background: #eef2f7;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.sf-chip-dropdown-option.selected .sf-chip-dropdown-count,
+.sf-filter-dropdown-item.selected .sf-filter-dropdown-count {
+    background: #dcfce7;
+    color: #15803d;
 }
 
 /* ===== DATE DROPDOWN ===== */

@@ -4371,75 +4371,86 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
     outline: none;
     box-shadow: none;
 }
-
 /* =========================
    Athena Badge
    ========================= */
+.sf-view-language-status-row {
+    display: grid;
+    grid-template-columns: 1fr var(--sf-sidebar-width);
+    gap: var(--sf-spacing-page);
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.sf-view-language-status-row .lang-switcher {
+    margin-bottom: 0;
+}
+
+.sf-athena-status-card {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 0;
+    width: 100%;
+}
+
 .sf-athena-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 7px 13px;
     border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    line-height: 1.3;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
     white-space: nowrap;
     border: 1px solid transparent;
-    transition: all 0.2s ease;
 }
 
-/* Viety – pehmeä vihreä success */
 .sf-athena-badge--ok {
-    background: #f0fdf4;
-    color: #166534;
-    border-color: #bbf7d0;
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.14);
 }
 
-.sf-athena-badge--ok .sf-athena-badge__icon {
-    filter: invert(30%) sepia(80%) saturate(500%) hue-rotate(100deg);
-}
-
-/* Ei viety – hillitty amber/oranssi, klikattava */
 .sf-athena-badge--missing {
     background: #fff7ed;
     color: #92400e;
     border-color: #fed7aa;
+}
+
+.sf-athena-badge__icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.sf-athena-action-btn {
+    min-height: 38px;
+    padding: 7px 14px;
+    border: none;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 800;
     cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+    transition: all 0.2s ease;
 }
 
-.sf-athena-badge--missing .sf-athena-badge__icon {
-    filter: invert(35%) sepia(70%) saturate(600%) hue-rotate(10deg);
-}
-
-.sf-athena-badge--missing:hover,
-.sf-athena-badge--missing:focus {
-    background: #ffedd5;
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+.sf-athena-action-btn:hover,
+.sf-athena-action-btn:focus {
+    background: #1d4ed8;
     transform: translateY(-1px);
     outline: none;
 }
 
-.sf-athena-badge__icon {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-    .sf-view-back-right {
-        width: 100%;
-        align-items: flex-end;
-    }
-
-    .sf-athena-badge {
-        max-width: 100%;
-        white-space: normal;
-        text-align: left;
-    }
-}
-
-/* Athena modal footer: "muistuta myöhemmin" -linkki */
 .sf-athena-remind-later-btn {
     display: inline-flex;
     align-items: center;
@@ -4457,4 +4468,25 @@ body.sf-modal-open #previewImageModal .sf-download-buttons {
 
 .sf-athena-remind-later-btn:hover {
     color: #374151;
+}
+
+@media (max-width: 900px) {
+    .sf-view-language-status-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .sf-athena-status-card {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .sf-athena-badge,
+    .sf-athena-action-btn {
+        white-space: normal;
+        text-align: left;
+    }
 }
