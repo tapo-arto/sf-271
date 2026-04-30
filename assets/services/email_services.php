@@ -1884,7 +1884,7 @@ function sf_get_worksite_notification_recipients(PDO $pdo, int $flashId, array $
     $stmtFlash->execute([$flashId]);
     $sourceWorksite = trim((string)($stmtFlash->fetchColumn() ?: ''));
 
-    // Hae intonäyttöavaimien worksite_id:t
+    // Hae infonäyttöavaimien worksite_id:t
     $placeholders = implode(',', array_fill(0, count($displayKeyIds), '?'));
     $stmtKeys = $pdo->prepare("
         SELECT DISTINCT k.worksite_id
