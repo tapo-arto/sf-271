@@ -164,6 +164,16 @@
     object-fit: contain;
 }
 
+/* ===== ICON-ONLY NAV LINK (Asetukset, Xibo Koonti) ===== */
+.sf-nav-link-icon-only {
+    padding: 10px 12px;
+    gap: 0;
+}
+
+.sf-nav-link-icon-only span {
+    display: none;
+}
+
 /* ===== NOTIFICATION BADGE (Updates) ===== */
 .sf-nav-badge {
     position: absolute;

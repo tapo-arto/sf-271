@@ -315,7 +315,9 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
 <?php if ($user && (int)$user['role_id'] === 1): ?>
 
 <a href="<?= htmlspecialchars($base) ?>/index.php?page=settings"
-   class="sf-nav-link <?= $currentPage === 'settings' ? 'sf-nav-active' : '' ?>"
+   class="sf-nav-link sf-nav-link-icon-only <?= $currentPage === 'settings' ? 'sf-nav-active' : '' ?>"
+   aria-label="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>"
+   title="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>"
    data-tooltip="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/settings.svg"
          alt=""
@@ -328,7 +330,9 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
 
 <?php if (function_exists('sf_is_admin_or_safety') && sf_is_admin_or_safety()): ?>
 <a href="<?= htmlspecialchars($xiboSummaryUrl, ENT_QUOTES, 'UTF-8') ?>"
-   class="sf-nav-link"
+   class="sf-nav-link sf-nav-link-icon-only"
+   aria-label="Xibo Koonti"
+   title="Xibo Koonti"
    data-tooltip="Xibo Koonti">
     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/screen.svg"
          alt=""
