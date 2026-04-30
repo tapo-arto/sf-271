@@ -1473,4 +1473,20 @@ return [
     'it' => 'Versione linguistica creata. Navigazione in corso...',
     'el' => 'Η γλωσσική έκδοση δημιουργήθηκε. Πλοήγηση...',
 ],
+
+// Worksite email notification (SafetyFlash published on other worksites' displays)
+'email_worksite_notification_subject' => [
+    'fi' => 'Uusi SafetyFlash julkaistu työmaanne infonäytöillä',
+    'sv' => 'Ny SafetyFlash publicerad på er arbetsplats informationsskärmar',
+    'en' => 'New SafetyFlash published on your worksite\'s info screens',
+    'it' => 'Nuovo SafetyFlash pubblicato sui display informativi del vostro cantiere',
+    'el' => 'Νέο SafetyFlash δημοσιεύτηκε στις οθόνες πληροφοριών του εργοταξίου σας',
+],
+'email_worksite_notification_body' => [
+    'fi' => 'Uusi SafetyFlash on julkaistu työmaanne infonäytöillä.',
+    'sv' => 'En ny SafetyFlash har publicerats på er arbetsplats informationsskärmar.',
+    'en' => 'A new SafetyFlash has been published on your worksite\'s info screens.',
+    'it' => 'Un nuovo SafetyFlash è stato pubblicato sui display informativi del vostro cantiere.',
+    'el' => 'Ένα νέο SafetyFlash δημοσιεύτηκε στις οθόνες πληροφοριών του εργοταξίου σας.',
+],
 ];

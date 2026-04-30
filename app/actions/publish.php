@@ -81,6 +81,7 @@ if (!$isAdmin && !$isSafety && !$isComms) {
 // Lue POST-parametrit (julkaisumodaalista)
 $sendToDistribution = isset($_POST['send_to_distribution']) && $_POST['send_to_distribution'] === '1';
 $hasPersonalInjury = isset($_POST['has_personal_injury']) && $_POST['has_personal_injury'] === '1';
+$sendWorksiteNotification = isset($_POST['send_worksite_notification']) && $_POST['send_worksite_notification'] === '1';
 
 // Lue valitut maat (POST)
 $selectedCountries = $_POST['distribution_countries'] ?? ['fi']; // Default: Suomi
@@ -392,6 +393,53 @@ if (!empty($distributionResults)) {
         ':user_id'    => $userId,
         ':event_type' => 'distribution_sent',
         ':description'=> $distDesc,
+        ':batch_id'   => $publishBatchId,
+    ]);
+}
+
+// Lähetä työmaa-ilmoitukset valittujen infonäyttökohteiden työmaahenkilöille
+if ($sendWorksiteNotification && function_exists('sf_mail_worksite_notification')) {
+    // Kerää kaikki valitut display key ID:t POST-datasta (kaikki kieliversiot)
+    $allSelectedDisplayKeyIds = [];
+    $rawDisplayTargets = $_POST['display_targets'] ?? [];
+    if (is_array($rawDisplayTargets)) {
+        foreach ($rawDisplayTargets as $perFlashTargets) {
+            if (is_array($perFlashTargets)) {
+                foreach ($perFlashTargets as $keyId) {
+                    $keyId = (int)$keyId;
+                    if ($keyId > 0) {
+                        $allSelectedDisplayKeyIds[] = $keyId;
+                    }
+                }
+            }
+        }
+    }
+    $allSelectedDisplayKeyIds = array_values(array_unique($allSelectedDisplayKeyIds));
+
+    $worksiteNotificationCount = 0;
+    try {
+        $worksiteNotificationCount = sf_mail_worksite_notification(
+            $pdo,
+            $id,
+            $allSelectedDisplayKeyIds,
+            (int)($userId ?? 0)
+        );
+        sf_app_log("publish.php: Worksite notification sent to {$worksiteNotificationCount} recipients for flash {$id}");
+    } catch (Throwable $e) {
+        sf_app_log("publish.php: Worksite notification ERROR: " . $e->getMessage(), LOG_LEVEL_ERROR);
+        $worksiteNotificationCount = 0;
+    }
+
+    // Lokimerkintä työmaa-ilmoituksesta
+    $logWsNotif = $pdo->prepare("
+        INSERT INTO safetyflash_logs (flash_id, user_id, event_type, description, batch_id, created_at)
+        VALUES (:flash_id, :user_id, :event_type, :description, :batch_id, NOW())
+    ");
+    $logWsNotif->execute([
+        ':flash_id'   => $logFlashId,
+        ':user_id'    => $userId,
+        ':event_type' => 'worksite_notification_sent',
+        ':description'=> "log_worksite_notification_sent|count:{$worksiteNotificationCount}",
         ':batch_id'   => $publishBatchId,
     ]);
 }
