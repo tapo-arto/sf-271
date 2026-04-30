@@ -27,6 +27,16 @@ require_once __DIR__ . '/../services/PublicAudit.php';
  */
 function sf_public_headers(string $allowedOrigin): void
 {
+    // Sanitize allowed origin against CSP/header injection.
+    // Remove characters that could terminate the directive or inject new headers.
+    $safeOrigin = preg_replace('/[;\r\n\0]/', '', $allowedOrigin);
+
+    // Validate that after sanitization the value still matches a valid HTTP(S) origin,
+    // optionally with port number. Fall back to 'none' if it doesn't.
+    if (!preg_match('#^https?://[a-zA-Z0-9._-]+(:[0-9]{1,5})?$#', $safeOrigin)) {
+        $safeOrigin = "'none'";
+    }
+
     // Remove conflicting headers set by security_headers.php
     header_remove('X-Frame-Options');
     header_remove('Content-Security-Policy');
@@ -41,7 +51,7 @@ function sf_public_headers(string $allowedOrigin): void
         . "font-src 'self' data:; "
         . "connect-src 'self'; "
         . "object-src 'none'; "
-        . "frame-ancestors " . $allowedOrigin . "; "
+        . "frame-ancestors " . $safeOrigin . "; "
         . "base-uri 'self'; "
         . "form-action 'none';"
     );

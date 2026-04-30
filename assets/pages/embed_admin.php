@@ -41,16 +41,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $expiryDays    = max(1, min(365, (int)($_POST['expiry_days'] ?? 30)));
         $interval      = max(5, min(60, (int)($_POST['interval'] ?? 15)));
 
-        // Validate origin
-        $parsed = parse_url($allowedOrigin);
-        if (empty($allowedOrigin) || !isset($parsed['scheme'], $parsed['host'])) {
-            $notice = 'error:Virheellinen Origin-URL. Muoto: https://intra.yritys.fi';
+        // Validate origin: must be a valid URL with scheme+host, no path/query/fragment
+        // and no injection characters (semicolons, newlines).
+        $parsed     = parse_url($allowedOrigin);
+        $schemeOk   = isset($parsed['scheme']) && in_array($parsed['scheme'], ['http', 'https'], true);
+        $hostOk     = isset($parsed['host']) && $parsed['host'] !== '';
+        $noPath     = !isset($parsed['path']) || $parsed['path'] === '' || $parsed['path'] === '/';
+        $noQuery    = !isset($parsed['query']);
+        $noFragment = !isset($parsed['fragment']);
+        $noInjection = preg_match('/[;\r\n\0]/', $allowedOrigin) === 0;
+        if (empty($allowedOrigin) || !$schemeOk || !$hostOk || !$noPath || !$noQuery || !$noFragment || !$noInjection) {
+            $notice = 'error:Virheellinen Origin-URL. Muoto: https://intra.yritys.fi (pelkkä scheme+host)';
         } else {
             // Generate cryptographically secure UUID v4
-            $bytes = random_bytes(16);
+            $bytes    = random_bytes(16);
             $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40); // version 4
             $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80); // variant RFC 4122
-            $jti = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+            $hex      = bin2hex($bytes);
+            $jti      = sprintf(
+                '%s-%s-%s-%s-%s',
+                substr($hex, 0, 8),
+                substr($hex, 8, 4),
+                substr($hex, 12, 4),
+                substr($hex, 16, 4),
+                substr($hex, 20, 12)
+            );
 
             $exp     = time() + ($expiryDays * 86400);
             $nbf     = time() - 5;
