@@ -313,17 +313,17 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
                     </a>
 
 <?php if ($user && (int)$user['role_id'] === 1): ?>
-
+<?php $settingsLabel = htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8'); ?>
 <a href="<?= htmlspecialchars($base) ?>/index.php?page=settings"
    class="sf-nav-link sf-nav-link-icon-only <?= $currentPage === 'settings' ? 'sf-nav-active' : '' ?>"
-   aria-label="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>"
-   title="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>"
-   data-tooltip="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
+   aria-label="<?= $settingsLabel ?>"
+   title="<?= $settingsLabel ?>"
+   data-tooltip="<?= $settingsLabel ?>">
     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/settings.svg"
          alt=""
          class="sf-nav-link-icon"
          aria-hidden="true">
-    <span><?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+    <span><?= $settingsLabel ?></span>
 </a>
 
 <?php endif; ?>
