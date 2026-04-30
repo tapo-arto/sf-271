@@ -313,22 +313,26 @@ sf_session_activity_tick(['is_api' => false, 'is_fetch' => false]);
                     </a>
 
 <?php if ($user && (int)$user['role_id'] === 1): ?>
-
+<?php $settingsLabel = htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8'); ?>
 <a href="<?= htmlspecialchars($base) ?>/index.php?page=settings"
-   class="sf-nav-link <?= $currentPage === 'settings' ? 'sf-nav-active' : '' ?>"
-   data-tooltip="<?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?>">
+   class="sf-nav-link sf-nav-link-icon-only <?= $currentPage === 'settings' ? 'sf-nav-active' : '' ?>"
+   aria-label="<?= $settingsLabel ?>"
+   title="<?= $settingsLabel ?>"
+   data-tooltip="<?= $settingsLabel ?>">
     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/settings.svg"
          alt=""
          class="sf-nav-link-icon"
          aria-hidden="true">
-    <span><?= htmlspecialchars(sf_term('settings_heading', $uiLang), ENT_QUOTES, 'UTF-8') ?></span>
+    <span><?= $settingsLabel ?></span>
 </a>
 
 <?php endif; ?>
 
 <?php if (function_exists('sf_is_admin_or_safety') && sf_is_admin_or_safety()): ?>
 <a href="<?= htmlspecialchars($xiboSummaryUrl, ENT_QUOTES, 'UTF-8') ?>"
-   class="sf-nav-link"
+   class="sf-nav-link sf-nav-link-icon-only"
+   aria-label="Xibo Koonti"
+   title="Xibo Koonti"
    data-tooltip="Xibo Koonti">
     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/screen.svg"
          alt=""
