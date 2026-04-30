@@ -69,6 +69,7 @@ class PublicRateLimit
 
     /**
      * Upsert a counter row and return the new count.
+     * Uses LAST_INSERT_ID() trick to retrieve the updated count in one round trip.
      */
     private static function increment(
         \PDO   $pdo,
@@ -77,13 +78,15 @@ class PublicRateLimit
         string $windowStart,
         int    $windowSeconds
     ): int {
+        // ON DUPLICATE KEY UPDATE returns LAST_INSERT_ID(expr) so we can read the
+        // incremented value without a second SELECT.
         $sql = '
             INSERT INTO sf_public_rate_limit
                 (key_value, key_type, window_start, window_seconds, request_count)
             VALUES
                 (:kv, :kt, :ws, :wsec, 1)
             ON DUPLICATE KEY UPDATE
-                request_count = request_count + 1
+                request_count = LAST_INSERT_ID(request_count + 1)
         ';
 
         $stmt = $pdo->prepare($sql);
@@ -94,21 +97,8 @@ class PublicRateLimit
             ':wsec' => $windowSeconds,
         ]);
 
-        // Fetch current count
-        $sel = $pdo->prepare(
-            'SELECT request_count FROM sf_public_rate_limit
-              WHERE key_value = :kv AND key_type = :kt
-                AND window_start = :ws AND window_seconds = :wsec
-              LIMIT 1'
-        );
-        $sel->execute([
-            ':kv'   => $keyValue,
-            ':kt'   => $keyType,
-            ':ws'   => $windowStart,
-            ':wsec' => $windowSeconds,
-        ]);
-
-        return (int)($sel->fetchColumn() ?: 0);
+        // LAST_INSERT_ID() holds the value set by the expression above
+        return (int)$pdo->lastInsertId();
     }
 
     /**
