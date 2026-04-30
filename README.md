@@ -450,3 +450,12 @@ It enables:
 - Direct publishing to worksite displays
 
 The result is faster, clearer, and more reliable safety communication across the entire organization.
+
+---
+
+## Public Embed
+
+SafetyFlash supports embedding read-only carousel and archive views into external websites (intranets, portals) via signed iframe tokens.
+
+See **[EMBED_INTEGRATION.md](EMBED_INTEGRATION.md)** for full setup instructions, security considerations, and iframe code examples.
+

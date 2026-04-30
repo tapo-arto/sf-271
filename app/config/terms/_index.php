@@ -29,6 +29,7 @@ $modules = [
     'display'    => require $termsDir . '/display.php',
     'body_map'   => require $termsDir . '/body_map.php',
     'updates'    => require $termsDir . '/updates.php',
+    'embed'      => require $termsDir . '/embed.php',
 ];
 
 // Merge all terms into one array
