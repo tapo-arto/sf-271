@@ -51,6 +51,7 @@ $allowed = [
     'feedback'         => '/assets/pages/feedback.php',
     'playlist_manager' => '/assets/pages/playlist_manager.php',
     'updates'          => '/assets/pages/updates.php',
+    'embed_admin'      => '/assets/pages/embed_admin.php',
 ];
 
 if (!isset($allowed[$page])) {
