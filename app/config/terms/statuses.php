@@ -31,6 +31,20 @@ return [
     'it' => 'Aggiunge un avviso nell\'oggetto dell\'email',
     'el' => 'Προσθέτει προειδοποίηση στο θέμα του email',
 ],
+'publish_worksite_notification' => [
+    'fi' => 'Lähetä sähköposti-ilmoitus valittujen työmaiden vastaaville ja kotityömaakäyttäjille',
+    'sv' => 'Skicka e-postavisering till ansvariga och hemarbetsplatsanvändare för valda arbetsplatser',
+    'en' => 'Send email notification to supervisors and home-worksite users of selected worksites',
+    'it' => 'Invia notifica email ai responsabili e agli utenti del cantiere principale delle aree selezionate',
+    'el' => 'Αποστολή ειδοποίησης email στους υπεύθυνους και τους χρήστες του κύριου εργοταξίου',
+],
+'publish_worksite_notification_hint' => [
+    'fi' => 'Ilmoitus lähetetään käyttäjien oman kieliasetuksen mukaan',
+    'sv' => 'Avisering skickas enligt användarnas egna språkinställningar',
+    'en' => 'Notification is sent according to each user\'s language preference',
+    'it' => 'La notifica viene inviata in base alle preferenze linguistiche di ciascun utente',
+    'el' => 'Η ειδοποίηση αποστέλλεται σύμφωνα με τις γλωσσικές προτιμήσεις κάθε χρήστη',
+],
 'publish_subject_preview' => [
     'fi' => 'Sähköpostin otsikko',
     'sv' => 'E-postens ämne',

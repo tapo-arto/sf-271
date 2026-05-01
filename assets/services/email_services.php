@@ -1859,3 +1859,191 @@ function sf_mail_mention_notifications(
         sf_app_log('sf_mail_mention_notifications ERROR: ' . $e->getMessage(), LOG_LEVEL_ERROR);
     }
 }
+
+/**
+ * Kokoaa vastaanottajalistan työmaa-ilmoituksille.
+ *
+ * Hakee kaikille valituille infonäyttöavaimille niiden työmaan
+ * työmaavastaavat ja kotityömaakäyttäjät. Jättää pois SafetyFlashin
+ * alkuperäisen työmaan käyttäjät sekä sähköposti-ilmoitukset
+ * poistaneet käyttäjät.
+ *
+ * @param PDO   $pdo             Tietokantayhteys
+ * @param int   $flashId         SafetyFlash ID (hakee lähdetyömaan nimen)
+ * @param int[] $displayKeyIds   Valitut infonäyttöavainten ID:t
+ * @return array<int,array{email:string,ui_lang:string}> Dedup-lista [email, ui_lang]
+ */
+function sf_get_worksite_notification_recipients(PDO $pdo, int $flashId, array $displayKeyIds): array
+{
+    if (empty($displayKeyIds)) {
+        return [];
+    }
+
+    // Hae lähdetyömaan nimi (sf_flashes.site)
+    $stmtFlash = $pdo->prepare("SELECT site FROM sf_flashes WHERE id = ? LIMIT 1");
+    $stmtFlash->execute([$flashId]);
+    $sourceWorksite = trim((string)($stmtFlash->fetchColumn() ?: ''));
+
+    // Hae infonäyttöavaimien worksite_id:t
+    $placeholders = implode(',', array_fill(0, count($displayKeyIds), '?'));
+    $stmtKeys = $pdo->prepare("
+        SELECT DISTINCT k.worksite_id
+        FROM sf_display_api_keys k
+        WHERE k.id IN ($placeholders)
+          AND k.worksite_id IS NOT NULL
+          AND k.is_active = 1
+    ");
+    $stmtKeys->execute(array_values($displayKeyIds));
+    $worksiteIds = $stmtKeys->fetchAll(PDO::FETCH_COLUMN);
+
+    if (empty($worksiteIds)) {
+        return [];
+    }
+
+    // Hae työmaat ja suodata pois lähdetyömaa (nimellä, case-insensitive)
+    $wsPlaceholders = implode(',', array_fill(0, count($worksiteIds), '?'));
+    $stmtWs = $pdo->prepare("
+        SELECT id, name FROM sf_worksites WHERE id IN ($wsPlaceholders)
+    ");
+    $stmtWs->execute(array_values($worksiteIds));
+    $worksites = $stmtWs->fetchAll(PDO::FETCH_ASSOC);
+
+    // Kerää vastaanottajat: email => ui_lang  (dedup)
+    $recipients = [];
+
+    foreach ($worksites as $ws) {
+        $wsId   = (int)$ws['id'];
+        $wsName = trim((string)$ws['name']);
+
+        // Ohita SafetyFlashin alkuperäinen työmaa
+        if ($sourceWorksite !== '' && mb_strtolower($wsName) === mb_strtolower($sourceWorksite)) {
+            sf_app_log("sf_get_worksite_notification_recipients: skipping source worksite '{$wsName}'");
+            continue;
+        }
+
+        // 1) Työmaavastaavat (role_categories.type = 'supervisor', worksite = työmaan nimi)
+        $stmtSup = $pdo->prepare("
+            SELECT DISTINCT u.email, COALESCE(u.ui_lang, 'fi') AS ui_lang
+            FROM sf_users u
+            INNER JOIN user_role_categories urc ON urc.user_id = u.id
+            INNER JOIN role_categories rc ON rc.id = urc.role_category_id
+            WHERE rc.type = 'supervisor'
+              AND rc.is_active = 1
+              AND LOWER(rc.worksite) = LOWER(?)
+              AND u.is_active = 1
+              AND u.email <> ''
+              AND u.email_notifications_enabled = 1
+        ");
+        $stmtSup->execute([$wsName]);
+        foreach ($stmtSup->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $email = trim($row['email']);
+            if (filter_var($email, FILTER_VALIDATE_EMAIL) && !isset($recipients[$email])) {
+                $recipients[$email] = $row['ui_lang'];
+            }
+        }
+
+        // 2) Käyttäjät, joilla työmaa on kotityömaana
+        $stmtHome = $pdo->prepare("
+            SELECT DISTINCT u.email, COALESCE(u.ui_lang, 'fi') AS ui_lang
+            FROM sf_users u
+            WHERE u.home_worksite_id = ?
+              AND u.is_active = 1
+              AND u.email <> ''
+              AND u.email_notifications_enabled = 1
+        ");
+        $stmtHome->execute([$wsId]);
+        foreach ($stmtHome->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $email = trim($row['email']);
+            if (filter_var($email, FILTER_VALIDATE_EMAIL) && !isset($recipients[$email])) {
+                $recipients[$email] = $row['ui_lang'];
+            }
+        }
+    }
+
+    // Muunna [email => ui_lang] muotoon [{email, ui_lang}, ...]
+    $result = [];
+    foreach ($recipients as $email => $lang) {
+        $result[] = ['email' => $email, 'ui_lang' => $lang];
+    }
+    return $result;
+}
+
+/**
+ * Lähettää työmaa-ilmoitukset SafetyFlashin julkaisusta.
+ *
+ * Jokainen vastaanottaja saa ilmoituksen omalla kielellään.
+ * Virheet kirjataan lokiin, mutta eivät keskeytä prosessia.
+ *
+ * @param PDO   $pdo           Tietokantayhteys
+ * @param int   $flashId       SafetyFlash ID
+ * @param int[] $displayKeyIds Valitut infonäyttöavainten ID:t
+ * @param int   $publishedBy   Julkaisijan käyttäjä-ID (lokitusta varten)
+ * @return int Lähetettyjen (tai yritettyjen) sähköpostien määrä
+ */
+function sf_mail_worksite_notification(PDO $pdo, int $flashId, array $displayKeyIds, int $publishedBy = 0): int
+{
+    sf_app_log("sf_mail_worksite_notification: CALLED flashId={$flashId}, keys=" . implode(',', $displayKeyIds));
+
+    $recipients = sf_get_worksite_notification_recipients($pdo, $flashId, $displayKeyIds);
+    if (empty($recipients)) {
+        sf_app_log("sf_mail_worksite_notification: no recipients for flashId={$flashId}");
+        return 0;
+    }
+
+    // Hae flash-tiedot
+    $flash = sf_get_flash_details($pdo, $flashId);
+    if (!$flash) {
+        sf_app_log("sf_mail_worksite_notification: flash {$flashId} not found");
+        return 0;
+    }
+
+    $groupId = !empty($flash['translation_group_id']) ? (int)$flash['translation_group_id'] : $flashId;
+
+    // Ryhmittele vastaanottajat kielen mukaan
+    $byLang = [];
+    foreach ($recipients as $r) {
+        $validLangs = ['fi', 'sv', 'en', 'it', 'el'];
+        $lang = in_array($r['ui_lang'], $validLangs, true) ? $r['ui_lang'] : 'fi';
+        $byLang[$lang][] = $r['email'];
+    }
+
+    $totalSent = 0;
+
+    foreach ($byLang as $lang => $emails) {
+        // Etsi kyseisen kielen flash-versio
+        $stmtLang = $pdo->prepare("
+            SELECT id FROM sf_flashes
+            WHERE (id = ? OR translation_group_id = ?) AND lang = ?
+            LIMIT 1
+        ");
+        $stmtLang->execute([$groupId, $groupId, $lang]);
+        $langFlashId = (int)($stmtLang->fetchColumn() ?: $flashId);
+
+        $subject = sf_email_term('email_worksite_notification_subject', $lang)
+                   . ' (ID: ' . $flashId . ')';
+
+        $emailData = [
+            'type'           => $flash['type'] ?? 'yellow',
+            'flash_id'       => $langFlashId,
+            'subject'        => sf_email_term('email_worksite_notification_subject', $lang),
+            'body_text'      => sf_email_term('email_worksite_notification_body', $lang),
+            'flash_title'    => $flash['title'] ?? '',
+            'flash_worksite' => $flash['worksite'] ?? '',
+            'flash_url'      => sf_build_flash_url($langFlashId),
+        ];
+
+        $emailContent = sf_build_email_html($emailData, $lang);
+        $attachments  = sf_get_preview_attachments($pdo, $langFlashId);
+
+        try {
+            sf_send_email($subject, $emailContent['html'], $emailContent['text'], $emails, $attachments, $flashId);
+            $totalSent += count($emails);
+            sf_app_log("sf_mail_worksite_notification: sent to " . count($emails) . " recipients in lang={$lang}");
+        } catch (Throwable $e) {
+            sf_app_log("sf_mail_worksite_notification: ERROR lang={$lang}: " . $e->getMessage(), LOG_LEVEL_ERROR);
+        }
+    }
+
+    sf_app_log("sf_mail_worksite_notification: total sent={$totalSent} for flashId={$flashId}");
+    return $totalSent;
+}

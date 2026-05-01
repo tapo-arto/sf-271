@@ -2651,6 +2651,38 @@ include __DIR__ . '/../partials/body_map_modal.php';
                     </div>
                 <?php endif; ?>
 
+                <!-- Työmaa-ilmoitus toggle -->
+                <div class="sf-worksite-notif-toggle" style="margin-top:1.25rem;">
+                    <label class="sf-toggle-card" id="worksiteNotifCard">
+                        <div class="sf-toggle-card-content">
+                            <div class="sf-toggle-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </div>
+                            <div class="sf-toggle-labels">
+                                <span class="sf-toggle-label-main">
+                                    <?= htmlspecialchars(sf_term('publish_worksite_notification', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <span class="sf-toggle-label-help">
+                                    <?= htmlspecialchars(sf_term('publish_worksite_notification_hint', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <span class="sf-toggle-label-help" id="worksiteNotifCount" style="margin-top:0.25rem;"></span>
+                            </div>
+                        </div>
+                        <label class="sf-toggle" aria-label="<?= htmlspecialchars(sf_term('publish_worksite_notification', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="send_worksite_notification" value="0">
+                            <input type="checkbox"
+                                   id="publishSendWorksiteNotification"
+                                   name="send_worksite_notification"
+                                   value="1"
+                                   checked>
+                            <span class="sf-toggle-slider"></span>
+                        </label>
+                    </label>
+                </div>
+
                 <div class="sf-modal-actions">
                     <button type="button" class="sf-btn sf-btn-secondary" id="btnPublishStep2Back">
                         ← <?= htmlspecialchars(sf_term('btn_back', $currentUiLang) ?? 'Takaisin', ENT_QUOTES, 'UTF-8') ?>
@@ -2691,6 +2723,8 @@ include __DIR__ . '/../partials/body_map_modal.php';
                         <dd id="summaryDistribution">—</dd>
                         <dt><?= htmlspecialchars(sf_term('publish_summary_displays', $currentUiLang) ?? 'Infonäytöt', ENT_QUOTES, 'UTF-8') ?></dt>
                         <dd id="summaryDisplays">—</dd>
+                        <dt><?= htmlspecialchars(sf_term('publish_summary_worksite_notification', $currentUiLang) ?? 'Ilmoitus työmaille', ENT_QUOTES, 'UTF-8') ?></dt>
+                        <dd id="summaryWorksiteNotification">—</dd>
                         <dt><?= htmlspecialchars(sf_term('publish_summary_ttl', $currentUiLang) ?? 'Näkyvyysaika', ENT_QUOTES, 'UTF-8') ?></dt>
                         <dd id="summaryTtl">—</dd>
                         <dt><?= htmlspecialchars(sf_term('publish_summary_duration', $currentUiLang) ?? 'Näyttökesto', ENT_QUOTES, 'UTF-8') ?></dt>
@@ -2967,6 +3001,153 @@ include __DIR__ . '/../partials/body_map_modal.php';
         if (footerPublish) {
             footerPublish.addEventListener('click', function () {
                 showPublishStep(1);
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
+<script>
+// ===== Worksite Notification Toggle & Recipient Count =====
+(function () {
+    'use strict';
+
+    var flashId    = <?= (int)$id ?>;
+    var base       = <?= json_encode($base) ?>;
+    var csrfToken  = <?= json_encode(sf_csrf_token()) ?>;
+
+    var toggle        = document.getElementById('publishSendWorksiteNotification');
+    var countEl       = document.getElementById('worksiteNotifCount');
+    var summaryEl     = document.getElementById('summaryWorksiteNotification');
+    var publishStep2  = document.getElementById('publishStep2');
+
+    var debounceTimer = null;
+    var lastCount     = null; // cache last fetched count
+
+    function getTerms() {
+        return window.SF_TERMS || {};
+    }
+
+    function formatCountText(count) {
+        var t = getTerms();
+        if (count === 0) {
+            return t.publish_worksite_recipients_none || 'Ei vastaanottajia';
+        }
+        var tpl = t.publish_worksite_recipients_count || 'Ilmoitus lähetetään %d henkilölle';
+        return tpl.replace('%d', count);
+    }
+
+    function getSelectedDisplayKeyIds() {
+        var ids = [];
+        if (!publishStep2) { return ids; }
+        publishStep2.querySelectorAll('input.dt-display-chip-cb:checked, input.sf-display-chip-input:checked').forEach(function (cb) {
+            var v = parseInt(cb.value, 10);
+            if (v > 0) { ids.push(v); }
+        });
+        return ids;
+    }
+
+    function updateCount() {
+        if (!toggle || !countEl) { return; }
+
+        if (!toggle.checked) {
+            countEl.textContent = '';
+            lastCount = null;
+            updateSummary();
+            return;
+        }
+
+        var ids = getSelectedDisplayKeyIds();
+        if (ids.length === 0) {
+            countEl.textContent = formatCountText(0);
+            lastCount = 0;
+            updateSummary();
+            return;
+        }
+
+        var t = getTerms();
+        countEl.textContent = t.publish_worksite_recipients_loading || 'Lasketaan...';
+
+        var body = new URLSearchParams();
+        body.append('flash_id', flashId);
+        body.append('csrf_token', csrfToken);
+        ids.forEach(function (id) { body.append('display_key_ids[]', id); });
+
+        fetch(base + '/app/api/worksite_notification_count.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data && data.ok) {
+                lastCount = data.count;
+                countEl.textContent = formatCountText(data.count);
+            } else {
+                lastCount = null;
+                countEl.textContent = '';
+            }
+            updateSummary();
+        })
+        .catch(function () {
+            lastCount = null;
+            countEl.textContent = '';
+            updateSummary();
+        });
+    }
+
+    function updateSummary() {
+        if (!summaryEl) { return; }
+        if (!toggle || !toggle.checked) {
+            summaryEl.textContent = '—';
+            return;
+        }
+        if (lastCount === null) {
+            summaryEl.textContent = '—';
+        } else {
+            summaryEl.textContent = formatCountText(lastCount);
+        }
+    }
+
+    function scheduleUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateCount, 350);
+    }
+
+    function init() {
+        if (!toggle) { return; }
+
+        // Toggle change
+        toggle.addEventListener('change', function () {
+            updateCount();
+        });
+
+        // Listen for display target checkbox changes inside step 2
+        if (publishStep2) {
+            publishStep2.addEventListener('change', function (e) {
+                if (e.target && (
+                    e.target.classList.contains('dt-display-chip-cb') ||
+                    e.target.classList.contains('sf-display-chip-input')
+                )) {
+                    scheduleUpdate();
+                }
+            });
+        }
+
+        // Trigger initial count (toggle is checked by default)
+        updateCount();
+
+        // When step 4 is shown, update summary with cached value
+        var btn3Next = document.getElementById('btnPublishStep3Next');
+        if (btn3Next) {
+            btn3Next.addEventListener('click', function () {
+                updateSummary();
             });
         }
     }
@@ -3668,7 +3849,11 @@ window.SF_TERMS = {
     type_green: <?php echo json_encode(sf_term('type_green', $currentUiLang)); ?>,
     confirm_creating_translation: <?php echo json_encode(sf_term('confirm_creating_translation', $currentUiLang)); ?>,
     // Publish summary terms
-    publish_yes: <?php echo json_encode(sf_term('publish_yes', $currentUiLang) ?? '✅ Kyllä'); ?>
+    publish_yes: <?php echo json_encode(sf_term('publish_yes', $currentUiLang) ?? '✅ Kyllä'); ?>,
+    // Worksite notification terms
+    publish_worksite_recipients_count: <?php echo json_encode(sf_term('publish_worksite_recipients_count', $currentUiLang) ?? 'Ilmoitus lähetetään %d henkilölle'); ?>,
+    publish_worksite_recipients_none:  <?php echo json_encode(sf_term('publish_worksite_recipients_none', $currentUiLang) ?? 'Ei vastaanottajia'); ?>,
+    publish_worksite_recipients_loading: <?php echo json_encode(sf_term('publish_worksite_recipients_loading', $currentUiLang) ?? 'Lasketaan...'); ?>
 };
 window.SF_FLASH_DATA      = <?php echo json_encode($flashDataForJs); ?>;
 window.SF_SUPPORTED_LANGS = <?php echo json_encode($supportedLangs); ?>;
