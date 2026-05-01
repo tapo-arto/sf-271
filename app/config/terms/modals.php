@@ -811,4 +811,62 @@ return [
     'it' => 'Il comunicato è stato pubblicato. Scarica il report PDF e caricalo su Athena (archivio intranet interno) in modo che gli altri utenti sappiano che è disponibile lì.',
     'el' => 'Η ανακοίνωση έχει δημοσιευτεί. Κατεβάστε την αναφορά PDF και μεταφορτώστε την στο Athena (εσωτερική τράπεζα αρχείων intranet) ώστε οι άλλοι χρήστες να γνωρίζουν ότι είναι διαθέσιμη εκεί.',
 ],
+
+// Comms modal – worksite email notification toggle (Step 3)
+'comms_notify_supervisors_label' => [
+    'fi' => 'Lähetä sähköposti-ilmoitus valittujen työmaiden vastaaville ja kotityömaakäyttäjille',
+    'sv' => 'Skicka e-postmeddelande till ansvariga och hemarbetsplatsanvändare för de valda arbetsplatserna',
+    'en' => 'Send email notification to selected worksites\' supervisors and home-worksite users',
+    'it' => 'Invia notifica e-mail ai responsabili dei cantieri selezionati e agli utenti che hanno il cantiere come principale',
+    'el' => 'Αποστολή ειδοποίησης μέσω email στους υπεύθυνους των επιλεγμένων εργοταξίων και στους χρήστες που έχουν το εργοτάξιο ως κύριο',
+],
+'comms_notify_supervisors_help' => [
+    'fi' => 'Ilmoitus lähetetään käyttäjien oman kieliasetuksen mukaan',
+    'sv' => 'Meddelandet skickas enligt användarnas egna språkinställningar',
+    'en' => 'Notification is sent according to each user\'s language preference',
+    'it' => 'La notifica viene inviata in base alle preferenze linguistiche di ciascun utente',
+    'el' => 'Η ειδοποίηση αποστέλλεται σύμφωνα με τις γλωσσικές προτιμήσεις κάθε χρήστη',
+],
+'comms_notify_recipients_count' => [
+    'fi' => 'Ilmoitus lähetetään %d henkilölle',
+    'sv' => 'Avisering skickas till %d personer',
+    'en' => 'Notification will be sent to %d recipients',
+    'it' => 'La notifica verrà inviata a %d destinatari',
+    'el' => 'Η ειδοποίηση θα σταλεί σε %d παραλήπτες',
+],
+'comms_notify_recipients_none' => [
+    'fi' => 'Ei vastaanottajia',
+    'sv' => 'Inga mottagare',
+    'en' => 'No recipients',
+    'it' => 'Nessun destinatario',
+    'el' => 'Δεν υπάρχουν παραλήπτες',
+],
+'comms_notify_recipients_loading' => [
+    'fi' => 'Lasketaan...',
+    'sv' => 'Beräknar...',
+    'en' => 'Calculating...',
+    'it' => 'Calcolo in corso...',
+    'el' => 'Υπολογισμός...',
+],
+'comms_notify_summary_on' => [
+    'fi' => '✉️ Ilmoitus lähetetään',
+    'sv' => '✉️ Avisering skickas',
+    'en' => '✉️ Notification will be sent',
+    'it' => '✉️ La notifica verrà inviata',
+    'el' => '✉️ Η ειδοποίηση θα αποσταλεί',
+],
+'comms_notify_summary_off' => [
+    'fi' => 'Ei ilmoitusta',
+    'sv' => 'Ingen avisering',
+    'en' => 'No notification',
+    'it' => 'Nessuna notifica',
+    'el' => 'Χωρίς ειδοποίηση',
+],
+'comms_summary_notification' => [
+    'fi' => 'Sähköposti-ilmoitus työmaille',
+    'sv' => 'E-postavisering till arbetsplatser',
+    'en' => 'Email notification to worksites',
+    'it' => 'Notifica email alle aree di lavoro',
+    'el' => 'Ειδοποίηση email στα εργοτάξια',
+],
 ];

@@ -39,6 +39,12 @@
         var btnStep4Back = document.getElementById('btnCommsStep4Back');
         var btnCommsSend = document.getElementById('btnCommsSend');
 
+        // Notify supervisors toggle
+        var notifyToggle = document.getElementById('commsNotifySupervisors');
+        var notifyCountEl = document.getElementById('commsNotifyCount');
+        var debounceNotify = null;
+        var lastNotifyCount = null;
+
         // Language chips toggle behavior - FIXED
         qsa('.sf-chip-toggle').forEach(function (chip) {
             var checkbox = chip.querySelector('input[type="checkbox"]');
@@ -97,6 +103,11 @@
             if (step === 4) {
                 updateSummary();
             }
+
+            // Fetch notification recipient count when reaching step 3
+            if (step === 3) {
+                updateNotifyCount();
+            }
         }
 
         function updateSummary() {
@@ -138,6 +149,96 @@
                     distSummary.textContent = getTerm('comms_summary_no', 'Ei');
                 }
             }
+
+            // Notification summary
+            var notifSummary = document.getElementById('commsSummaryNotification');
+            if (notifSummary) {
+                if (notifyToggle && notifyToggle.checked) {
+                    var countPart = lastNotifyCount !== null
+                        ? ' (' + formatNotifyCount(lastNotifyCount) + ')'
+                        : '';
+                    notifSummary.textContent = getTerm('comms_notify_summary_on', '✉️ Ilmoitus lähetetään') + countPart;
+                } else {
+                    notifSummary.textContent = getTerm('comms_notify_summary_off', 'Ei ilmoitusta');
+                }
+            }
+        }
+
+        function formatNotifyCount(count) {
+            if (count === 0) {
+                return getTerm('comms_notify_recipients_none', 'Ei vastaanottajia');
+            }
+            var tpl = getTerm('comms_notify_recipients_count', 'Ilmoitus lähetetään %d henkilölle');
+            return tpl.replace('%d', count);
+        }
+
+        function getCheckedDisplayKeyIds() {
+            var ids = [];
+            var commsStep2 = document.getElementById('commsStep2');
+            if (!commsStep2) { return ids; }
+            qsa('.dt-display-chip-cb:checked, .sf-display-chip-input:checked', commsStep2).forEach(function (cb) {
+                var v = parseInt(cb.value, 10);
+                if (v > 0) { ids.push(v); }
+            });
+            return ids;
+        }
+
+        function updateNotifyCount() {
+            if (!notifyToggle || !notifyCountEl) { return; }
+
+            if (!notifyToggle.checked) {
+                notifyCountEl.textContent = '';
+                lastNotifyCount = null;
+                updateSummary();
+                return;
+            }
+
+            var ids = getCheckedDisplayKeyIds();
+            if (ids.length === 0) {
+                notifyCountEl.textContent = formatNotifyCount(0);
+                lastNotifyCount = 0;
+                updateSummary();
+                return;
+            }
+
+            var flashId = window.SF_FLASH_ID || new URLSearchParams(window.location.search).get('id');
+            var baseUrl = window.SF_BASE_URL || '';
+            var csrfInput = document.querySelector('#commsForm input[name="csrf_token"]');
+            var csrfToken = csrfInput ? csrfInput.value : '';
+
+            notifyCountEl.textContent = getTerm('comms_notify_recipients_loading', 'Lasketaan...');
+
+            var body = new URLSearchParams();
+            body.append('flash_id', flashId);
+            body.append('csrf_token', csrfToken);
+            ids.forEach(function (id) { body.append('display_key_ids[]', id); });
+
+            fetch(baseUrl + '/app/api/worksite_notification_count.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.ok) {
+                    lastNotifyCount = data.count;
+                    notifyCountEl.textContent = formatNotifyCount(data.count);
+                } else {
+                    lastNotifyCount = null;
+                    notifyCountEl.textContent = '';
+                }
+                updateSummary();
+            })
+            .catch(function () {
+                lastNotifyCount = null;
+                notifyCountEl.textContent = '';
+                updateSummary();
+            });
+        }
+
+        function scheduleNotifyUpdate() {
+            clearTimeout(debounceNotify);
+            debounceNotify = setTimeout(updateNotifyCount, 350);
         }
 
         // Step navigation
@@ -179,6 +280,27 @@
         if (btnStep4Back) {
             btnStep4Back.addEventListener('click', function () {
                 showStep(3);
+            });
+        }
+
+        // Notify supervisors toggle
+        if (notifyToggle) {
+            notifyToggle.addEventListener('change', function () {
+                this.setAttribute('aria-checked', this.checked ? 'true' : 'false');
+                updateNotifyCount();
+            });
+        }
+
+        // Listen for display target changes in step 2 to update notification count
+        var commsStep2El = document.getElementById('commsStep2');
+        if (commsStep2El) {
+            commsStep2El.addEventListener('change', function (e) {
+                if (e.target && (
+                    e.target.classList.contains('dt-display-chip-cb') ||
+                    e.target.classList.contains('sf-display-chip-input')
+                )) {
+                    scheduleNotifyUpdate();
+                }
             });
         }
 

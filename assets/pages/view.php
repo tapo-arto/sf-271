@@ -2377,6 +2377,37 @@ include __DIR__ . '/../partials/body_map_modal.php';
                 </div>
             </div>
 
+            <!-- Sähköposti-ilmoitus työmaille toggle -->
+            <div class="sf-field" style="margin-top: 0.75rem;">
+                <div class="sf-toggle-card" id="commsNotifyCard">
+                    <div class="sf-toggle-card-content">
+                        <div class="sf-toggle-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <div class="sf-toggle-text">
+                            <strong><?= htmlspecialchars(sf_term('comms_notify_supervisors_label', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></strong>
+                            <small><?= htmlspecialchars(sf_term('comms_notify_supervisors_help', $currentUiLang), ENT_QUOTES, 'UTF-8') ?></small>
+                            <small id="commsNotifyCount" style="margin-top:0.25rem;"></small>
+                        </div>
+                    </div>
+                    <label class="sf-modern-toggle" aria-label="<?= htmlspecialchars(sf_term('comms_notify_supervisors_label', $currentUiLang), ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="checkbox"
+                               name="notify_supervisors"
+                               id="commsNotifySupervisors"
+                               value="1"
+                               checked
+                               role="switch"
+                               aria-checked="true">
+                        <span class="sf-modern-toggle-track">
+                            <span class="sf-modern-toggle-thumb"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <div class="sf-modal-actions">
                 <button type="button" class="sf-btn sf-btn-secondary" id="btnCommsStep3Back">
                     ← <?= htmlspecialchars(sf_term('btn_back', $currentUiLang) ?? 'Takaisin', ENT_QUOTES, 'UTF-8') ?>
@@ -2420,6 +2451,12 @@ include __DIR__ . '/../partials/body_map_modal.php';
                     <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/megaphone.svg" alt="" class="sf-summary-icon">
                     <strong><?= htmlspecialchars(sf_term('comms_summary_distribution', $currentUiLang) ?? 'Jakelu', ENT_QUOTES, 'UTF-8') ?></strong>
                     <span id="commsSummaryDistribution">-</span>
+                </div>
+                
+                <div class="sf-summary-item">
+                    <img src="<?= htmlspecialchars($base) ?>/assets/img/icons/email.svg" alt="" class="sf-summary-icon">
+                    <strong><?= htmlspecialchars(sf_term('comms_summary_notification', $currentUiLang) ?? 'Sähköposti-ilmoitus työmaille', ENT_QUOTES, 'UTF-8') ?></strong>
+                    <span id="commsSummaryNotification">-</span>
                 </div>
             </div>
 
@@ -3853,7 +3890,16 @@ window.SF_TERMS = {
     // Worksite notification terms
     publish_worksite_recipients_count: <?php echo json_encode(sf_term('publish_worksite_recipients_count', $currentUiLang) ?? 'Ilmoitus lähetetään %d henkilölle'); ?>,
     publish_worksite_recipients_none:  <?php echo json_encode(sf_term('publish_worksite_recipients_none', $currentUiLang) ?? 'Ei vastaanottajia'); ?>,
-    publish_worksite_recipients_loading: <?php echo json_encode(sf_term('publish_worksite_recipients_loading', $currentUiLang) ?? 'Lasketaan...'); ?>
+    publish_worksite_recipients_loading: <?php echo json_encode(sf_term('publish_worksite_recipients_loading', $currentUiLang) ?? 'Lasketaan...'); ?>,
+    // Comms modal: worksite notification toggle terms
+    comms_notify_supervisors_label: <?php echo json_encode(sf_term('comms_notify_supervisors_label', $currentUiLang)); ?>,
+    comms_notify_supervisors_help: <?php echo json_encode(sf_term('comms_notify_supervisors_help', $currentUiLang)); ?>,
+    comms_notify_recipients_count: <?php echo json_encode(sf_term('comms_notify_recipients_count', $currentUiLang) ?? 'Ilmoitus lähetetään %d henkilölle'); ?>,
+    comms_notify_recipients_none: <?php echo json_encode(sf_term('comms_notify_recipients_none', $currentUiLang) ?? 'Ei vastaanottajia'); ?>,
+    comms_notify_recipients_loading: <?php echo json_encode(sf_term('comms_notify_recipients_loading', $currentUiLang) ?? 'Lasketaan...'); ?>,
+    comms_notify_summary_on: <?php echo json_encode(sf_term('comms_notify_summary_on', $currentUiLang) ?? '✉️ Ilmoitus lähetetään'); ?>,
+    comms_notify_summary_off: <?php echo json_encode(sf_term('comms_notify_summary_off', $currentUiLang) ?? 'Ei ilmoitusta'); ?>,
+    comms_summary_notification: <?php echo json_encode(sf_term('comms_summary_notification', $currentUiLang) ?? 'Sähköposti-ilmoitus työmaille'); ?>
 };
 window.SF_FLASH_DATA      = <?php echo json_encode($flashDataForJs); ?>;
 window.SF_SUPPORTED_LANGS = <?php echo json_encode($supportedLangs); ?>;

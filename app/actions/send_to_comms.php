@@ -52,6 +52,9 @@ try {
     // Simplified distribution - just a toggle now
     $widerDistribution = !empty($_POST['wider_distribution']) ? (int)$_POST['wider_distribution'] : 0;
 
+    // Notify worksite supervisors and home-worksite users
+    $notifySupervisors = isset($_POST['notify_supervisors']) && $_POST['notify_supervisors'] === '1';
+
     $screensOption = trim((string) ($_POST['screens_option'] ?? 'all'));
 
     // Display target selections come from Step 2 as display_targets[flash_id][]
@@ -67,6 +70,7 @@ try {
     sf_app_log("send_to_comms.php: Processing flash {$id}");
     sf_app_log("send_to_comms.php: Languages: " . json_encode($languages));
     sf_app_log("send_to_comms.php: Wider distribution: " . ($widerDistribution ? 'Yes' : 'No'));
+    sf_app_log("send_to_comms.php: Notify supervisors: " . ($notifySupervisors ? 'Yes' : 'No'));
     sf_app_log("send_to_comms.php: Screens option: {$screensOption}");
     sf_app_log("send_to_comms.php: Selected countries: " . json_encode($selectedCountries));
     sf_app_log("send_to_comms.php: Selected worksites: " . json_encode($selectedWorksites));
@@ -288,6 +292,9 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
     } else {
         $desc .= "\nemail_no_distribution";
     }
+    if ($notifySupervisors) {
+        $desc .= "\nlog_worksite_notification_sent";
+    }
     $desc .= "\nemail_selected_worksites: " . $worksitesText;
 
     // Log event
@@ -348,6 +355,36 @@ $updatedCount = sf_update_state_all_languages($pdo, $id, $newState);
         error_log(
             "send_to_comms.php EMAIL ERROR: " . $emailError->getMessage() . "\n" . $emailError->getTraceAsString()
         );
+    }
+
+    // Send worksite supervisor notifications if toggle was enabled
+    if ($notifySupervisors && function_exists('sf_mail_worksite_notification') && !empty($allVersionIds)) {
+        try {
+            // Collect display key IDs from saved display targets for all language versions
+            $stmtNotifIds = $pdo->prepare(
+                "SELECT DISTINCT display_key_id FROM sf_flash_display_targets WHERE flash_id IN (" .
+                implode(',', array_fill(0, count($allVersionIds), '?')) .
+                ")"
+            );
+            $stmtNotifIds->execute(array_values($allVersionIds));
+            $notifDisplayKeyIds = array_map('intval', $stmtNotifIds->fetchAll(PDO::FETCH_COLUMN));
+
+            if (!empty($notifDisplayKeyIds)) {
+                $notifCount = sf_mail_worksite_notification($pdo, $id, $notifDisplayKeyIds, (int)($userId ?? 0));
+                sf_app_log("send_to_comms.php: Worksite notifications sent to {$notifCount} recipients for flash {$id}");
+
+                if (function_exists('sf_log_event')) {
+                    sf_log_event($logFlashId, 'worksite_notification_sent', "log_worksite_notification_sent|count:{$notifCount}", $commsBatchId);
+                }
+            } else {
+                sf_app_log("send_to_comms.php: No display targets saved, skipping worksite notification for flash {$id}");
+            }
+        } catch (Throwable $notifError) {
+            sf_app_log(
+                "send_to_comms.php: WORKSITE NOTIFY ERROR for flash {$id}: " . $notifError->getMessage(),
+                LOG_LEVEL_ERROR
+            );
+        }
     }
 
     // Audit log
