@@ -189,7 +189,7 @@
             if (!notifyToggle.checked) {
                 notifyCountEl.textContent = '';
                 lastNotifyCount = null;
-                updateNotifySummary();
+                updateSummary();
                 return;
             }
 
@@ -197,7 +197,7 @@
             if (ids.length === 0) {
                 notifyCountEl.textContent = formatNotifyCount(0);
                 lastNotifyCount = 0;
-                updateNotifySummary();
+                updateSummary();
                 return;
             }
 
@@ -227,26 +227,13 @@
                     lastNotifyCount = null;
                     notifyCountEl.textContent = '';
                 }
-                updateNotifySummary();
+                updateSummary();
             })
             .catch(function () {
                 lastNotifyCount = null;
                 notifyCountEl.textContent = '';
-                updateNotifySummary();
+                updateSummary();
             });
-        }
-
-        function updateNotifySummary() {
-            var notifSummary = document.getElementById('commsSummaryNotification');
-            if (!notifSummary) { return; }
-            if (notifyToggle && notifyToggle.checked) {
-                var countPart = lastNotifyCount !== null
-                    ? ' (' + formatNotifyCount(lastNotifyCount) + ')'
-                    : '';
-                notifSummary.textContent = getTerm('comms_notify_summary_on', '✉️ Ilmoitus lähetetään') + countPart;
-            } else {
-                notifSummary.textContent = getTerm('comms_notify_summary_off', 'Ei ilmoitusta');
-            }
         }
 
         function scheduleNotifyUpdate() {
